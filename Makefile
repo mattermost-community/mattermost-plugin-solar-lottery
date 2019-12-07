@@ -32,7 +32,7 @@ apply:
 
 ## Runs govet and gofmt against all packages.
 .PHONY: check-style
-check-style: webapp/.npminstall gofmt govet golint
+check-style: webapp/.npminstall gofmt govet
 	@echo Checking for style guide compliance
 
 ifneq ($(HAS_WEBAPP),)
@@ -78,6 +78,16 @@ golint:
 	env GO111MODULE=off $(GO) get golang.org/x/lint/golint
 	$(GOPATH)/bin/golint -set_exit_status ./...
 	@echo lint success
+
+## Generates mock golang interfaces for testing
+mock:
+ifneq ($(HAS_SERVER),)
+	go install github.com/golang/mock/mockgen
+	# mockgen -destination server/api/mock_api/mock_api.go github.com/levb/mattermost-plugin-solar-lottery/server/api API
+	# mockgen -destination server/utils/bot/mock_bot/mock_poster.go github.com/levb/mattermost-plugin-solar-lottery/server/utils/bot Poster
+	# mockgen -destination server/utils/bot/mock_bot/mock_admin.go github.com/levb/mattermost-plugin-solar-lottery/server/utils/bot Admin
+	# mockgen -destination server/store/mock_store/mock_user_store.go github.com/levb/mattermost-plugin-solar-lottery/server/store UserStore
+endif
 
 ## Builds the server, if it exists, including support for multiple architectures.
 .PHONY: server
@@ -139,11 +149,23 @@ endif
 dist:	apply server webapp bundle
 
 ## Installs the plugin to a (development) server.
-## It uses the API if appropriate environment variables are defined,
-## and otherwise falls back to trying to copy the plugin to a sibling mattermost-server directory.
 .PHONY: deploy
 deploy: dist
-	./build/bin/deploy $(PLUGIN_ID) dist/$(BUNDLE_NAME)
+## It uses the API if appropriate environment variables are defined,
+## or copying the files directly to a sibling mattermost-server directory.
+ifneq ($(and $(MM_SERVICESETTINGS_SITEURL),$(MM_ADMIN_USERNAME),$(MM_ADMIN_PASSWORD),$(CURL)),)
+	@echo "Installing plugin via API"
+	$(eval TOKEN := $(shell curl -i --post301 --location $(MM_SERVICESETTINGS_SITEURL) -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/users/login -d '{"login_id": "$(MM_ADMIN_USERNAME)", "password": "$(MM_ADMIN_PASSWORD)"}' | grep Token | cut -f2 -d' ' 2> /dev/null))
+	@curl -s --post301 --location $(MM_SERVICESETTINGS_SITEURL) -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins -F "plugin=@dist/$(BUNDLE_NAME)" -F "force=true" > /dev/null && \
+		curl -s --post301 --location $(MM_SERVICESETTINGS_SITEURL) -H "Authorization: Bearer $(TOKEN)" -X POST $(MM_SERVICESETTINGS_SITEURL)/api/v4/plugins/$(PLUGIN_ID)/enable > /dev/null && \
+		echo "OK." || echo "Sorry, something went wrong."
+else ifneq ($(wildcard ../mattermost-server/.*),)
+	@echo "Installing plugin via filesystem. Server restart and manual plugin enabling required"
+	mkdir -p ../mattermost-server/plugins
+	tar -C ../mattermost-server/plugins -zxvf dist/$(BUNDLE_NAME)
+else
+	@echo "No supported deployment method available. Install plugin manually."
+endif
 
 .PHONY: debug-deploy
 debug-deploy: debug-dist deploy
