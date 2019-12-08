@@ -10,6 +10,7 @@ import (
 )
 
 type API interface {
+	bot.Logger
 	User
 	Skills
 	Rotations
@@ -31,14 +32,19 @@ type Config struct {
 }
 
 type api struct {
+	bot.Logger
 	Config
 	mattermostUserID string
 	user             *store.User
+	skills           []string
 	rotations        map[string]*store.Rotation
 }
 
 func New(apiConfig Config, mattermostUserID string) API {
 	return &api{
+		Logger: apiConfig.Logger.With(bot.LogContext{
+			"MattermostUserID": mattermostUserID,
+		}),
 		Config:           apiConfig,
 		mattermostUserID: mattermostUserID,
 	}

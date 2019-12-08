@@ -32,7 +32,7 @@ type Need struct {
 	Name  string
 	Count int
 	Skill string
-	Level Level
+	Level int
 }
 
 func NewRotation(name string) *Rotation {
@@ -61,28 +61,4 @@ func (s *pluginStore) StoreRotations(rotations map[string]*Rotation) error {
 		"Rotations": rotations,
 	}).Debugf("Stored rotations")
 	return nil
-}
-
-type Level int
-
-const (
-	None = Level(iota)
-	Beginner
-	Intermediate
-	Advanced
-	Expert
-)
-
-func (l Level) String() string {
-	switch l {
-	case Beginner:
-		return "beginner"
-	case Intermediate:
-		return "intermediate"
-	case Advanced:
-		return "advanced"
-	case Expert:
-		return "expert"
-	}
-	return "none"
 }

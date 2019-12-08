@@ -23,6 +23,8 @@ type User struct {
 	// Settings store the user's preferences.
 	Settings Settings `json:"mattermostSettings,omitempty"`
 
+	SkillLevels map[string]int
+
 	// Joined is a map of all subscription (names) the user has joined. The
 	// value is the last shift number served, for the rotation. When a user
 	// joins a new rotation, their "last shift number" is set to the current
@@ -50,6 +52,7 @@ type Settings struct {
 func NewUser(mattermostUserID string) *User {
 	return &User{
 		MattermostUserID: mattermostUserID,
+		SkillLevels:      map[string]int{},
 		Joined:           map[string]int{},
 		Unavailables:     []Unavailable{},
 	}

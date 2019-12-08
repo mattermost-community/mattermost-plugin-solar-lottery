@@ -11,6 +11,8 @@ type User interface {
 	GetUser() (*store.User, error)
 	JoinRotation(rotationName string, graceShifts int) error
 	LeaveRotation(rotationName string) error
+	UpdateUserSkill(skill string, level int) (*store.User, error)
+	DeleteUserSkill(skill string) (*store.User, error)
 }
 
 func (api *api) GetUser() (*store.User, error) {
