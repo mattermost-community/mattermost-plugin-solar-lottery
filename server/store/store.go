@@ -8,12 +8,14 @@ import (
 
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
-	"github.com/mattermost/mattermost-plugin-msoffice/server/utils/bot"
-	"github.com/mattermost/mattermost-plugin-msoffice/server/utils/kvstore"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
 )
 
 const (
-	UserKeyPrefix = "user_"
+	UserKeyPrefix     = "user_"
+	SkillsKeyPrefix   = "skills_"
+	RotationKeyPrefix = "rotation_"
 )
 
 const OAuth2KeyExpiration = 15 * time.Minute
@@ -22,19 +24,25 @@ var ErrNotFound = kvstore.ErrNotFound
 
 type Store interface {
 	UserStore
+	SkillsStore
+	RotationStore
 }
 
 type pluginStore struct {
-	basicKV kvstore.KVStore
-	userKV  kvstore.KVStore
-	Logger  bot.Logger
+	basicKV    kvstore.KVStore
+	userKV     kvstore.KVStore
+	skillsKV   kvstore.KVStore
+	rotationKV kvstore.KVStore
+	Logger     bot.Logger
 }
 
 func NewPluginStore(api plugin.API, logger bot.Logger) Store {
 	basicKV := kvstore.NewPluginStore(api)
 	return &pluginStore{
-		basicKV: basicKV,
-		userKV:  kvstore.NewHashedKeyStore(basicKV, UserKeyPrefix),
-		Logger:  logger,
+		basicKV:    basicKV,
+		userKV:     kvstore.NewHashedKeyStore(basicKV, UserKeyPrefix),
+		skillsKV:   kvstore.NewHashedKeyStore(basicKV, SkillsKeyPrefix),
+		rotationKV: kvstore.NewHashedKeyStore(basicKV, RotationKeyPrefix),
+		Logger:     logger,
 	}
 }

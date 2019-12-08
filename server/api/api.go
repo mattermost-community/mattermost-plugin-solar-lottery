@@ -4,22 +4,21 @@
 package api
 
 import (
-	"github.com/mattermost/mattermost-plugin-msoffice/server/config"
-	"github.com/mattermost/mattermost-plugin-msoffice/server/store"
-	"github.com/mattermost/mattermost-plugin-msoffice/server/utils/bot"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
-type Foo interface {
-	Foo() error
-}
-
 type API interface {
-	Foo
+	User
+	Skills
 }
 
 // Dependencies contains all API dependencies
 type Dependencies struct {
 	UserStore         store.UserStore
+	RotationStore     store.RotationStore
+	SkillsStore       store.SkillsStore
 	Logger            bot.Logger
 	Poster            bot.Poster
 	IsAuthorizedAdmin func(userID string) (bool, error)

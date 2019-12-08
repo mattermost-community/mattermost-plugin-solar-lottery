@@ -5,7 +5,7 @@ package bot
 
 import "fmt"
 
-import "github.com/mattermost/mattermost-plugin-msoffice/server/utils"
+import "github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
 
 type LogContext map[string]interface{}
 

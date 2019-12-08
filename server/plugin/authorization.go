@@ -6,7 +6,7 @@ package plugin
 import (
 	"strings"
 
-	"github.com/mattermost/mattermost-plugin-msoffice/server/utils/bot"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
 // isAuthorized returns true if the user is authorized to use the workflow plugin's admin-level APIs/commands.

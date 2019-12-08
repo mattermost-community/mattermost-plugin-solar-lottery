@@ -6,11 +6,11 @@ package command
 import (
 	"fmt"
 
-	"github.com/mattermost/mattermost-plugin-msoffice/server/config"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 )
 
 func (c *Command) help(parameters ...string) (string, error) {
-	resp := fmt.Sprintf("Mattermost Microsoft Office plugin version: %s, "+
+	resp := fmt.Sprintf("Mattermost Solar Lottery plugin version: %s, "+
 		"[%s](https://github.com/mattermost/%s/commit/%s), built %s\n",
 		c.Config.PluginVersion,
 		c.Config.BuildHashShort,

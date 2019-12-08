@@ -4,9 +4,10 @@
 package store
 
 import (
-	"fmt"
+	"time"
 
-	"github.com/mattermost/mattermost-plugin-msoffice/server/utils/kvstore"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
 )
 
 type UserStore interface {
@@ -19,18 +20,22 @@ type User struct {
 	PluginVersion    string
 	MattermostUserID string
 	Settings         Settings `json:"mattermostSettings,omitempty"`
+	LastServedPeriod map[string]int
+	Unavailables     []Unavailable
+}
+
+type Unavailable struct {
+	From    time.Time
+	To      time.Time
+	Comment string
 }
 
 type Settings struct {
-	EventSubscriptionID string
+	Dummy bool
 }
 
 func (settings Settings) String() string {
-	sub := "no subscription"
-	if settings.EventSubscriptionID != "" {
-		sub = "subscription ID: " + settings.EventSubscriptionID
-	}
-	return fmt.Sprintf(" - %s", sub)
+	return "settings <><>"
 }
 
 func (s *pluginStore) LoadUser(mattermostUserId string) (*User, error) {
@@ -43,9 +48,23 @@ func (s *pluginStore) LoadUser(mattermostUserId string) (*User, error) {
 }
 
 func (s *pluginStore) StoreUser(user *User) error {
-	return kvstore.StoreJSON(s.userKV, user.MattermostUserID, user)
+	err := kvstore.StoreJSON(s.userKV, user.MattermostUserID, user)
+	if err != nil {
+		return err
+	}
+	s.Logger.With(bot.LogContext{
+		"User": user,
+	}).Debugf("Stored user")
+	return nil
 }
 
 func (s *pluginStore) DeleteUser(mattermostUserID string) error {
-	return s.userKV.Delete(mattermostUserID)
+	err := s.userKV.Delete(mattermostUserID)
+	if err != nil {
+		return err
+	}
+	s.Logger.With(bot.LogContext{
+		"MattermostUserID": mattermostUserID,
+	}).Debugf("Deleted user")
+	return nil
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/mattermost/mattermost-plugin-msoffice/server/config"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 )
 
 var apiContextKey = config.Repository + "/" + fmt.Sprintf("%T", api{})

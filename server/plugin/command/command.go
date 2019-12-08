@@ -12,9 +12,9 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
-	"github.com/mattermost/mattermost-plugin-msoffice/server/api"
-	"github.com/mattermost/mattermost-plugin-msoffice/server/config"
-	"github.com/mattermost/mattermost-plugin-msoffice/server/utils"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
 )
 
 // Handler handles commands
@@ -61,8 +61,8 @@ func (c *Command) Handle() (string, error) {
 	switch cmd {
 	case "info":
 		handler = c.info
-	case "subscribe":
-		handler = c.subscribe
+	case "skills":
+		handler = c.skills
 	}
 	out, err := handler(parameters...)
 	if err != nil {

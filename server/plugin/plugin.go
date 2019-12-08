@@ -17,12 +17,12 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
-	"github.com/mattermost/mattermost-plugin-msoffice/server/api"
-	"github.com/mattermost/mattermost-plugin-msoffice/server/config"
-	"github.com/mattermost/mattermost-plugin-msoffice/server/plugin/command"
-	"github.com/mattermost/mattermost-plugin-msoffice/server/plugin/http"
-	"github.com/mattermost/mattermost-plugin-msoffice/server/store"
-	"github.com/mattermost/mattermost-plugin-msoffice/server/utils/bot"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/plugin/command"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/plugin/http"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
 type Plugin struct {
@@ -121,7 +121,7 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	out, err := command.Handle()
 	if err != nil {
 		p.API.LogError(err.Error())
-		return nil, model.NewAppError("msofficeplugin.ExecuteCommand", "Unable to execute command.", nil, err.Error(), gohttp.StatusInternalServerError)
+		return nil, model.NewAppError("ExecuteCommand", "Unable to execute command.", nil, err.Error(), gohttp.StatusInternalServerError)
 	}
 
 	apiconf.Poster.Ephemeral(args.UserId, args.ChannelId, out)
@@ -161,9 +161,11 @@ func (p *Plugin) newAPIConfig() api.Config {
 	return api.Config{
 		Config: conf,
 		Dependencies: &api.Dependencies{
-			UserStore: store,
-			Logger:    bot,
-			Poster:    bot,
+			RotationStore: store,
+			SkillsStore:   store,
+			UserStore:     store,
+			Logger:        bot,
+			Poster:        bot,
 		},
 	}
 }
