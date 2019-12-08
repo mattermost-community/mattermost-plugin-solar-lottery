@@ -66,7 +66,6 @@ func (c *Command) skillUser(parameters ...string) (string, error) {
 			return "", err
 		}
 		user, err = c.API.UpdateUserSkill(skill, int(l))
-		c.API.Errorf("<><> RETURNED %v %v", user, err)
 	}
 	if err != nil {
 		return "", err

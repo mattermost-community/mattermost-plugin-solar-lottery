@@ -32,15 +32,11 @@ func (api *api) ValidateSkill(skill string) error {
 	if err != nil {
 		return err
 	}
-	api.Errorf("<><> LOOKING FOR %s", skill)
-
 	for _, s := range api.skills {
 		if s == skill {
 			return nil
 		}
 	}
-
-	api.Errorf("<><> NOT FOUND")
 	return store.ErrNotFound
 }
 

@@ -12,10 +12,12 @@ import (
 )
 
 type Rotations interface {
-	ListRotations() (map[string]*store.Rotation, error)
-	UpdateRotation(string, func(*store.Rotation) error) (*store.Rotation, error)
-	DeleteRotation(string) error
 	AddRotation(r *store.Rotation) (*store.Rotation, error)
+	ChangeRotationNeed(r *store.Rotation, name, skill string, level, count int)
+	DeleteRotation(string) error
+	ListRotations() (map[string]*store.Rotation, error)
+	RemoveRotationNeed(r *store.Rotation, name string) error
+	UpdateRotation(string, func(*store.Rotation) error) (*store.Rotation, error)
 }
 
 var ErrRotationAlreadyExists = errors.New("rotation already exists")

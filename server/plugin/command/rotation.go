@@ -4,6 +4,7 @@
 package command
 
 import (
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
 	"github.com/pkg/errors"
@@ -83,16 +84,30 @@ func (c *Command) updateRotation(parameters ...string) (string, error) {
 	rotationName := parameters[0]
 
 	s := flag.NewFlagSet("rotation", flag.ContinueOnError)
-	period, start := "", ""
-	minBetween, size := 0, 0
+	var noNeedName, needName, needSkill, needLevel, period, start string
+	var minBetween, size, needCount int
 	s.StringVar(&period, "period", "", "rotation period 'w', '2w', or 'm'")
 	s.StringVar(&start, "start", "", "rotation starts on")
+	s.StringVar(&noNeedName, "no-need", "", "remove a need from the rotation")
+	s.StringVar(&needName, "need", "", "update rotation's needs")
+	s.StringVar(&needSkill, "skill", "", "if used with --need, indicates the needed skill")
+	s.StringVar(&needLevel, "level", "", "if used with --need, indicates the needed skill level")
+	s.IntVar(&needCount, "count", 0, "if used with --need, indicates the needed headcount")
 	s.IntVar(&minBetween, "min-between", 0, "minimum number of periods between shifts")
 	s.IntVar(&size, "size", 0, "number of people in the shift")
 	err := s.Parse(parameters[1:])
 	if err != nil {
 		return "", err
 	}
+
+	if needName != "" && len(needLevel)+len(needSkill)+needCount == 0 {
+		return "", errors.New("--need requires skill, level, and count to be specified")
+	}
+	if needName != "" && noNeedName != "" {
+		return "", errors.New("--need and --no-need can not be used in the same command")
+	}
+
+	// TODO more input validation
 
 	r, err := c.API.UpdateRotation(rotationName, func(r *store.Rotation) error {
 		if period != "" {
@@ -106,6 +121,19 @@ func (c *Command) updateRotation(parameters ...string) (string, error) {
 		}
 		if size != 0 {
 			r.Size = size
+		}
+		if needName != "" {
+			level, err := api.ParseLevel(needLevel)
+			if err != nil {
+				return err
+			}
+			c.API.ChangeRotationNeed(r, needName, needSkill, int(level), needCount)
+		}
+		if noNeedName != "" {
+			err := c.API.RemoveRotationNeed(r, noNeedName)
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	})

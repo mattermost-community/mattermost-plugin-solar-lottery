@@ -25,11 +25,10 @@ type Rotation struct {
 	Size              int               `json:",omitempty"`
 	MinBetweenShifts  int               `json:",omitempty"`
 	MattermostUserIDs map[string]string `json:",omitempty"`
-	Needs             []Need            `json:",omitempty"`
+	Needs             map[string]Need   `json:",omitempty"`
 }
 
 type Need struct {
-	Name  string
 	Count int
 	Skill string
 	Level int
@@ -39,7 +38,7 @@ func NewRotation(name string) *Rotation {
 	return &Rotation{
 		Name:              name,
 		MattermostUserIDs: map[string]string{},
-		Needs:             []Need{},
+		Needs:             map[string]Need{},
 	}
 }
 
