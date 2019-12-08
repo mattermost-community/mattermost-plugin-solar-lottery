@@ -17,7 +17,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
 )
 
-// Handler handles commands
+// Command handles commands
 type Command struct {
 	Context   *plugin.Context
 	Args      *model.CommandArgs
@@ -65,8 +65,12 @@ func (c *Command) Handle() (string, error) {
 		handler = c.skill
 	case "rotation":
 		handler = c.rotation
-		// case "user":
-		// 	handler = c.user
+	case "user":
+		handler = c.user
+	case "join":
+		handler = c.join
+	case "leave":
+		handler = c.leave
 	}
 	out, err := handler(parameters...)
 	if err != nil {

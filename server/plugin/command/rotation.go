@@ -55,25 +55,18 @@ func (c *Command) addRotation(parameters ...string) (string, error) {
 	}
 	rotationName := parameters[0]
 
+	r := store.NewRotation(rotationName)
 	s := flag.NewFlagSet("rotation", flag.ContinueOnError)
-	period, start := "", ""
-	minBetween, maxSize := 0, 0
-	s.StringVar(&period, "period", "m", "rotation period 'w', '2w', or 'm'")
-	s.StringVar(&start, "start", "", "rotation starts on")
-	s.IntVar(&minBetween, "min-between", 1, "minimum number of periods between shifts")
-	s.IntVar(&maxSize, "max-size", 1, "maximum number of people in the shift")
+	s.StringVar(&r.Period, "period", "m", "rotation period 'w', '2w', or 'm'")
+	s.StringVar(&r.Start, "start", "", "rotation starts on")
+	s.IntVar(&r.MinBetweenShifts, "min-between", 1, "minimum number of shifts between being elected")
+	s.IntVar(&r.Size, "size", 1, "number of people in the shift")
 	err := s.Parse(parameters[1:])
 	if err != nil {
 		return "", err
 	}
 
-	r := &store.Rotation{
-		Name:            rotationName,
-		Period:          period,
-		Start:           start,
-		MinBetweenServe: minBetween,
-		MaxSize:         maxSize,
-	}
+	//TODO input validation
 
 	r, err = c.API.AddRotation(r)
 	if err != nil {
@@ -91,11 +84,11 @@ func (c *Command) updateRotation(parameters ...string) (string, error) {
 
 	s := flag.NewFlagSet("rotation", flag.ContinueOnError)
 	period, start := "", ""
-	minBetween, maxSize := 0, 0
+	minBetween, size := 0, 0
 	s.StringVar(&period, "period", "", "rotation period 'w', '2w', or 'm'")
 	s.StringVar(&start, "start", "", "rotation starts on")
 	s.IntVar(&minBetween, "min-between", 0, "minimum number of periods between shifts")
-	s.IntVar(&maxSize, "max-size", 0, "maximum number of people in the shift")
+	s.IntVar(&size, "size", 0, "number of people in the shift")
 	err := s.Parse(parameters[1:])
 	if err != nil {
 		return "", err
@@ -109,10 +102,10 @@ func (c *Command) updateRotation(parameters ...string) (string, error) {
 			r.Start = start
 		}
 		if minBetween != 0 {
-			r.MinBetweenServe = minBetween
+			r.MinBetweenShifts = minBetween
 		}
-		if maxSize != 0 {
-			r.MaxSize = maxSize
+		if size != 0 {
+			r.Size = size
 		}
 		return nil
 	})

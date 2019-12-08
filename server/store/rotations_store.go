@@ -14,14 +14,18 @@ type RotationsStore interface {
 }
 
 type Rotation struct {
-	PluginVersion     string
-	MattermostUserIDs map[string]string
-	MaxSize           int
-	MinBetweenServe   int
-	Name              string
-	Needs             []Need
-	Period            string
-	Start             string
+	PluginVersion string
+
+	// Mandatory attributes
+	Name   string
+	Period string
+	Start  string
+
+	// Optional attributes
+	Size              int               `json:",omitempty"`
+	MinBetweenShifts  int               `json:",omitempty"`
+	MattermostUserIDs map[string]string `json:",omitempty"`
+	Needs             []Need            `json:",omitempty"`
 }
 
 type Need struct {
@@ -29,6 +33,14 @@ type Need struct {
 	Count int
 	Skill string
 	Level Level
+}
+
+func NewRotation(name string) *Rotation {
+	return &Rotation{
+		Name:              name,
+		MattermostUserIDs: map[string]string{},
+		Needs:             []Need{},
+	}
 }
 
 func (s *pluginStore) LoadRotations() (map[string]*Rotation, error) {

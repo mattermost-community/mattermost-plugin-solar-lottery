@@ -17,11 +17,24 @@ type UserStore interface {
 }
 
 type User struct {
-	PluginVersion    string
+	PluginVersion    string `json:",omitempty"`
 	MattermostUserID string
-	Settings         Settings `json:"mattermostSettings,omitempty"`
-	LastServedPeriod map[string]int
-	Unavailables     []Unavailable
+
+	// Settings store the user's preferences.
+	Settings Settings `json:"mattermostSettings,omitempty"`
+
+	// Joined is a map of all subscription (names) the user has joined. The
+	// value is the last shift number served, for the rotation. When a user
+	// joins a new rotation, their "last shift number" is set to the current
+	// period by default, offsetting it forward or backwards with a graceShifts
+	// affects the new users likelihood of being selected for the next shift.
+	// Setting it N shifts into the future guarantees that the new user will
+	// not be selected until then.
+	Joined map[string]int `json:",omitempty"`
+
+	// Unavailables stores the times of user unavailability, applies to all
+	// rotations the user is in.
+	Unavailables []Unavailable `json:",omitempty"`
 }
 
 type Unavailable struct {
@@ -34,17 +47,21 @@ type Settings struct {
 	Dummy bool
 }
 
-func (settings Settings) String() string {
-	return "settings <><>"
+func NewUser(mattermostUserID string) *User {
+	return &User{
+		MattermostUserID: mattermostUserID,
+		Joined:           map[string]int{},
+		Unavailables:     []Unavailable{},
+	}
 }
 
 func (s *pluginStore) LoadUser(mattermostUserId string) (*User, error) {
-	user := User{}
-	err := kvstore.LoadJSON(s.userKV, mattermostUserId, &user)
+	user := NewUser(mattermostUserId)
+	err := kvstore.LoadJSON(s.userKV, mattermostUserId, user)
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return user, nil
 }
 
 func (s *pluginStore) StoreUser(user *User) error {
