@@ -4,8 +4,6 @@
 package api
 
 import (
-	"time"
-
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
@@ -79,35 +77,6 @@ func (api *api) DeleteRotation(rotationName string) error {
 
 	delete(rr, rotationName)
 	return api.RotationsStore.StoreRotations(rr)
-}
-
-const Week = time.Hour * 24 * 7
-const DateFormat = "2006-01-02"
-
-func ShiftNumber(r *store.Rotation, t time.Time) (int, error) {
-	start, err := time.Parse(DateFormat, r.Start)
-	if err != nil {
-		return 0, err
-	}
-	if time.Now().Before(start) {
-		return 0, errors.Errorf("Time %v is before rotation start %v", t, start)
-	}
-
-	switch r.Period {
-	case "1w", "w":
-		return int(t.Sub(start) / Week), nil
-	case "2w":
-		return int(t.Sub(start) / (2 * Week)), nil
-	case "1m", "m":
-		y, m, d := start.Date()
-		ty, tm, td := t.Date()
-		n := (ty*12 + int(tm)) - (y*12 - int(m))
-		if td >= d {
-			n++
-		}
-		return n, nil
-	}
-	return 0, nil
 }
 
 func withRotations(api *api) error {

@@ -39,6 +39,9 @@ type User struct {
 	Unavailables []Unavailable `json:",omitempty"`
 }
 
+type UserIDList map[string]string
+type UserList map[string]*User
+
 type Unavailable struct {
 	From    time.Time
 	To      time.Time

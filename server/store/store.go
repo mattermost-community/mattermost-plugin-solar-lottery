@@ -16,6 +16,7 @@ const (
 	UserKeyPrefix      = "user_"
 	SkillsKeyPrefix    = "skills_"
 	RotationsKeyPrefix = "rotations_"
+	ShiftKeyPrefix     = "shift_"
 )
 
 const OAuth2KeyExpiration = 15 * time.Minute
@@ -26,6 +27,7 @@ type Store interface {
 	UserStore
 	SkillsStore
 	RotationsStore
+	ShiftStore
 }
 
 type pluginStore struct {
@@ -33,6 +35,7 @@ type pluginStore struct {
 	userKV      kvstore.KVStore
 	skillsKV    kvstore.KVStore
 	rotationsKV kvstore.KVStore
+	shiftKV     kvstore.KVStore
 	Logger      bot.Logger
 }
 
@@ -43,6 +46,7 @@ func NewPluginStore(api plugin.API, logger bot.Logger) Store {
 		userKV:      kvstore.NewHashedKeyStore(basicKV, UserKeyPrefix),
 		skillsKV:    kvstore.NewHashedKeyStore(basicKV, SkillsKeyPrefix),
 		rotationsKV: kvstore.NewHashedKeyStore(basicKV, RotationsKeyPrefix),
+		shiftKV:     kvstore.NewHashedKeyStore(basicKV, ShiftKeyPrefix),
 		Logger:      logger,
 	}
 }

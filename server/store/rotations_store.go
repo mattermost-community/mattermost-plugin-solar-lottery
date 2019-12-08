@@ -22,10 +22,10 @@ type Rotation struct {
 	Start  string
 
 	// Optional attributes
-	Size              int               `json:",omitempty"`
-	MinBetweenShifts  int               `json:",omitempty"`
-	MattermostUserIDs map[string]string `json:",omitempty"`
-	Needs             map[string]Need   `json:",omitempty"`
+	Size              int             `json:",omitempty"`
+	MinBetweenShifts  int             `json:",omitempty"`
+	MattermostUserIDs UserIDList        `json:",omitempty"`
+	Needs             map[string]Need `json:",omitempty"`
 }
 
 type Need struct {
@@ -37,7 +37,7 @@ type Need struct {
 func NewRotation(name string) *Rotation {
 	return &Rotation{
 		Name:              name,
-		MattermostUserIDs: map[string]string{},
+		MattermostUserIDs: UserIDList{},
 		Needs:             map[string]Need{},
 	}
 }

@@ -21,6 +21,7 @@ type Dependencies struct {
 	UserStore         store.UserStore
 	RotationsStore    store.RotationsStore
 	SkillsStore       store.SkillsStore
+	ShiftStore        store.ShiftStore
 	Logger            bot.Logger
 	Poster            bot.Poster
 	IsAuthorizedAdmin func(userID string) (bool, error)

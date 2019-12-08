@@ -39,3 +39,15 @@ func withUser(api *api) error {
 	api.user = user
 	return nil
 }
+
+func (api *api) loadUsers(ids store.UserIDList) (store.UserList, error) {
+	users := store.UserList{}
+	for id := range ids {
+		u, err := api.UserStore.LoadUser(id)
+		if err != nil {
+			return nil, err
+		}
+		users[u.MattermostUserID] = u
+	}
+	return users, nil
+}

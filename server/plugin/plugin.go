@@ -4,6 +4,7 @@
 package plugin
 
 import (
+	"math/rand"
 	gohttp "net/http"
 	"net/url"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -68,6 +70,8 @@ func (p *Plugin) OnActivate() error {
 	// p.notificationHandler = api.NewNotificationHandler(p.newAPIConfig())
 
 	command.Register(p.API.RegisterCommand)
+
+	rand.Seed(time.Now().UnixNano())
 
 	p.API.LogInfo(p.config.PluginID + " activated")
 	return nil
@@ -164,6 +168,7 @@ func (p *Plugin) newAPIConfig() api.Config {
 			RotationsStore: store,
 			SkillsStore:    store,
 			UserStore:      store,
+			ShiftStore:     store,
 			Logger:         bot,
 			Poster:         bot,
 		},

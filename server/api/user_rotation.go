@@ -38,7 +38,7 @@ func (api *api) JoinRotation(rotationName string, graceShifts int) error {
 	}
 
 	if r.MattermostUserIDs == nil {
-		r.MattermostUserIDs = map[string]string{}
+		r.MattermostUserIDs = store.UserIDList{}
 	}
 	r.MattermostUserIDs[api.user.MattermostUserID] = api.user.MattermostUserID
 
