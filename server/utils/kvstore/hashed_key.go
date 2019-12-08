@@ -6,6 +6,7 @@ package kvstore
 import (
 	"crypto/md5"
 	"fmt"
+	"strings"
 )
 
 type hashedKeyStore struct {
@@ -22,20 +23,35 @@ func NewHashedKeyStore(s KVStore, prefix string) KVStore {
 	}
 }
 
-func (s hashedKeyStore) Load(key string) ([]byte, error) {
+func (s *hashedKeyStore) Load(key string) ([]byte, error) {
 	return s.store.Load(hashKey(s.prefix, key))
 }
 
-func (s hashedKeyStore) Store(key string, data []byte) error {
+func (s *hashedKeyStore) Store(key string, data []byte) error {
 	return s.store.Store(hashKey(s.prefix, key), data)
 }
 
-func (s hashedKeyStore) StoreTTL(key string, data []byte, ttlSeconds int64) error {
+func (s *hashedKeyStore) StoreTTL(key string, data []byte, ttlSeconds int64) error {
 	return s.store.StoreTTL(hashKey(s.prefix, key), data, ttlSeconds)
 }
 
-func (s hashedKeyStore) Delete(key string) error {
+func (s *hashedKeyStore) Delete(key string) error {
 	return s.store.Delete(hashKey(s.prefix, key))
+}
+
+func (s *hashedKeyStore) Keys() ([]string, error) {
+	all, err := s.store.Keys()
+	if err != nil {
+		return nil, err
+	}
+
+	matched := []string{}
+	for _, key := range all {
+		if strings.HasPrefix(key, s.prefix) {
+			matched = append(matched, key)
+		}
+	}
+	return matched, nil
 }
 
 func hashKey(prefix, hashableKey string) string {

@@ -30,7 +30,7 @@ func NewPluginStoreWithExpiry(api plugin.API, ttl time.Duration) KVStore {
 	}
 }
 
-func (s pluginStore) Load(key string) ([]byte, error) {
+func (s *pluginStore) Load(key string) ([]byte, error) {
 	data, appErr := s.api.KVGet(key)
 	if appErr != nil {
 		return nil, errors.WithMessage(appErr, "failed plugin KVGet")
@@ -41,7 +41,7 @@ func (s pluginStore) Load(key string) ([]byte, error) {
 	return data, nil
 }
 
-func (s pluginStore) Store(key string, data []byte) error {
+func (s *pluginStore) Store(key string, data []byte) error {
 	var appErr *model.AppError
 	if s.ttlSeconds > 0 {
 		appErr = s.api.KVSetWithExpiry(key, data, s.ttlSeconds)
@@ -54,7 +54,7 @@ func (s pluginStore) Store(key string, data []byte) error {
 	return nil
 }
 
-func (s pluginStore) StoreTTL(key string, data []byte, ttlSeconds int64) error {
+func (s *pluginStore) StoreTTL(key string, data []byte, ttlSeconds int64) error {
 	appErr := s.api.KVSetWithExpiry(key, data, ttlSeconds)
 	if appErr != nil {
 		return errors.WithMessagef(appErr, "failed plugin KVSet (ttl: %vs) %q", s.ttlSeconds, key)
@@ -62,10 +62,27 @@ func (s pluginStore) StoreTTL(key string, data []byte, ttlSeconds int64) error {
 	return nil
 }
 
-func (s pluginStore) Delete(key string) error {
+func (s *pluginStore) Delete(key string) error {
 	appErr := s.api.KVDelete(key)
 	if appErr != nil {
 		return errors.WithMessagef(appErr, "failed plugin KVdelete %q", key)
 	}
 	return nil
+}
+
+const listPerPage = 100
+
+func (s *pluginStore) Keys() ([]string, error) {
+	keys := []string{}
+	for i := 0; ; i++ {
+		moreKeys, appErr := s.api.KVList(i, listPerPage)
+		if appErr != nil {
+			return nil, appErr
+		}
+		if len(moreKeys) < listPerPage {
+			break
+		}
+		keys = append(keys, moreKeys...)
+	}
+	return keys, nil
 }

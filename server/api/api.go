@@ -12,12 +12,13 @@ import (
 type API interface {
 	User
 	Skills
+	Rotations
 }
 
 // Dependencies contains all API dependencies
 type Dependencies struct {
 	UserStore         store.UserStore
-	RotationStore     store.RotationStore
+	RotationsStore    store.RotationsStore
 	SkillsStore       store.SkillsStore
 	Logger            bot.Logger
 	Poster            bot.Poster
@@ -33,6 +34,7 @@ type api struct {
 	Config
 	mattermostUserID string
 	user             *store.User
+	rotations        map[string]*store.Rotation
 }
 
 func New(apiConfig Config, mattermostUserID string) API {
@@ -51,19 +53,5 @@ func (api *api) Filter(filters ...filterf) error {
 			return err
 		}
 	}
-	return nil
-}
-
-func withUser(api *api) error {
-	if api.user != nil {
-		return nil
-	}
-
-	user, err := api.UserStore.LoadUser(api.mattermostUserID)
-	if err != nil {
-		return err
-	}
-
-	api.user = user
 	return nil
 }

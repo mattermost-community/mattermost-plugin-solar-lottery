@@ -13,6 +13,7 @@ type KVStore interface {
 	Store(key string, data []byte) error
 	StoreTTL(key string, data []byte, ttlSeconds int64) error
 	Delete(key string) error
+	Keys() ([]string, error)
 }
 
 var ErrNotFound = errors.New("not found")

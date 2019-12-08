@@ -61,8 +61,12 @@ func (c *Command) Handle() (string, error) {
 	switch cmd {
 	case "info":
 		handler = c.info
-	case "skills":
-		handler = c.skills
+	case "skill":
+		handler = c.skill
+	case "rotation":
+		handler = c.rotation
+		// case "user":
+		// 	handler = c.user
 	}
 	out, err := handler(parameters...)
 	if err != nil {

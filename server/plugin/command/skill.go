@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (c *Command) skills(parameters ...string) (string, error) {
+func (c *Command) skill(parameters ...string) (string, error) {
 	if len(parameters) == 0 {
 		return "", errors.New("invalid syntax TODO")
 	}

@@ -8,21 +8,20 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
 )
 
-type RotationStore interface {
-	LoadRotation(rotationName string) (*Rotation, error)
-	StoreRotation(rotation *Rotation) error
-	DeleteRotation(rotationName string) error
+type RotationsStore interface {
+	LoadRotations() (map[string]*Rotation, error)
+	StoreRotations(rotations map[string]*Rotation) error
 }
 
 type Rotation struct {
 	PluginVersion     string
-	Name              string
 	MattermostUserIDs map[string]string
+	MaxSize           int
 	MinBetweenServe   int
+	Name              string
+	Needs             []Need
 	Period            string
 	Start             string
-	MaxSize           int
-	Needs             []Need
 }
 
 type Need struct {
@@ -32,34 +31,23 @@ type Need struct {
 	Level Level
 }
 
-func (s *pluginStore) LoadRotation(rotationName string) (*Rotation, error) {
-	rotation := Rotation{}
-	err := kvstore.LoadJSON(s.userKV, rotationName, &rotation)
+func (s *pluginStore) LoadRotations() (map[string]*Rotation, error) {
+	rotations := map[string]*Rotation{}
+	err := kvstore.LoadJSON(s.rotationsKV, "rotations", &rotations)
 	if err != nil {
 		return nil, err
 	}
-	return &rotation, nil
+	return rotations, nil
 }
 
-func (s *pluginStore) StoreRotation(rotation *Rotation) error {
-	err := kvstore.StoreJSON(s.userKV, rotation.Name, rotation)
+func (s *pluginStore) StoreRotations(rotations map[string]*Rotation) error {
+	err := kvstore.StoreJSON(s.rotationsKV, "rotations", rotations)
 	if err != nil {
 		return err
 	}
 	s.Logger.With(bot.LogContext{
-		"Rotation": rotation,
-	}).Debugf("Stored rotation")
-	return nil
-}
-
-func (s *pluginStore) DeleteRotation(rotationName string) error {
-	err := s.userKV.Delete(rotationName)
-	if err != nil {
-		return err
-	}
-	s.Logger.With(bot.LogContext{
-		"RotationName": rotationName,
-	}).Debugf("Deleted rotation")
+		"Rotations": rotations,
+	}).Debugf("Stored rotations")
 	return nil
 }
 

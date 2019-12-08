@@ -161,11 +161,11 @@ func (p *Plugin) newAPIConfig() api.Config {
 	return api.Config{
 		Config: conf,
 		Dependencies: &api.Dependencies{
-			RotationStore: store,
-			SkillsStore:   store,
-			UserStore:     store,
-			Logger:        bot,
-			Poster:        bot,
+			RotationsStore: store,
+			SkillsStore:    store,
+			UserStore:      store,
+			Logger:         bot,
+			Poster:         bot,
 		},
 	}
 }
