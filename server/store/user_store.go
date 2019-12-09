@@ -4,8 +4,6 @@
 package store
 
 import (
-	"time"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
 )
@@ -16,36 +14,49 @@ type UserStore interface {
 	DeleteUser(mattermostUserId string) error
 }
 
+const (
+	StatusAvailable = ""
+	StatusServing   = "serving"
+	StatusBlocked   = "blocked"
+)
+
 type User struct {
 	PluginVersion    string `json:",omitempty"`
 	MattermostUserID string
 
+	// Status is the user's current status
+	Status string
+
 	// Settings store the user's preferences.
-	Settings Settings `json:"mattermostSettings,omitempty"`
+	Settings Settings
 
 	SkillLevels map[string]int
 
-	// Joined is a map of all subscription (names) the user has joined. The
+	// Rotations is a map of all rotations (names) the user has joined. The
 	// value is the last shift number served, for the rotation. When a user
 	// joins a new rotation, their "last shift number" is set to the current
-	// period by default, offsetting it forward or backwards with a graceShifts
+	// shift by default, offsetting it forward or backwards with a graceShifts
 	// affects the new users likelihood of being selected for the next shift.
 	// Setting it N shifts into the future guarantees that the new user will
 	// not be selected until then.
-	Joined map[string]int `json:",omitempty"`
+	Rotations map[string]int
 
-	// Unavailables stores the times of user unavailability, applies to all
-	// rotations the user is in.
-	Unavailables []Unavailable `json:",omitempty"`
+	// Calendar is sorted by start date of the events
+	Calendar []*Event
 }
 
 type UserIDList map[string]string
 type UserList map[string]*User
 
-type Unavailable struct {
-	From    time.Time
-	To      time.Time
-	Comment string
+const (
+	EventTypeShift = "shift"
+	EventTypeOther = "other"
+)
+
+type Event struct {
+	Type string
+	From string // time.RFC3339
+	To   string // time.RFC3339
 }
 
 type Settings struct {
@@ -56,8 +67,8 @@ func NewUser(mattermostUserID string) *User {
 	return &User{
 		MattermostUserID: mattermostUserID,
 		SkillLevels:      map[string]int{},
-		Joined:           map[string]int{},
-		Unavailables:     []Unavailable{},
+		Rotations:        map[string]int{},
+		Calendar:         []*Event{},
 	}
 }
 

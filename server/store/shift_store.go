@@ -11,31 +11,38 @@ import (
 )
 
 type ShiftStore interface {
-	LoadShift(rotationName string, number int) (*Shift, error)
+	LoadShift(rotationName string, shiftNumber int) (*Shift, error)
 	StoreShift(shift *Shift) error
 }
+
+const (
+	ShiftStatusScheduled  = "scheduled"
+	ShiftStatusClosed     = "closed"
+	ShiftStatusInProgress = "inprogress"
+)
 
 type Shift struct {
 	PluginVersion string
 
 	// Mandatory attributes
-	Number            int
+	ShiftNumber       int
+	ShiftStatus       string
 	Start             string
 	End               string
 	RotationName      string
 	MattermostUserIDs UserIDList `json:",omitempty"`
 }
 
-func NewShift(rotationName string, number int) *Shift {
+func NewShift(rotationName string, shiftNumber int) *Shift {
 	return &Shift{
 		RotationName:      rotationName,
-		Number:            number,
+		ShiftNumber:       shiftNumber,
 		MattermostUserIDs: UserIDList{},
 	}
 }
 
-func (s *pluginStore) LoadShift(rotationName string, number int) (*Shift, error) {
-	key := fmt.Sprintf("%v-%v", rotationName, number)
+func (s *pluginStore) LoadShift(rotationName string, shiftNumber int) (*Shift, error) {
+	key := fmt.Sprintf("%v-%v", rotationName, shiftNumber)
 	shift := Shift{}
 	err := kvstore.LoadJSON(s.shiftKV, key, &shift)
 	if err != nil {
@@ -45,7 +52,7 @@ func (s *pluginStore) LoadShift(rotationName string, number int) (*Shift, error)
 }
 
 func (s *pluginStore) StoreShift(shift *Shift) error {
-	key := fmt.Sprintf("%v-%v", shift.RotationName, shift.Number)
+	key := fmt.Sprintf("%v-%v", shift.RotationName, shift.ShiftNumber)
 	err := kvstore.StoreJSON(s.shiftKV, key, shift)
 	if err != nil {
 		return err

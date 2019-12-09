@@ -30,7 +30,7 @@ func (api *api) JoinRotation(rotationName string, graceShifts int) error {
 
 	// A new person may be given some slack - setting LastShiftNumber in the
 	// future guarantees they won't be selected until then.
-	api.user.Joined[rotationName] = shiftNumber + graceShifts
+	api.user.Rotations[rotationName] = shiftNumber + graceShifts
 
 	err = api.UserStore.StoreUser(api.user)
 	if err != nil {
@@ -60,7 +60,7 @@ func (api *api) LeaveRotation(rotationName string) error {
 	}
 
 	user := api.user
-	delete(user.Joined, rotationName)
+	delete(user.Rotations, rotationName)
 	err = api.UserStore.StoreUser(api.user)
 	if err != nil {
 		return err

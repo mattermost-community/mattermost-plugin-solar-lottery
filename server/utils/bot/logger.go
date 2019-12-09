@@ -3,9 +3,12 @@
 
 package bot
 
-import "fmt"
+import (
+	"fmt"
+	"testing"
 
-import "github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
+)
 
 type LogContext map[string]interface{}
 
@@ -96,3 +99,32 @@ func (l *NilLogger) Debugf(format string, args ...interface{}) {}
 func (l *NilLogger) Errorf(format string, args ...interface{}) {}
 func (l *NilLogger) Infof(format string, args ...interface{})  {}
 func (l *NilLogger) Warnf(format string, args ...interface{})  {}
+
+type TestLogger struct {
+	testing.TB
+	logContext LogContext
+}
+
+func (l *TestLogger) With(logContext LogContext) Logger {
+	newl := *l
+	if len(newl.logContext) == 0 {
+		newl.logContext = map[string]interface{}{}
+	}
+	for k, v := range logContext {
+		newl.logContext[k] = v
+	}
+	return &newl
+}
+
+func (l *TestLogger) logf(prefix, format string, args ...interface{}) {
+	out := fmt.Sprintf(prefix+": "+format, args...)
+	if len(l.logContext) > 0 {
+		out += fmt.Sprintf(" -- %+v", l.logContext)
+	}
+	l.TB.Logf(out)
+}
+
+func (l *TestLogger) Debugf(format string, args ...interface{}) { l.logf("DEBUG", format, args...) }
+func (l *TestLogger) Errorf(format string, args ...interface{}) { l.logf("ERROR", format, args...) }
+func (l *TestLogger) Infof(format string, args ...interface{})  { l.logf("INFO", format, args...) }
+func (l *TestLogger) Warnf(format string, args ...interface{})  { l.logf("WARN", format, args...) }

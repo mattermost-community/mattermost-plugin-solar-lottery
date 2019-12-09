@@ -83,10 +83,13 @@ golint:
 mock:
 ifneq ($(HAS_SERVER),)
 	go install github.com/golang/mock/mockgen
-	# mockgen -destination server/api/mock_api/mock_api.go github.com/levb/mattermost-plugin-solar-lottery/server/api API
-	# mockgen -destination server/utils/bot/mock_bot/mock_poster.go github.com/levb/mattermost-plugin-solar-lottery/server/utils/bot Poster
-	# mockgen -destination server/utils/bot/mock_bot/mock_admin.go github.com/levb/mattermost-plugin-solar-lottery/server/utils/bot Admin
-	# mockgen -destination server/store/mock_store/mock_user_store.go github.com/levb/mattermost-plugin-solar-lottery/server/store UserStore
+	mockgen -destination server/api/mock_api/mock_api.go github.com/mattermost/mattermost-plugin-solar-lottery/server/api API
+	mockgen -destination server/utils/bot/mock_bot/mock_poster.go github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot Poster
+	mockgen -destination server/utils/bot/mock_bot/mock_admin.go github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot Admin
+	mockgen -destination server/store/mock_store/mock_user_store.go github.com/mattermost/mattermost-plugin-solar-lottery/server/store UserStore
+	mockgen -destination server/store/mock_store/mock_skills_store.go github.com/mattermost/mattermost-plugin-solar-lottery/server/store SkillsStore
+	mockgen -destination server/store/mock_store/mock_shift_store.go github.com/mattermost/mattermost-plugin-solar-lottery/server/store ShiftStore
+	mockgen -destination server/store/mock_store/mock_rotations_store.go github.com/mattermost/mattermost-plugin-solar-lottery/server/store RotationsStore
 endif
 
 ## Builds the server, if it exists, including support for multiple architectures.

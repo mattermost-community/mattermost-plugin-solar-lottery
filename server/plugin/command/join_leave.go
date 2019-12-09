@@ -32,5 +32,5 @@ func (c *Command) leave(parameters ...string) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("Joined rotation %s", rotationName), nil
+	return fmt.Sprintf("Left rotation %s", rotationName), nil
 }
