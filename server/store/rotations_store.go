@@ -24,11 +24,12 @@ type Rotation struct {
 	// Optional attributes
 	Size              int             `json:",omitempty"`
 	MinBetweenShifts  int             `json:",omitempty"`
-	MattermostUserIDs UserIDList        `json:",omitempty"`
+	MattermostUserIDs UserIDList      `json:",omitempty"`
 	Needs             map[string]Need `json:",omitempty"`
 }
 
 type Need struct {
+	// TODO replace with MinCount/MaxCount to support "leads" as 1/shift
 	Count int
 	Skill string
 	Level int

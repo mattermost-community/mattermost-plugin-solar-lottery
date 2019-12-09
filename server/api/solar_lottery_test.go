@@ -107,18 +107,6 @@ var testUserMobile2 = &store.User{
 	Rotations: lastRotation0,
 }
 
-var testUserIDs = store.UserIDList{
-	"test-user-guru":    "test-user-guru",
-	"test-user-server1": "test-user-server1",
-	"test-user-server2": "test-user-server2",
-	"test-user-server3": "test-user-server3",
-	"test-user-webapp1": "test-user-webapp1",
-	"test-user-webapp2": "test-user-webapp2",
-	"test-user-webapp3": "test-user-webapp3",
-	"test-user-mobile1": "test-user-mobile1",
-	"test-user-mobile2": "test-user-mobile2",
-}
-
 var testUsers = store.UserList{
 	"test-user-guru":    testUserGuru,
 	"test-user-server1": testUserServer1,
@@ -131,28 +119,23 @@ var testUsers = store.UserList{
 	"test-user-mobile2": testUserMobile2,
 }
 
-var testRotation = store.Rotation{
-	Name:              "test-rotation",
-	Start:             "2020-01-16",
-	Period:            "1m",
-	MattermostUserIDs: testUserIDs,
-	Size:              3,
-	Needs: map[string]store.Need{
-		"server-junior": {1, "server", 1},
-		"webapp":        {1, "webapp", 2},
-		"mobile":        {1, "mobile", 1},
-	},
+func setupRotationUsers(r *store.Rotation, users ...*store.User) store.UserList {
+	r.MattermostUserIDs = make(store.UserIDList)
+	userList := make(store.UserList)
+	for _, u := range users {
+		u = u.Clone()
+		r.MattermostUserIDs[u.MattermostUserID] = u.MattermostUserID
+		userList[u.MattermostUserID] = u
+	}
+	return userList
 }
 
-func TestPrepareShift(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
+func setupAPIForPrepareShift(t testing.TB, ctrl *gomock.Controller, testUsers store.UserList) *api {
 	shiftStore := mock_store.NewMockShiftStore(ctrl)
 	shiftStore.EXPECT().LoadShift(
 		gomock.Eq("test-rotation"),
-		gomock.Eq(0),
-	).Return(nil, store.ErrNotFound)
+		gomock.Any(),
+	).AnyTimes().Return(nil, store.ErrNotFound)
 
 	userStore := mock_store.NewMockUserStore(ctrl)
 	userStore.EXPECT().LoadUser(
@@ -170,14 +153,80 @@ func TestPrepareShift(t *testing.T) {
 		Dependencies: &Dependencies{
 			UserStore:  userStore,
 			ShiftStore: shiftStore,
-			Logger:     &bot.TestLogger{TB: t},
+			// Uncomment to display logs while debugging tests
+			// Logger:     &bot.TestLogger{TB: t},
+			Logger: &bot.NilLogger{},
 		},
 		Config: &config.Config{},
 	}
 
 	api := New(apiConfig, "test-user-1").(*api)
+	return api
+}
+
+func TestPrepareShiftHappy(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	var testRotation = store.Rotation{
+		Name:   "test-rotation",
+		Start:  "2020-01-16",
+		Period: "1m",
+		Size:   3,
+		Needs: map[string]store.Need{
+			"server-junior": {1, "server", 1},
+			"webapp":        {1, "webapp", 2},
+			"mobile":        {1, "mobile", 1},
+		},
+	}
+
+	testUsers := setupRotationUsers(&testRotation,
+		testUserGuru, testUserServer1, testUserServer2, testUserServer3, testUserWebapp1,
+		testUserWebapp2, testUserWebapp3, testUserMobile1, testUserMobile2)
+
+	api := setupAPIForPrepareShift(t, ctrl, testUsers)
 
 	shift, err := api.prepareShift(&testRotation, 0)
 	require.Nil(t, err)
 	assert.NotNil(t, shift)
+	require.Equal(t, testRotation.Size, len(shift.MattermostUserIDs))
+}
+
+func TestPrepareShiftEvenDistribution(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	var testRotation = store.Rotation{
+		Name:   "test-rotation",
+		Start:  "2020-01-16",
+		Period: "1m",
+		Size:   1,
+		Needs: map[string]store.Need{
+			"webapp": {1, "webapp", 1},
+		},
+	}
+
+	testUsers := setupRotationUsers(&testRotation,
+		testUserGuru, testUserServer1, testUserServer2, testUserServer3, testUserWebapp1,
+		testUserWebapp2, testUserWebapp3, testUserMobile1, testUserMobile2)
+
+	api := setupAPIForPrepareShift(t, ctrl, testUsers)
+
+	counters := map[string]int{}
+	for i := 0; i < len(testUsers)*1000; i++ {
+		shift, err := api.prepareShift(&testRotation, i)
+		require.Nil(t, err)
+		assert.NotNil(t, shift)
+		require.Equal(t, testRotation.Size, len(shift.MattermostUserIDs))
+
+		for mattermostUserID := range shift.MattermostUserIDs {
+			testUsers[mattermostUserID].Rotations["test-rotation"] = i
+			counters[mattermostUserID]++
+		}
+	}
+
+	for k, c := range counters {
+		assert.Greater(t, c, 900, k)
+		assert.Less(t, c, 1100, k)
+	}
 }

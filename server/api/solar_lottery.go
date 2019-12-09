@@ -4,7 +4,6 @@
 package api
 
 import (
-	"fmt"
 	"math"
 	"math/rand"
 	"sort"
@@ -35,7 +34,6 @@ func (api *api) prepareShift(r *store.Rotation, shiftNumber int) (*store.Shift, 
 		shift = store.NewShift(r.Name, shiftNumber)
 		shift.Start = start.Format(DateFormat)
 		shift.End = end.Format(DateFormat)
-		logger.Debugf("No existing shift, created: %v to %v", shift.Start, shift.End)
 
 	case nil:
 		if shift.ShiftStatus != store.ShiftStatusScheduled {
@@ -45,7 +43,6 @@ func (api *api) prepareShift(r *store.Rotation, shiftNumber int) (*store.Shift, 
 			return nil, errors.Errorf("loaded shift has wrong dates %v-%v, expected %v-%v",
 				shift.Start, shift.End, start, end)
 		}
-		logger.Debugf("Loaded existing shift: %v to %v", shift.Start, shift.End)
 
 	default:
 		return nil, err
@@ -63,16 +60,15 @@ func (api *api) prepareShift(r *store.Rotation, shiftNumber int) (*store.Shift, 
 		// Do not include if already in the shift
 		_, ok := shift.MattermostUserIDs[u.MattermostUserID]
 		if ok {
-			logger.Debugf("skipping %v, already in the shift", u.MattermostUserID)
+			// logger.Debugf("skipping %v, already in the shift", u.MattermostUserID)
 			continue
 		}
 		if !IsUserAvailable(u, start, end) {
-			logger.Debugf("skipping %v, already in the shift", u.MattermostUserID)
+			// logger.Debugf("skipping %v, unavailable", u.MattermostUserID)
 			continue
 		}
 		pool[u.MattermostUserID] = u
 	}
-	logger.Debugf("%v users in the pool", len(pool))
 
 	var unsatisfied bool
 	// Start with the users already scheduled in the shift, if any
@@ -80,31 +76,25 @@ func (api *api) prepareShift(r *store.Rotation, shiftNumber int) (*store.Shift, 
 	if err != nil {
 		return nil, err
 	}
-	logger.Debugf("%v users already in the shift", len(selectedUsers))
 
 	for _, need := range r.Needs {
-		needName := fmt.Sprintf("%s (%s)", need.Skill, Level(need.Level))
-		logger.Debugf("preparing need %s", needName)
 		if len(selectedUsers) >= r.Size {
-			logger.Debugf("%v shift size reached, %v", r.Size, len(selectedUsers))
 			unsatisfied = true
 			break
 		}
 		need.Count = api.unsatisfiedNeed(need, selectedUsers)
 		if need.Count == 0 {
-			logger.Debugf("%s need already satisfied", needName)
 			continue
 		}
 
-		picked, err := api.pickUsers(r, need, pool, shiftNumber)
+		picked, err := api.pickUsersForNeed(r, need, pool, shiftNumber)
 		if err != nil {
 			return nil, err
 		}
-		logger.Debugf("picked %v users, needed %v for %s", len(picked), need.Count, needName)
-
 		for _, u := range picked {
 			selectedUsers[u.MattermostUserID] = u
 		}
+
 		need.Count = 0
 	}
 
@@ -113,9 +103,19 @@ func (api *api) prepareShift(r *store.Rotation, shiftNumber int) (*store.Shift, 
 		return nil, errors.New("<><> impossible")
 	}
 
+	// Backfill any remaining headcount from the remaining pool
+	picked, err := api.pickUsersN(r, pool, shiftNumber, r.Size-len(selectedUsers))
+	if err != nil {
+		return nil, err
+	}
+	for _, u := range picked {
+		selectedUsers[u.MattermostUserID] = u
+	}
+
 	for _, u := range selectedUsers {
 		shift.MattermostUserIDs[u.MattermostUserID] = u.MattermostUserID
 	}
+	logger.Debugf("selected %v", shift.MattermostUserIDs)
 
 	return shift, nil
 }
@@ -136,30 +136,40 @@ func (api *api) unsatisfiedNeed(need store.Need, users store.UserList) int {
 	return c
 }
 
-func (api *api) pickUsers(r *store.Rotation, need store.Need, users store.UserList, shiftNumber int) (store.UserList, error) {
-	skilled := store.UserList{}
-	for _, u := range users {
-		skillLevel, _ := u.SkillLevels[need.Skill]
+func (api *api) pickUsersForNeed(r *store.Rotation, need store.Need, users store.UserList, shiftNumber int) (store.UserList, error) {
+	qualified := store.UserList{}
+	for _, user := range users {
+		skillLevel, _ := user.SkillLevels[need.Skill]
 		if skillLevel >= need.Level {
-			skilled[u.MattermostUserID] = u
-			api.Logger.Debugf("Added %q (%s) to skilled for %s(%s)",
-				u.MattermostUserID, Level(u.SkillLevels[need.Skill]), need.Skill, Level(need.Level))
+			qualified[user.MattermostUserID] = user
 		}
 	}
 
+	picked, err := api.pickUsersN(r, qualified, shiftNumber, need.Count)
+	if err != nil {
+		return nil, err
+	}
+	for k, _ := range picked {
+		delete(users, k)
+	}
+	return picked, nil
+}
+
+func (api *api) pickUsersN(r *store.Rotation, users store.UserList, shiftNumber int, numUsers int) (store.UserList, error) {
 	picked := store.UserList{}
-	for c := need.Count; c > 0; c-- {
-		user, err := api.pickOne(r, need, skilled, shiftNumber)
+	for c := numUsers; c > 0; c-- {
+		user, err := api.pickOne(r, users, shiftNumber)
 		if err != nil {
 			return nil, err
 		}
 		picked[user.MattermostUserID] = user
+		delete(users, user.MattermostUserID)
 	}
 
 	return picked, nil
 }
 
-func (api *api) pickOne(r *store.Rotation, need store.Need, users store.UserList, shiftNumber int) (*store.User, error) {
+func (api *api) pickOne(r *store.Rotation, users store.UserList, shiftNumber int) (*store.User, error) {
 	ids := []string{}
 	weights := []float64{}
 	for _, user := range users {

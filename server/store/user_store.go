@@ -42,7 +42,7 @@ type User struct {
 	Rotations map[string]int
 
 	// Calendar is sorted by start date of the events
-	Calendar []*Event
+	Calendar []Event
 }
 
 type UserIDList map[string]string
@@ -68,8 +68,20 @@ func NewUser(mattermostUserID string) *User {
 		MattermostUserID: mattermostUserID,
 		SkillLevels:      map[string]int{},
 		Rotations:        map[string]int{},
-		Calendar:         []*Event{},
+		Calendar:         []Event{},
 	}
+}
+
+func (user *User) Clone() *User {
+	clone := NewUser(user.MattermostUserID)
+	for k, v := range user.SkillLevels {
+		clone.SkillLevels[k] = v
+	}
+	for k, v := range user.Rotations {
+		clone.Rotations[k] = v
+	}
+	clone.Calendar = user.Calendar
+	return clone
 }
 
 func (s *pluginStore) LoadUser(mattermostUserId string) (*User, error) {
