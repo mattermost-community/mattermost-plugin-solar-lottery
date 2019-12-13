@@ -5,11 +5,8 @@ package api
 
 import "github.com/pkg/errors"
 
-type Level int
-
 const (
-	None = Level(iota)
-	Beginner
+	Beginner = 1 + iota
 	Intermediate
 	Advanced
 	Expert
@@ -22,7 +19,7 @@ const (
 	LevelExpert       = "expert"
 )
 
-func ParseLevel(l string) (Level, error) {
+func ParseLevel(l string) (int, error) {
 	switch l {
 	case LevelBeginner:
 		return Beginner, nil
@@ -36,7 +33,7 @@ func ParseLevel(l string) (Level, error) {
 	return 0, errors.Errorf("%s is not a valid skill level", l)
 }
 
-func (l Level) String() string {
+func LevelToString(l int) string {
 	switch l {
 	case Beginner:
 		return LevelBeginner

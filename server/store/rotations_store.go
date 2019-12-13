@@ -59,6 +59,6 @@ func (s *pluginStore) StoreRotations(rotations map[string]*Rotation) error {
 	}
 	s.Logger.With(bot.LogContext{
 		"Rotations": rotations,
-	}).Debugf("Stored rotations")
+	}).Debugf("store: Stored rotations")
 	return nil
 }

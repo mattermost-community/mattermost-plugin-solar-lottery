@@ -87,7 +87,8 @@ func (api *api) prepareShift(r *store.Rotation, shiftNumber int) (*store.Shift, 
 			continue
 		}
 
-		picked, err := api.pickUsersForNeed(r, need, pool, shiftNumber)
+		var picked store.UserList
+		picked, err = api.pickUsersForNeed(r, need, pool, shiftNumber)
 		if err != nil {
 			return nil, err
 		}
@@ -115,7 +116,7 @@ func (api *api) prepareShift(r *store.Rotation, shiftNumber int) (*store.Shift, 
 	for _, u := range selectedUsers {
 		shift.MattermostUserIDs[u.MattermostUserID] = u.MattermostUserID
 	}
-	logger.Debugf("selected %v", shift.MattermostUserIDs)
+	logger.Debugf("api: selected %v users for shift", len(shift.MattermostUserIDs))
 
 	return shift, nil
 }
@@ -149,7 +150,7 @@ func (api *api) pickUsersForNeed(r *store.Rotation, need store.Need, users store
 	if err != nil {
 		return nil, err
 	}
-	for k, _ := range picked {
+	for k := range picked {
 		delete(users, k)
 	}
 	return picked, nil

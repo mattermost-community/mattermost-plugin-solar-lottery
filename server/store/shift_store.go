@@ -59,6 +59,6 @@ func (s *pluginStore) StoreShift(shift *Shift) error {
 	}
 	s.Logger.With(bot.LogContext{
 		"Shift": shift,
-	}).Debugf("Stored shift")
+	}).Debugf("store: Stored shift")
 	return nil
 }

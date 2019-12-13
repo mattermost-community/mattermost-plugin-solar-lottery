@@ -164,6 +164,18 @@ func setupAPIForPrepareShift(t testing.TB, ctrl *gomock.Controller, testUsers st
 	return api
 }
 
+func need(c int, skill string, level int) store.Need {
+	return store.Need{
+		Count: c,
+		Skill: skill,
+		Level: level,
+	}
+}
+
+func needOne(skill string, level int) store.Need {
+	return need(1, skill, level)
+}
+
 func TestPrepareShiftHappy(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -174,9 +186,9 @@ func TestPrepareShiftHappy(t *testing.T) {
 		Period: "1m",
 		Size:   3,
 		Needs: map[string]store.Need{
-			"server-junior": {1, "server", 1},
-			"webapp":        {1, "webapp", 2},
-			"mobile":        {1, "mobile", 1},
+			"server-junior": needOne("server", 1),
+			"webapp":        needOne("webapp", 2),
+			"mobile":        needOne("mobile", 1),
 		},
 	}
 
@@ -202,7 +214,7 @@ func TestPrepareShiftEvenDistribution(t *testing.T) {
 		Period: "1m",
 		Size:   1,
 		Needs: map[string]store.Need{
-			"webapp": {1, "webapp", 1},
+			"webapp": needOne("webapp", 1),
 		},
 	}
 

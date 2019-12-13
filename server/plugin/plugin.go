@@ -20,9 +20,9 @@ import (
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/command"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/plugin/command"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/plugin/http"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/http"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )

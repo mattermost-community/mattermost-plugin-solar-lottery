@@ -60,12 +60,12 @@ func (c *Command) skillUser(parameters ...string) (string, error) {
 	if deleteSkill {
 		user, err = c.API.DeleteUserSkill(skill)
 	} else {
-		var l api.Level
+		l := 0
 		l, err = api.ParseLevel(level)
 		if err != nil {
 			return "", err
 		}
-		user, err = c.API.UpdateUserSkill(skill, int(l))
+		user, err = c.API.UpdateUserSkill(skill, l)
 	}
 	if err != nil {
 		return "", err

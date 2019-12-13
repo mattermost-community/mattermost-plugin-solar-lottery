@@ -100,7 +100,7 @@ func (s *pluginStore) StoreUser(user *User) error {
 	}
 	s.Logger.With(bot.LogContext{
 		"User": user,
-	}).Debugf("Stored user")
+	}).Debugf("store: Stored user")
 	return nil
 }
 
@@ -111,6 +111,6 @@ func (s *pluginStore) DeleteUser(mattermostUserID string) error {
 	}
 	s.Logger.With(bot.LogContext{
 		"MattermostUserID": mattermostUserID,
-	}).Debugf("Deleted user")
+	}).Debugf("store: Deleted user")
 	return nil
 }

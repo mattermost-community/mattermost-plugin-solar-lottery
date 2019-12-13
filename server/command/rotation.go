@@ -123,14 +123,15 @@ func (c *Command) updateRotation(parameters ...string) (string, error) {
 			r.Size = size
 		}
 		if needName != "" {
-			level, err := api.ParseLevel(needLevel)
+			level := 0
+			level, err = api.ParseLevel(needLevel)
 			if err != nil {
 				return err
 			}
 			c.API.ChangeRotationNeed(r, needName, needSkill, int(level), needCount)
 		}
 		if noNeedName != "" {
-			err := c.API.RemoveRotationNeed(r, noNeedName)
+			err = c.API.RemoveRotationNeed(r, noNeedName)
 			if err != nil {
 				return err
 			}

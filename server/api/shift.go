@@ -39,7 +39,6 @@ func ShiftNumber(r *store.Rotation, t time.Time) (int, error) {
 	default:
 		return 0, errors.Errorf("Invalid rotation period value %q", r.Period)
 	}
-	return 0, nil
 }
 
 func ShiftDates(r *store.Rotation, shiftNumber int) (time.Time, time.Time, error) {
