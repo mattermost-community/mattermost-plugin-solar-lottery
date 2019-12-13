@@ -25,10 +25,10 @@ func (c *Command) help(parameters ...string) (string, error) {
 	- [x] --user @user: remove someone else from rotation
 - [ ] rotation: manage rotations.
 	- [x] list: list rotations.
-	- [ ] show: show rotation's details.
-		- [ ] --shedule: lists currently scheduled shifts.
-		- [ ] --auto: adds auto-filled shifts to --schedule.
-		- [ ] --shifts: list this many shifts forward in time
+	- [x] show: show rotation's details.
+		- [x] --schedule: lists currently scheduled shifts.
+		- [x] --auto: adds auto-filled shifts to --schedule.
+		- [x] --shifts: list this many shifts forward in time
 	- [x] add: add a new rotation.
 	- [x] delete: delete a rotation.
 	- [ ] update: modiy rotation's settings.

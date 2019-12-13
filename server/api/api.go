@@ -16,6 +16,7 @@ type API interface {
 	User
 	Skills
 	Rotations
+	SolarLottery
 }
 
 type PluginAPI interface {

@@ -4,16 +4,21 @@
 package command
 
 import (
+	"fmt"
+	"time"
+
+	"github.com/pkg/errors"
+	flag "github.com/spf13/pflag"
+
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
-	"github.com/pkg/errors"
-	flag "github.com/spf13/pflag"
 )
 
 func (c *Command) rotation(parameters ...string) (string, error) {
 	subcommands := map[string]func(...string) (string, error){
 		"list":   c.listRotations,
+		"show":   c.showRotation,
 		"delete": c.deleteRotation,
 		"add":    c.addRotation,
 		"update": c.updateRotation,
@@ -30,12 +35,60 @@ func (c *Command) rotation(parameters ...string) (string, error) {
 	return f(parameters[1:]...)
 }
 
+func (c *Command) showRotation(parameters ...string) (string, error) {
+	if len(parameters) == 0 {
+		return "", errors.New("invalid syntax TODO")
+	}
+	rotationName := parameters[0]
+
+	rr, err := c.API.ListRotations()
+	if err != nil {
+		return "", err
+	}
+	r := rr[rotationName]
+	if r == nil {
+		return "", store.ErrNotFound
+	}
+
+	s := flag.NewFlagSet("rotation", flag.ContinueOnError)
+	schedule := false
+	autofill := false
+	start, err := api.ShiftNumber(r, time.Now())
+	if err != nil {
+		return "", err
+	}
+	numShifts := 12
+	s.BoolVar(&schedule, "schedule", false, "display future schedule")
+	s.BoolVar(&autofill, "autofill", false, "automatically fill shifts that are not scheduled yet")
+	s.IntVar(&start, "start", start, "starting shift to display, with --schedule")
+	s.IntVar(&numShifts, "shifts", numShifts, "number of shifts forward, with --schedule")
+	err = s.Parse(parameters[1:])
+	if err != nil {
+		return "", err
+	}
+
+	if !schedule {
+		return utils.JSONBlock(r), nil
+	}
+
+	shifts, err := c.API.CrystalBall(rotationName, start, numShifts, autofill)
+	if err != nil {
+		return "", err
+	}
+
+	return utils.JSONBlock(shifts), nil
+}
+
 func (c *Command) listRotations(parameters ...string) (string, error) {
 	rr, err := c.API.ListRotations()
 	if err != nil {
 		return "", err
 	}
-	return utils.JSONBlock(rr), nil
+	out := ""
+	for name := range rr {
+		out += fmt.Sprintf("- %s\n", name)
+	}
+	return out, nil
 }
 
 func (c *Command) deleteRotation(parameters ...string) (string, error) {
