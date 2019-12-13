@@ -11,7 +11,7 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-func (c *Command) user(parameters ...string) (string, error) {
+func (c *Command) me(parameters ...string) (string, error) {
 	subcommands := map[string]func(...string) (string, error){
 		"show":  c.showUser,
 		"skill": c.skillUser,

@@ -17,7 +17,36 @@ func (c *Command) help(parameters ...string) (string, error) {
 		config.Repository,
 		c.Config.BuildHash,
 		c.Config.BuildDate)
-	resp += "\n"
-	resp += "TODO help"
+	resp += `
+- [x] info: display plugin information.
+- [x] join: add a user to rotation.
+	- [x] --user @user: add someone else to rotation
+- [x] leave: remove a user from rotation.
+	- [x] --user @user: remove someone else from rotation
+- [ ] rotation: manage rotations.
+	- [x] list: list rotations.
+	- [ ] show: show rotation's details.
+		- [ ] --shedule: lists currently scheduled shifts.
+		- [ ] --auto: adds auto-filled shifts to --schedule.
+		- [ ] --shifts: list this many shifts forward in time
+	- [x] add: add a new rotation.
+	- [x] delete: delete a rotation.
+	- [ ] update: modiy rotation's settings.
+- [ ] shift:
+	- [ ] schedule: creates/updates a scheduled shift for a rotation.
+		- [ ] --in: schedules a user into shift.
+		- [ ] --out: schedules a user in  shift.
+		- [ ] --create: create a new shift
+	- [ ] delete: deletes (resets) a scheduled shift.
+	- [ ] start: starts a shift (??).
+	- [ ] finish: finishes a shift.
+- [x] skill: manage known skills.
+	- [x] list: list skills.
+	- [x] add: add a new skill.
+	- [x] delete: delete a skill.
+- [x] me: manage my profile
+	- [x] show: display the profile.
+	- [x] skills: manage skill levels.
+`
 	return resp, nil
 }

@@ -65,8 +65,8 @@ func (c *Command) Handle() (string, error) {
 		handler = c.skill
 	case "rotation":
 		handler = c.rotation
-	case "user":
-		handler = c.user
+	case "me":
+		handler = c.me
 	case "join":
 		handler = c.join
 	case "leave":

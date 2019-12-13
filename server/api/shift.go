@@ -4,6 +4,8 @@
 package api
 
 import (
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -13,6 +15,22 @@ import (
 
 const Week = time.Hour * 24 * 7
 const DateFormat = "2006-01-02"
+
+// ParseShift parses a rotation/shift.
+func ParseShift(s string) (string, int, error) {
+	ss := strings.Split(s, "/")
+	if len(ss) != 2 {
+		return "", 0, errors.Errorf("Invalid rotation/shiftNumber %q", s)
+	}
+	rotationName := ss[0]
+	shift := ss[1]
+
+	shiftNumber, err := strconv.Atoi(shift)
+	if err != nil {
+		return "", 0, errors.WithMessagef(err, "Invalid shiftNumber %q", shift)
+	}
+	return rotationName, shiftNumber, nil
+}
 
 func ShiftNumber(r *store.Rotation, t time.Time) (int, error) {
 	start, err := time.Parse(DateFormat, r.Start)

@@ -171,6 +171,7 @@ func (p *Plugin) newAPIConfig() api.Config {
 			ShiftStore:     store,
 			Logger:         bot,
 			Poster:         bot,
+			PluginAPI:      p,
 		},
 	}
 }

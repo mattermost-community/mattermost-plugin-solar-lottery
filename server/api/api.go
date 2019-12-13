@@ -4,6 +4,8 @@
 package api
 
 import (
+	"github.com/mattermost/mattermost-server/v5/model"
+
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
@@ -16,20 +18,26 @@ type API interface {
 	Rotations
 }
 
+type PluginAPI interface {
+	GetUser(string) (*model.User, error)
+	GetUserByUsername(string) (*model.User, error)
+	IsPluginAdmin(mattermostUserID string) (bool, error)
+}
+
 // Dependencies contains all API dependencies
 type Dependencies struct {
-	UserStore         store.UserStore
-	RotationsStore    store.RotationsStore
-	SkillsStore       store.SkillsStore
-	ShiftStore        store.ShiftStore
-	Logger            bot.Logger
-	Poster            bot.Poster
-	IsAuthorizedAdmin func(userID string) (bool, error)
+	Logger         bot.Logger
+	PluginAPI      PluginAPI
+	Poster         bot.Poster
+	RotationsStore store.RotationsStore
+	ShiftStore     store.ShiftStore
+	SkillsStore    store.SkillsStore
+	UserStore      store.UserStore
 }
 
 type Config struct {
-	*Dependencies
 	*config.Config
+	*Dependencies
 }
 
 type api struct {
