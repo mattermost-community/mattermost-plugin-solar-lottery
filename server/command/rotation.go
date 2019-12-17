@@ -5,189 +5,139 @@ package command
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/pkg/errors"
+	"github.com/spf13/pflag"
 	flag "github.com/spf13/pflag"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
 )
 
 func (c *Command) rotation(parameters ...string) (string, error) {
 	subcommands := map[string]func(...string) (string, error){
-		"list":   c.listRotations,
-		"show":   c.showRotation,
-		"delete": c.deleteRotation,
-		"add":    c.addRotation,
-		"update": c.updateRotation,
+		"archive":  c.archiveRotation,
+		"create":   c.createRotation,
+		"forecast": c.forecast,
+		"list":     c.listRotations,
+		"need":     c.updateRotationNeed,
+		"show":     c.showRotation,
+		"update":   c.updateRotation,
 	}
+	errUsage := errors.Errorf("Invalid subcommand. Usage:\n"+
+		"- `%s rotation list` - list all known rotations\n"+
+		"- `%s rotation archive|create|forecast|show|update] <rotation-name>` - view or modify specific rotations\n"+
+		"\n"+
+		"Use `%s rotation subcommand --help` for more information.\n",
+		config.CommandTrigger, config.CommandTrigger, config.CommandTrigger)
+
 	if len(parameters) == 0 {
-		return "", errors.New("invalid syntax TODO")
+		return "", errUsage
 	}
 
 	f := subcommands[parameters[0]]
 	if f == nil {
-		return "", errors.New("invalid syntax TODO")
+		return "", errUsage
 	}
 
 	return f(parameters[1:]...)
 }
 
 func (c *Command) showRotation(parameters ...string) (string, error) {
-	if len(parameters) == 0 {
-		return "", errors.New("invalid syntax TODO")
-	}
-	rotationName := parameters[0]
+	fs := flag.NewFlagSet("showRotation", flag.ContinueOnError)
 
-	rr, err := c.API.ListRotations()
+	rotation, err := c.parseRotationFlagsAndLoad(fs, parameters, "rotation show <rotation-name>")
 	if err != nil {
 		return "", err
 	}
-	r := rr[rotationName]
-	if r == nil {
-		return "", store.ErrNotFound
-	}
-
-	s := flag.NewFlagSet("rotation", flag.ContinueOnError)
-	schedule := false
-	autofill := false
-	start, err := api.ShiftNumber(r, time.Now())
-	if err != nil {
-		return "", err
-	}
-	numShifts := 12
-	s.BoolVar(&schedule, "schedule", false, "display future schedule")
-	s.BoolVar(&autofill, "autofill", false, "automatically fill shifts that are not scheduled yet")
-	s.IntVar(&start, "start", start, "starting shift to display, with --schedule")
-	s.IntVar(&numShifts, "shifts", numShifts, "number of shifts forward, with --schedule")
-	err = s.Parse(parameters[1:])
-	if err != nil {
-		return "", err
-	}
-
-	if !schedule {
-		return utils.JSONBlock(r), nil
-	}
-
-	shifts, err := c.API.CrystalBall(rotationName, start, numShifts, autofill)
-	if err != nil {
-		return "", err
-	}
-
-	return utils.JSONBlock(shifts), nil
+	return api.MarkdownRotationWithDetails(rotation), nil
 }
 
 func (c *Command) listRotations(parameters ...string) (string, error) {
-	rr, err := c.API.ListRotations()
+	if len(parameters) > 0 {
+		return "", errors.Errorf(commandUsage("rotation forecast <rotation-name>", nil))
+	}
+	rotations, err := c.API.LoadKnownRotations()
 	if err != nil {
 		return "", err
 	}
+	if len(rotations) == 0 {
+		return "*none*", nil
+	}
+
 	out := ""
-	for name := range rr {
-		out += fmt.Sprintf("- %s\n", name)
+	for id := range rotations {
+		out += fmt.Sprintf("- %s\n", id)
 	}
 	return out, nil
 }
 
-func (c *Command) deleteRotation(parameters ...string) (string, error) {
-	if len(parameters) == 0 {
-		return "", errors.New("invalid syntax TODO")
-	}
-	rotationName := parameters[0]
-	err := c.API.DeleteRotation(rotationName)
+func (c *Command) archiveRotation(parameters ...string) (string, error) {
+	fs := flag.NewFlagSet("archiveRotation", flag.ContinueOnError)
+
+	rotation, err := c.parseRotationFlagsAndLoad(fs, parameters, "rotation archive <rotation-name>")
 	if err != nil {
 		return "", err
 	}
-	return "Deleted rotation " + rotationName, nil
+
+	err = c.API.ArchiveRotation(rotation)
+	if err != nil {
+		return "", errors.WithMessagef(err, "failed to archive %s", rotation.Name)
+	}
+
+	return "Deleted rotation " + rotation.Name, nil
 }
 
-func (c *Command) addRotation(parameters ...string) (string, error) {
-	if len(parameters) == 0 {
-		return "", errors.New("invalid syntax TODO")
+func (c *Command) createRotation(parameters ...string) (string, error) {
+	var start string
+	var period api.Period
+	var size, paddingWeeks int
+	fs := flag.NewFlagSet("createRotation", flag.ContinueOnError)
+	withRotationCreate(fs, &start, &period)
+	withRotationOptions(fs, &size, &paddingWeeks)
+	usage := commandUsage("rotation create <rotation-name>", fs)
+	err := fs.Parse(parameters)
+	if err != nil {
+		return "", errors.Errorf("**%s**.\n\n%s", err.Error(), usage)
 	}
-	rotationName := parameters[0]
+	if len(fs.Args()) != 1 || start == "" || period.String() == "" {
+		return "", errors.New(usage)
+	}
 
-	r := store.NewRotation(rotationName)
-	s := flag.NewFlagSet("rotation", flag.ContinueOnError)
-	s.StringVar(&r.Period, "period", "m", "rotation period 'w', '2w', or 'm'")
-	s.StringVar(&r.Start, "start", "", "rotation starts on")
-	s.IntVar(&r.MinBetweenShifts, "min-between", 1, "minimum number of shifts between being elected")
-	s.IntVar(&r.Size, "size", 1, "number of people in the shift")
-	err := s.Parse(parameters[1:])
+	rotation, err := c.API.MakeRotation(fs.Arg(0))
+	if err != nil {
+		return "", err
+	}
+	rotation.Period = period.String()
+	rotation.Start = start
+	rotation.Size = size
+	rotation.PaddingWeeks = paddingWeeks
+
+	err = c.API.AddRotation(rotation)
 	if err != nil {
 		return "", err
 	}
 
-	//TODO input validation
-
-	r, err = c.API.AddRotation(r)
-	if err != nil {
-		return "", err
-	}
-
-	return "Added rotation " + utils.JSONBlock(r), nil
+	return "Created rotation " + api.MarkdownRotationWithDetails(rotation), nil
 }
 
 func (c *Command) updateRotation(parameters ...string) (string, error) {
-	if len(parameters) == 0 {
-		return "", errors.New("invalid syntax TODO")
-	}
-	rotationName := parameters[0]
+	var size, paddingWeeks int
+	fs := flag.NewFlagSet("updateRotation", flag.ContinueOnError)
+	withRotationOptions(fs, &size, &paddingWeeks)
 
-	s := flag.NewFlagSet("rotation", flag.ContinueOnError)
-	var noNeedName, needName, needSkill, needLevel, period, start string
-	var minBetween, size, needCount int
-	s.StringVar(&period, "period", "", "rotation period 'w', '2w', or 'm'")
-	s.StringVar(&start, "start", "", "rotation starts on")
-	s.StringVar(&noNeedName, "no-need", "", "remove a need from the rotation")
-	s.StringVar(&needName, "need", "", "update rotation's needs")
-	s.StringVar(&needSkill, "skill", "", "if used with --need, indicates the needed skill")
-	s.StringVar(&needLevel, "level", "", "if used with --need, indicates the needed skill level")
-	s.IntVar(&needCount, "count", 0, "if used with --need, indicates the needed headcount")
-	s.IntVar(&minBetween, "min-between", 0, "minimum number of periods between shifts")
-	s.IntVar(&size, "size", 0, "number of people in the shift")
-	err := s.Parse(parameters[1:])
+	rotation, err := c.parseRotationFlagsAndLoad(fs, parameters, "rotation update <rotation-name>")
 	if err != nil {
 		return "", err
 	}
 
-	if needName != "" && len(needLevel)+len(needSkill)+needCount == 0 {
-		return "", errors.New("--need requires skill, level, and count to be specified")
-	}
-	if needName != "" && noNeedName != "" {
-		return "", errors.New("--need and --no-need can not be used in the same command")
-	}
-
-	// TODO more input validation
-
-	r, err := c.API.UpdateRotation(rotationName, func(r *store.Rotation) error {
-		if period != "" {
-			r.Period = period
-		}
-		if start != "" {
-			r.Start = start
-		}
-		if minBetween != 0 {
-			r.MinBetweenShifts = minBetween
+	err = c.API.UpdateRotation(rotation, func(rotation *api.Rotation) error {
+		if paddingWeeks != 0 {
+			rotation.PaddingWeeks = paddingWeeks
 		}
 		if size != 0 {
-			r.Size = size
-		}
-		if needName != "" {
-			level := 0
-			level, err = api.ParseLevel(needLevel)
-			if err != nil {
-				return err
-			}
-			c.API.ChangeRotationNeed(r, needName, needSkill, int(level), needCount)
-		}
-		if noNeedName != "" {
-			err = c.API.RemoveRotationNeed(r, noNeedName)
-			if err != nil {
-				return err
-			}
+			rotation.Size = size
 		}
 		return nil
 	})
@@ -195,5 +145,104 @@ func (c *Command) updateRotation(parameters ...string) (string, error) {
 		return "", err
 	}
 
-	return "Updated rotation " + utils.JSONBlock(r), nil
+	return "Updated rotation " + api.MarkdownRotationWithDetails(rotation), nil
+}
+
+func (c *Command) updateRotationNeed(parameters ...string) (string, error) {
+	var name, skill, level, removeName string
+	var min, max int
+	fs := flag.NewFlagSet("updateRotationNeed", flag.ContinueOnError)
+	withRotationNeed(fs, &name, &skill, &level, &min, &max, &removeName)
+
+	rotation, err := c.parseRotationFlagsAndLoad(fs, parameters, "rotation need <rotation-name>")
+	if err != nil {
+		return "", err
+	}
+	if len(name) == 0 && len(removeName) == 0 {
+		return "", errors.Errorf("only one of --need and --remove-need must be specified. %s",
+			commandUsage("rotation need <rotation-name>", fs))
+	}
+	if len(name) != 0 && len(removeName) != 0 {
+		return "", errors.Errorf("one of --need and --remove-need must be specified. %s",
+			commandUsage("rotation need <rotation-name>", fs))
+	}
+
+	var updatef func(rotation *api.Rotation) error
+	if removeName != "" {
+		updatef = func(rotation *api.Rotation) error {
+			return rotation.DeleteNeed(removeName)
+		}
+	} else {
+		if level == "" || skill == "" || min == 0 {
+			return "", errors.Errorf("--need requires skill, level, and min to be specified. %s",
+				commandUsage("rotation need <rotation-name>", fs))
+		}
+		l := 0
+		l, err = api.ParseLevel(level)
+		if err != nil {
+			return "", err
+		}
+		updatef = func(rotation *api.Rotation) error {
+			rotation.ChangeNeed(name, store.Need{
+				Skill: skill,
+				Level: l,
+				Min:   min,
+				Max:   max,
+			})
+			return nil
+		}
+	}
+
+	err = c.API.UpdateRotation(rotation, updatef)
+	if err != nil {
+		return "", err
+	}
+
+	return "Updated rotation " + api.MarkdownRotationWithDetails(rotation), nil
+}
+
+func withRotationCreate(fs *pflag.FlagSet, start *string, period *api.Period) {
+	fs.StringVar(start, "start", "", fmt.Sprintf("rotation start date formatted as %s. It must be provided at creation and **can not be modified** later.", api.DateFormat))
+	fs.Var(period, "period", "rotation period 1w, 2w, or 1m")
+}
+
+func withRotationOptions(fs *pflag.FlagSet, size *int, paddingWeeks *int) {
+	fs.IntVar(size, "size", 0, "target number of people in each shift. 0 (default) means unlimited, based on needs")
+	fs.IntVar(paddingWeeks, "padding", 0, "makes each user's shift  padded by this many weeks of unavailability, on each side")
+}
+
+func withRotationID(fs *pflag.FlagSet, rotationID *string) {
+	fs.StringVar(rotationID, "id", "", "provide rotation ID instead of name")
+}
+
+func (c *Command) parseRotationFlagsAndLoad(fs *pflag.FlagSet, parameters []string, subcommand string) (*api.Rotation, error) {
+	var id string
+	withRotationID(fs, &id)
+	err := fs.Parse(parameters)
+	switch {
+	case err != nil:
+		return nil, errors.Errorf("**%s**\n\n%s", err.Error(), commandUsage(subcommand, fs))
+
+	case id != "" && len(fs.Args()) != 0:
+		return nil, errors.Errorf("**can not specify rotation name and --id**\n\n%s", commandUsage(subcommand, fs))
+
+	case id != "":
+		return c.API.LoadRotation(id)
+
+	case len(fs.Args()) > 1:
+		return nil, errors.New(commandUsage(subcommand, fs))
+
+	case fs.Arg(0) != "":
+		return c.API.LoadRotationNamed(fs.Arg(0))
+	}
+	return nil, errors.New("unreachable)")
+}
+
+func withRotationNeed(fs *pflag.FlagSet, name, skill, level *string, min, max *int, removeName *string) {
+	fs.StringVar(name, "need", "", "update rotation need")
+	fs.StringVar(skill, "skill", "", "if used with --need, indicates the needed skill")
+	fs.StringVar(level, "level", "", "if used with --need, indicates the needed skill level")
+	fs.IntVar(min, "min", 0, "if used with --need, indicates the minimum needed headcount")
+	fs.IntVar(max, "max", 0, "if used with --need, indicates the maximum needed headcount")
+	fs.StringVar(removeName, "remove-need", "", "remove a need from rotation")
 }

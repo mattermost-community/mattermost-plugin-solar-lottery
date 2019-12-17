@@ -30,23 +30,20 @@ type User struct {
 	// Settings store the user's preferences.
 	Settings Settings
 
-	SkillLevels map[string]int
+	SkillLevels IntMap
 
-	// Rotations is a map of all rotations (names) the user has joined. The
+	// Rotations is a map of all rotations (IDs) the user has joined. The
 	// value is the last shift number served, for the rotation. When a user
 	// joins a new rotation, their "last shift number" is set to the current
 	// shift by default, offsetting it forward or backwards with a graceShifts
 	// affects the new users likelihood of being selected for the next shift.
 	// Setting it N shifts into the future guarantees that the new user will
 	// not be selected until then.
-	Rotations map[string]int
+	Rotations IntMap
 
 	// Calendar is sorted by start date of the events
 	Calendar []Event
 }
-
-type UserIDList map[string]string
-type UserList map[string]*User
 
 const (
 	EventTypeShift = "shift"
@@ -66,21 +63,17 @@ type Settings struct {
 func NewUser(mattermostUserID string) *User {
 	return &User{
 		MattermostUserID: mattermostUserID,
-		SkillLevels:      map[string]int{},
-		Rotations:        map[string]int{},
+		SkillLevels:      IntMap{},
+		Rotations:        IntMap{},
 		Calendar:         []Event{},
 	}
 }
 
 func (user *User) Clone() *User {
 	clone := NewUser(user.MattermostUserID)
-	for k, v := range user.SkillLevels {
-		clone.SkillLevels[k] = v
-	}
-	for k, v := range user.Rotations {
-		clone.Rotations[k] = v
-	}
-	clone.Calendar = user.Calendar
+	clone.SkillLevels = user.SkillLevels.Clone()
+	clone.Rotations = user.Rotations.Clone()
+	clone.Calendar = append([]Event{}, user.Calendar...)
 	return clone
 }
 

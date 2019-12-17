@@ -12,28 +12,30 @@ import (
 )
 
 type API interface {
-	bot.Logger
-	User
+	Users
 	Skills
 	Rotations
-	SolarLottery
+	Forecaster
+
+	bot.Logger
+	PluginAPI
 }
 
 type PluginAPI interface {
-	GetUser(string) (*model.User, error)
-	GetUserByUsername(string) (*model.User, error)
+	GetMattermostUser(mattermostUserID string) (*model.User, error)
+	GetMattermostUserByUsername(mattermostUsername string) (*model.User, error)
 	IsPluginAdmin(mattermostUserID string) (bool, error)
 }
 
 // Dependencies contains all API dependencies
 type Dependencies struct {
-	Logger         bot.Logger
-	PluginAPI      PluginAPI
-	Poster         bot.Poster
-	RotationsStore store.RotationsStore
-	ShiftStore     store.ShiftStore
-	SkillsStore    store.SkillsStore
-	UserStore      store.UserStore
+	PluginAPI
+	Logger        bot.Logger
+	Poster        bot.Poster
+	RotationStore store.RotationStore
+	ShiftStore    store.ShiftStore
+	SkillsStore   store.SkillsStore
+	UserStore     store.UserStore
 }
 
 type Config struct {
@@ -44,10 +46,24 @@ type Config struct {
 type api struct {
 	bot.Logger
 	Config
-	mattermostUserID string
-	user             *store.User
-	skills           []string
-	rotations        map[string]*store.Rotation
+
+	// set by `api.New`
+	actingMattermostUserID string
+
+	// use withActingUser or withActingUserExpanded to initialize.
+	actingUser *User
+
+	// use withKnownSkills to initialize.
+	knownSkills store.IDMap
+
+	// use withKnownRotations or withRotation(rotationID) to initialize, not expanded by default.
+	knownRotations store.IDMap
+
+	// use withRotation(rotationID) to initialize, not expanded by default.
+	// rotation *Rotation
+
+	// use withMattermostUsers(usernames) or withUsers(mattermostUserIDs) to initialize, not expanded by default.
+	users UserMap
 }
 
 func New(apiConfig Config, mattermostUserID string) API {
@@ -55,8 +71,8 @@ func New(apiConfig Config, mattermostUserID string) API {
 		Logger: apiConfig.Logger.With(bot.LogContext{
 			"MattermostUserID": mattermostUserID,
 		}),
-		Config:           apiConfig,
-		mattermostUserID: mattermostUserID,
+		Config:                 apiConfig,
+		actingMattermostUserID: mattermostUserID,
 	}
 }
 

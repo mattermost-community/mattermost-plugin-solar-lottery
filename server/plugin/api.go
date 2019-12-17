@@ -25,7 +25,7 @@ func (p *Plugin) IsPluginAdmin(mattermostUserID string) (bool, error) {
 	return bot.IsUserAdmin(mattermostUserID), nil
 }
 
-func (p *Plugin) GetUserByUsername(mattermostUsername string) (*model.User, error) {
+func (p *Plugin) GetMattermostUserByUsername(mattermostUsername string) (*model.User, error) {
 	for strings.HasPrefix(mattermostUsername, "@") {
 		mattermostUsername = mattermostUsername[1:]
 	}
@@ -39,13 +39,13 @@ func (p *Plugin) GetUserByUsername(mattermostUsername string) (*model.User, erro
 	return u, nil
 }
 
-func (p *Plugin) GetUser(mattermostUserID string) (*model.User, error) {
-	u, err := p.API.GetUser(mattermostUserID)
+func (p *Plugin) GetMattermostUser(mattermostUserID string) (*model.User, error) {
+	mmuser, err := p.API.GetUser(mattermostUserID)
 	if err != nil {
 		return nil, err
 	}
-	if u.DeleteAt != 0 {
+	if mmuser.DeleteAt != 0 {
 		return nil, store.ErrNotFound
 	}
-	return u, nil
+	return mmuser, nil
 }

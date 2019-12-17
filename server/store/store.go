@@ -13,10 +13,12 @@ import (
 )
 
 const (
-	UserKeyPrefix      = "user_"
-	SkillsKeyPrefix    = "skills_"
-	RotationsKeyPrefix = "rotations_"
-	ShiftKeyPrefix     = "shift_"
+	UserKeyPrefix     = "user_"
+	RotationKeyPrefix = "rotation_"
+	ShiftKeyPrefix    = "shift_"
+
+	KnownSkillsKey    = "index_skills"
+	KnownRotationsKey = "index_rotations"
 )
 
 const OAuth2KeyExpiration = 15 * time.Minute
@@ -26,27 +28,25 @@ var ErrNotFound = kvstore.ErrNotFound
 type Store interface {
 	UserStore
 	SkillsStore
-	RotationsStore
+	RotationStore
 	ShiftStore
 }
 
 type pluginStore struct {
-	basicKV     kvstore.KVStore
-	userKV      kvstore.KVStore
-	skillsKV    kvstore.KVStore
-	rotationsKV kvstore.KVStore
-	shiftKV     kvstore.KVStore
-	Logger      bot.Logger
+	basicKV    kvstore.KVStore
+	userKV     kvstore.KVStore
+	rotationKV kvstore.KVStore
+	shiftKV    kvstore.KVStore
+	Logger     bot.Logger
 }
 
 func NewPluginStore(api plugin.API, logger bot.Logger) Store {
 	basicKV := kvstore.NewPluginStore(api)
 	return &pluginStore{
-		basicKV:     basicKV,
-		userKV:      kvstore.NewHashedKeyStore(basicKV, UserKeyPrefix),
-		skillsKV:    kvstore.NewHashedKeyStore(basicKV, SkillsKeyPrefix),
-		rotationsKV: kvstore.NewHashedKeyStore(basicKV, RotationsKeyPrefix),
-		shiftKV:     kvstore.NewHashedKeyStore(basicKV, ShiftKeyPrefix),
-		Logger:      logger,
+		basicKV:    basicKV,
+		userKV:     kvstore.NewHashedKeyStore(basicKV, UserKeyPrefix),
+		rotationKV: kvstore.NewHashedKeyStore(basicKV, RotationKeyPrefix),
+		shiftKV:    kvstore.NewHashedKeyStore(basicKV, ShiftKeyPrefix),
+		Logger:     logger,
 	}
 }

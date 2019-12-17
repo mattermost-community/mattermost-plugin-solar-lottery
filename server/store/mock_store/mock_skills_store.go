@@ -6,6 +6,7 @@ package mock_store
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	store "github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	reflect "reflect"
 )
 
@@ -32,31 +33,31 @@ func (m *MockSkillsStore) EXPECT() *MockSkillsStoreMockRecorder {
 	return m.recorder
 }
 
-// LoadSkills mocks base method
-func (m *MockSkillsStore) LoadSkills() ([]string, error) {
+// LoadKnownSkills mocks base method
+func (m *MockSkillsStore) LoadKnownSkills() (store.IDMap, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoadSkills")
-	ret0, _ := ret[0].([]string)
+	ret := m.ctrl.Call(m, "LoadKnownSkills")
+	ret0, _ := ret[0].(store.IDMap)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// LoadSkills indicates an expected call of LoadSkills
-func (mr *MockSkillsStoreMockRecorder) LoadSkills() *gomock.Call {
+// LoadKnownSkills indicates an expected call of LoadKnownSkills
+func (mr *MockSkillsStoreMockRecorder) LoadKnownSkills() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadSkills", reflect.TypeOf((*MockSkillsStore)(nil).LoadSkills))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadKnownSkills", reflect.TypeOf((*MockSkillsStore)(nil).LoadKnownSkills))
 }
 
-// StoreSkills mocks base method
-func (m *MockSkillsStore) StoreSkills(arg0 []string) error {
+// StoreKnownSkills mocks base method
+func (m *MockSkillsStore) StoreKnownSkills(arg0 store.IDMap) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StoreSkills", arg0)
+	ret := m.ctrl.Call(m, "StoreKnownSkills", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// StoreSkills indicates an expected call of StoreSkills
-func (mr *MockSkillsStoreMockRecorder) StoreSkills(arg0 interface{}) *gomock.Call {
+// StoreKnownSkills indicates an expected call of StoreKnownSkills
+func (mr *MockSkillsStoreMockRecorder) StoreKnownSkills(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreSkills", reflect.TypeOf((*MockSkillsStore)(nil).StoreSkills), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreKnownSkills", reflect.TypeOf((*MockSkillsStore)(nil).StoreKnownSkills), arg0)
 }

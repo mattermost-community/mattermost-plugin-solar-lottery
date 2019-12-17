@@ -49,15 +49,15 @@ func (mr *MockShiftStoreMockRecorder) LoadShift(arg0, arg1 interface{}) *gomock.
 }
 
 // StoreShift mocks base method
-func (m *MockShiftStore) StoreShift(arg0 *store.Shift) error {
+func (m *MockShiftStore) StoreShift(arg0 string, arg1 int, arg2 *store.Shift) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StoreShift", arg0)
+	ret := m.ctrl.Call(m, "StoreShift", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // StoreShift indicates an expected call of StoreShift
-func (mr *MockShiftStoreMockRecorder) StoreShift(arg0 interface{}) *gomock.Call {
+func (mr *MockShiftStoreMockRecorder) StoreShift(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreShift", reflect.TypeOf((*MockShiftStore)(nil).StoreShift), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreShift", reflect.TypeOf((*MockShiftStore)(nil).StoreShift), arg0, arg1, arg2)
 }

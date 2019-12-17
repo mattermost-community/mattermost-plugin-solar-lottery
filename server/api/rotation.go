@@ -4,95 +4,161 @@
 package api
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
-type Rotations interface {
-	AddRotation(r *store.Rotation) (*store.Rotation, error)
-	ChangeRotationNeed(r *store.Rotation, name, skill string, level, count int)
-	DeleteRotation(string) error
-	ListRotations() (map[string]*store.Rotation, error)
-	RemoveRotationNeed(r *store.Rotation, name string) error
-	UpdateRotation(string, func(*store.Rotation) error) (*store.Rotation, error)
+type Rotation struct {
+	*store.Rotation
+
+	StartTime time.Time
+	Users     UserMap
 }
 
-var ErrRotationAlreadyExists = errors.New("rotation already exists")
-
-func (api *api) ListRotations() (map[string]*store.Rotation, error) {
-	err := api.Filter(withRotations)
+func (rotation *Rotation) init(api *api) error {
+	start, err := time.Parse(DateFormat, rotation.Start)
 	if err != nil {
-		return nil, err
-	}
-	return api.rotations, nil
-}
-
-func (api *api) UpdateRotation(rotationName string, updatef func(*store.Rotation) error) (*store.Rotation, error) {
-	err := api.Filter(withRotations)
-	if err != nil {
-		return nil, err
-	}
-	r, ok := api.rotations[rotationName]
-	if !ok {
-		return nil, store.ErrNotFound
-	}
-
-	err = updatef(r)
-	if err != nil {
-		return nil, err
-	}
-	return r, api.RotationsStore.StoreRotations(api.rotations)
-}
-
-func (api *api) AddRotation(r *store.Rotation) (*store.Rotation, error) {
-	err := api.Filter(withRotations)
-	if err != nil {
-		return nil, err
-	}
-	rr := api.rotations
-	_, ok := rr[r.Name]
-	if ok {
-		return nil, ErrRotationAlreadyExists
-	}
-
-	rr[r.Name] = r
-	err = api.RotationsStore.StoreRotations(rr)
-	if err != nil {
-		return nil, err
-	}
-
-	return r, nil
-}
-
-func (api *api) DeleteRotation(rotationName string) error {
-	rr, err := api.RotationsStore.LoadRotations()
-	if err != nil && err != store.ErrNotFound {
 		return err
 	}
-	_, ok := rr[rotationName]
-	if !ok {
-		return store.ErrNotFound
-	}
+	rotation.StartTime = start
 
-	delete(rr, rotationName)
-	return api.RotationsStore.StoreRotations(rr)
+	if rotation.Users == nil {
+		rotation.Users = UserMap{}
+	}
+	return nil
 }
 
-func withRotations(api *api) error {
-	if api.rotations != nil {
+func (api *api) ExpandRotation(rotation *Rotation) error {
+	if !rotation.StartTime.IsZero() && len(rotation.Users) == len(rotation.MattermostUserIDs) {
 		return nil
 	}
 
-	rr, err := api.RotationsStore.LoadRotations()
+	err := rotation.init(api)
 	if err != nil {
-		if err == store.ErrNotFound {
-			rr = map[string]*store.Rotation{}
-		} else {
-			return err
-		}
+		return err
 	}
 
-	api.rotations = rr
+	users, err := api.LoadStoredUsers(rotation.MattermostUserIDs)
+	if err != nil {
+		return err
+	}
+	err = api.ExpandUserMap(users)
+	if err != nil {
+		return err
+	}
+	rotation.Users = users
+
 	return nil
+}
+
+func withRotation(rotationID string) func(api *api) error {
+	return func(api *api) error {
+		return nil
+	}
+}
+
+func withRotationExpanded(rotation *Rotation) func(api *api) error {
+	return func(api *api) error {
+		return api.ExpandRotation(rotation)
+	}
+}
+
+func withRotationIsNotArchived(rotation *Rotation) func(api *api) error {
+	return func(api *api) error {
+		if rotation.IsArchived {
+			return errors.Errorf("rotation %s is archived", MarkdownRotation(rotation))
+		}
+		return nil
+	}
+}
+
+func (rotation *Rotation) shiftNumberForTime(t time.Time) (int, error) {
+	if t.Before(rotation.StartTime) {
+		return 0, errors.Errorf("Time %v is before rotation start %v", t, rotation.StartTime)
+	}
+
+	switch rotation.Period {
+	case EveryWeek:
+		return int(t.Sub(rotation.StartTime) / WeekDuration), nil
+	case EveryTwoWeeks:
+		return int(t.Sub(rotation.StartTime) / (2 * WeekDuration)), nil
+	case EveryMonth:
+		y, m, d := rotation.StartTime.Date()
+		ty, tm, td := t.Date()
+		n := (ty*12 + int(tm)) - (y*12 + int(m))
+		if td >= d {
+			n++
+		}
+		return n, nil
+	default:
+		return 0, errors.Errorf("Invalid rotation period value %q", rotation.Period)
+	}
+}
+
+func (rotation *Rotation) shiftDatesForNumber(shiftNumber int) (time.Time, time.Time, error) {
+	var begin, end time.Time
+	switch rotation.Period {
+	case EveryWeek:
+		begin = rotation.StartTime.Add(time.Duration(shiftNumber) * WeekDuration)
+		end = begin.Add(WeekDuration)
+
+	case EveryTwoWeeks:
+		begin = rotation.StartTime.Add(time.Duration(shiftNumber) * 2 * WeekDuration)
+		end = begin.Add(2 * WeekDuration)
+
+	case EveryMonth:
+		y, month, d := rotation.StartTime.Date()
+		m := int(month-1) + shiftNumber
+		year := y + m/12
+		month = time.Month((m % 12) + 1)
+		begin = time.Date(year, month, d, 0, 0, 0, 0, rotation.StartTime.Location())
+		m++
+		year = y + m/12
+		month = time.Month((m % 12) + 1)
+		end = time.Date(year, month, d, 0, 0, 0, 0, rotation.StartTime.Location())
+
+	default:
+		return time.Time{}, time.Time{}, errors.Errorf("Invalid rotation period value %q", rotation.Period)
+	}
+	return begin, end, nil
+}
+
+func (rotation *Rotation) ChangeNeed(needName string, need store.Need) {
+	if rotation.Needs == nil {
+		rotation.Needs = map[string]store.Need{}
+	}
+	rotation.Needs[needName] = need
+}
+
+func (rotation *Rotation) DeleteNeed(needName string) error {
+	_, ok := rotation.Needs[needName]
+	if !ok {
+		return errors.Errorf("%s is not found in rotation %s", needName, MarkdownRotation(rotation))
+	}
+	delete(rotation.Needs, needName)
+	return nil
+}
+
+func (api *api) deleteUsersFromRotation(users UserMap, rotation *Rotation) error {
+	for _, user := range users {
+		_, ok := rotation.MattermostUserIDs[user.MattermostUserID]
+		if !ok {
+			return errors.Errorf("%s is not found in rotation %s", MarkdownUser(user), MarkdownRotation(rotation))
+		}
+
+		delete(user.Rotations, rotation.RotationID)
+		_, err := api.storeUserWelcomeNew(user)
+		if err != nil {
+			return err
+		}
+		delete(rotation.MattermostUserIDs, user.MattermostUserID)
+		api.messageLeftRotation(user, rotation)
+		api.Logger.Debugf("removed %s from %s.", MarkdownUser(user), MarkdownRotation(rotation))
+		return nil
+	}
+
+	return api.RotationStore.StoreRotation(rotation.Rotation)
 }

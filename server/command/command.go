@@ -8,13 +8,13 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/spf13/pflag"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
 )
 
 // Command handles commands
@@ -26,13 +26,12 @@ type Command struct {
 	API       api.API
 }
 
-func getHelp() string {
-	help := `
-TODO: help text.
-`
-	return utils.CodeBlock(fmt.Sprintf(
-		help,
-	))
+func commandUsage(command string, fs *pflag.FlagSet) string {
+	if fs == nil {
+		return fmt.Sprintf("Usage:\n```\n/%s %s```\n", config.CommandTrigger, command)
+	}
+	return fmt.Sprintf("Usage:\n```\n/%s %s [flags...]\n\n%s```\n",
+		config.CommandTrigger, command, fs.FlagUsages())
 }
 
 // RegisterFunc is a function that allows the runner to register commands with the mattermost server.
@@ -42,8 +41,8 @@ type RegisterFunc func(*model.Command) error
 func Register(registerFunc RegisterFunc) {
 	_ = registerFunc(&model.Command{
 		Trigger:          config.CommandTrigger,
-		DisplayName:      "TODO display name",
-		Description:      "TODO description",
+		DisplayName:      "Solar Lottery",
+		Description:      "team rotation scheduler",
 		AutoComplete:     true,
 		AutoCompleteDesc: "TODO autocomplete desc",
 		AutoCompleteHint: "TODO autocomplete hint",
@@ -65,8 +64,8 @@ func (c *Command) Handle() (string, error) {
 		handler = c.skill
 	case "rotation":
 		handler = c.rotation
-	case "me":
-		handler = c.me
+	case "user":
+		handler = c.user
 	case "join":
 		handler = c.join
 	case "leave":
@@ -74,7 +73,7 @@ func (c *Command) Handle() (string, error) {
 	}
 	out, err := handler(parameters...)
 	if err != nil {
-		return "", errors.WithMessagef(err, "Command /%s %s failed", config.CommandTrigger, cmd)
+		return "", errors.WithMessagef(err, "Command `/%s %s` failed", config.CommandTrigger, cmd)
 	}
 
 	return out, nil

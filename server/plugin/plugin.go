@@ -125,11 +125,16 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	out, err := command.Handle()
 	if err != nil {
 		p.API.LogError(err.Error())
-		return nil, model.NewAppError("ExecuteCommand", "Unable to execute command.", nil, err.Error(), gohttp.StatusInternalServerError)
+		return &model.CommandResponse{
+			ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
+			Text:         err.Error(),
+		}, nil
 	}
-
-	apiconf.Poster.Ephemeral(args.UserId, args.ChannelId, out)
-	return &model.CommandResponse{}, nil
+	// apiconf.Poster.Ephemeral(args.UserId, args.ChannelId, out)
+	return &model.CommandResponse{
+		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
+		Text:         out,
+	}, nil
 }
 
 func (p *Plugin) ServeHTTP(pc *plugin.Context, w gohttp.ResponseWriter, req *gohttp.Request) {
@@ -165,13 +170,13 @@ func (p *Plugin) newAPIConfig() api.Config {
 	return api.Config{
 		Config: conf,
 		Dependencies: &api.Dependencies{
-			RotationsStore: store,
-			SkillsStore:    store,
-			UserStore:      store,
-			ShiftStore:     store,
-			Logger:         bot,
-			Poster:         bot,
-			PluginAPI:      p,
+			RotationStore: store,
+			SkillsStore:   store,
+			UserStore:     store,
+			ShiftStore:    store,
+			Logger:        bot,
+			Poster:        bot,
+			PluginAPI:     p,
 		},
 	}
 }

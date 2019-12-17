@@ -4,48 +4,45 @@
 package api
 
 import (
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
+	"github.com/pkg/errors"
 )
 
-func (api *api) UpdateUserSkill(skill string, level int) (*store.User, error) {
-	err := api.Filter(withSkills, withUser)
-	if err != nil {
-		return nil, err
-	}
-	err = api.ValidateSkill(skill)
-	if err != nil {
-		return nil, err
-	}
-
-	if api.user.SkillLevels[skill] == level {
+func (api *api) updateUserSkill(user *User, skillName string, level int) (*User, error) {
+	if user.SkillLevels[skillName] == level {
 		// nothing to do
-		return api.user, nil
+		api.Logger.Debugf("nothing to do for user %s, already has skill %s (%v)", MarkdownUser(user), skillName, level)
+		return user, nil
 	}
 
-	api.user.SkillLevels[skill] = level
+	if level == 0 {
+		_, ok := user.SkillLevels[skillName]
+		if !ok {
+			return nil, errors.Errorf("%s does not have skill %s", MarkdownUser(user), skillName)
+		}
+		delete(user.SkillLevels, skillName)
+	} else {
+		user.SkillLevels[skillName] = level
+	}
 
-	err = api.UserStore.StoreUser(api.user)
+	user, err := api.storeUserWelcomeNew(user)
 	if err != nil {
 		return nil, err
 	}
-	return api.user, nil
+	api.Logger.Debugf("%s (%v) skill added to user %s", skillName, level, MarkdownUser(user))
+	return user, nil
 }
 
-func (api *api) DeleteUserSkill(skill string) (*store.User, error) {
-	err := api.Filter(withSkills, withUser)
-	if err != nil {
-		return nil, err
+func withValidSkillName(skillName string) func(api *api) error {
+	return func(api *api) error {
+		err := api.Filter(withKnownSkills)
+		if err != nil {
+			return err
+		}
+		for _, s := range api.knownSkills {
+			if s == skillName {
+				return nil
+			}
+		}
+		return errors.Errorf("skill %s is not found", skillName)
 	}
-	_, ok := api.user.SkillLevels[skill]
-	if !ok {
-		return nil, store.ErrNotFound
-	}
-
-	delete(api.user.SkillLevels, skill)
-
-	err = api.UserStore.StoreUser(api.user)
-	if err != nil {
-		return nil, err
-	}
-	return api.user, nil
 }

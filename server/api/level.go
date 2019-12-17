@@ -13,21 +13,25 @@ const (
 )
 
 const (
-	LevelBeginner     = "beginner"
-	LevelIntermediate = "intermediate"
-	LevelAdvanced     = "advanced"
-	LevelExpert       = "expert"
+	LevelAdvanced           = "advanced"
+	LevelAdvancedSymbol     = "◈"
+	LevelBeginner           = "beginner"
+	LevelBeginnerSymbol     = "◉"
+	LevelExpert             = "expert"
+	LevelExpertSymbol       = "◈◈"
+	LevelIntermediate       = "intermediate"
+	LevelIntermediateSymbol = "▣"
 )
 
 func ParseLevel(l string) (int, error) {
 	switch l {
-	case LevelBeginner:
+	case LevelBeginner, LevelBeginnerSymbol:
 		return Beginner, nil
-	case LevelIntermediate:
+	case LevelIntermediate, LevelIntermediateSymbol:
 		return Intermediate, nil
-	case LevelAdvanced:
+	case LevelAdvanced, LevelAdvancedSymbol:
 		return Advanced, nil
-	case LevelExpert:
+	case LevelExpert, LevelExpertSymbol:
 		return Expert, nil
 	}
 	return 0, errors.Errorf("%s is not a valid skill level", l)
@@ -36,13 +40,13 @@ func ParseLevel(l string) (int, error) {
 func LevelToString(l int) string {
 	switch l {
 	case Beginner:
-		return LevelBeginner
+		return LevelBeginnerSymbol
 	case Intermediate:
-		return LevelIntermediate
+		return LevelIntermediateSymbol
 	case Advanced:
-		return LevelAdvanced
+		return LevelAdvancedSymbol
 	case Expert:
-		return LevelExpert
+		return LevelExpertSymbol
 	}
 	return "none"
 }

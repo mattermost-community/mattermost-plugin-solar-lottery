@@ -4,6 +4,7 @@
 package api
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"sort"
@@ -15,232 +16,256 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
-type SolarLottery interface {
-	CrystalBall(rotationName string, startShift int, numShifts int, autofill bool) ([]*store.Shift, error)
+func (api *api) loadOrMakeOneShift(rotation *Rotation, shiftNumber int, autofill bool) (*Shift, bool, error) {
+	start, end, err := rotation.shiftDatesForNumber(shiftNumber)
+	if err != nil {
+		return nil, false, err
+	}
+
+	var shift *Shift
+	created := false
+	storedShift, err := api.ShiftStore.LoadShift(rotation.RotationID, shiftNumber)
+	switch err {
+	case nil:
+		shift = &Shift{
+			Shift: storedShift,
+		}
+		err = api.ExpandShift(shift)
+
+	case store.ErrNotFound:
+		if !autofill {
+			return nil, false, err
+		}
+		shift, err = api.makeShift(rotation, shiftNumber, nil)
+		if err != nil {
+			return nil, false, err
+		}
+		created = true
+
+	default:
+		return nil, false, err
+	}
+
+	if shift.ShiftStatus != "" {
+		return nil, false, errors.Errorf("can not be scheduled, it is %q", shift.ShiftStatus)
+	}
+	if shift.Start != start.Format(DateFormat) || shift.End != end.Format(DateFormat) {
+		return nil, false, errors.Errorf("loaded shift has wrong dates %v-%v, expected %v-%v",
+			shift.Start, shift.End, start, end)
+	}
+
+	err = api.ExpandShift(shift)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return shift, created, nil
 }
 
-var ErrShiftAlreadyExists = errors.New("Shift already exists")
-
-func (api *api) CrystalBall(rotationName string, startShift int, numShifts int, autofill bool) ([]*store.Shift, error) {
-	err := api.Filter(withRotations)
-	if err != nil {
-		return nil, err
+func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift, autofill bool) error {
+	if len(shift.Users) > 0 {
+		api.Logger.Debugf("Shift %v already has users %v: %v",
+			shiftNumber, len(shift.Users), MarkdownUserMapWithSkills(shift.Users))
 	}
 
-	r := api.rotations[rotationName]
-	if r == nil {
-		return nil, store.ErrNotFound
-	}
-
-	// Load all rotation users
-	rotationUsers, err := api.loadUsers(r.MattermostUserIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	cachedUsers := store.UserList{}
-	for k, v := range rotationUsers {
-		cachedUsers[k] = v
-	}
-
-	var shifts []*store.Shift
-	for n := startShift; n < numShifts; n++ {
-		start, end, err := ShiftDates(r, n)
-		if err != nil {
-			return nil, err
-		}
-
-		var shift *store.Shift
-		shift, err = api.ShiftStore.LoadShift(r.Name, n)
-		switch {
-		case autofill && err == store.ErrNotFound:
-			shift = store.NewShift(r.Name, n)
-			shift.Start = start.Format(DateFormat)
-			shift.End = end.Format(DateFormat)
-
-		case err == nil:
-			if shift.ShiftStatus != store.ShiftStatusScheduled {
-				return nil, errors.Errorf("can not be scheduled, it is %q", shift.ShiftStatus)
-			}
-			if shift.Start != start.Format(DateFormat) || shift.End != end.Format(DateFormat) {
-				return nil, errors.Errorf("loaded shift has wrong dates %v-%v, expected %v-%v",
-					shift.Start, shift.End, start, end)
-			}
-
-		default:
-			return nil, err
-		}
-
-		// Start with the users already scheduled in the shift, if any
-		var shiftUsers store.UserList
-		shiftUsers, err = api.loadUsers(shift.MattermostUserIDs)
-		if err != nil {
-			return nil, err
-		}
-
-		// replace with cached Users where appropriate
-		for k := range shiftUsers {
-			if cachedUsers[k] != nil {
-				shiftUsers[k] = cachedUsers[k]
-			}
-		}
-
-		err = api.prepareShift(r, rotationUsers, n, shift, shiftUsers, start, end, autofill)
-		if err != nil {
-			return nil, err
-		}
-
-		// Update shift's users' last served counter, and update the cache in
-		// case they were not there
-		for k, u := range shiftUsers {
-			// rotationUSers is using the same pointers, is updated automatically
-			u.Rotations[rotationName] = n
-			cachedUsers[k] = u
-		}
-
-		shifts = append(shifts, shift)
-	}
-
-	return shifts, nil
-}
-
-func (api *api) prepareShift(r *store.Rotation, rotationUsers store.UserList, shiftNumber int, shift *store.Shift, shiftUsers store.UserList,
-	start, end time.Time, autofill bool) error {
-
-	// Filter out users who will not participate
-	pool := store.UserList{}
-	for _, u := range rotationUsers {
-		// Do not include if already in the shift
-		_, ok := shift.MattermostUserIDs[u.MattermostUserID]
+	pool := rotation.Users.Clone()
+	chosen := shift.Users.Clone()
+	// remove any users already chosen from the pool
+	for id := range chosen {
+		_, ok := pool[id]
 		if ok {
-			// logger.Debugf("skipping %v, already in the shift", u.MattermostUserID)
-			continue
+			delete(pool, id)
 		}
-		if !IsUserAvailable(u, start, end) {
-			// logger.Debugf("skipping %v, unavailable", u.MattermostUserID)
-			continue
-		}
-		pool[u.MattermostUserID] = u
 	}
 
-	var unsatisfied bool
-	for _, need := range r.Needs {
-		if len(shiftUsers) >= r.Size {
-			unsatisfied = true
+	unsatisfiedNeeds := api.unsatisfiedNeeds(rotation.Needs, chosen)
+
+	if !autofill {
+		if len(unsatisfiedNeeds) > 0 {
+			return errors.Errorf("%v needs could not be satisfied, %v users in the shift, not autofilled.",
+				len(unsatisfiedNeeds), len(chosen))
+		}
+		return nil
+	}
+
+	// Take a snapshot of the initial probability distribution for logging later
+	logIDs, logCDF := cdf(rotation, pool, shiftNumber)
+	logPool := []string{}
+	logChosen := []string{}
+	prev := float64(0)
+	for i, id := range logIDs {
+		logPool = append(logPool,
+			fmt.Sprintf("%s: (%.2f)", MarkdownUser(pool[id]), (logCDF[i]-prev)/logCDF[len(logCDF)-1]))
+		prev = logCDF[i]
+	}
+
+	// First pass: start with the qualified, backfill the rest if any left
+	unqualified := UserMap{}
+	for len(pool) > 0 {
+		if rotation.Size != 0 && len(chosen) >= rotation.Size {
+			api.Logger.Debugf("Reached capacity `%v`.", rotation.Size)
 			break
 		}
-		need.Count = api.unsatisfiedNeed(need, shiftUsers)
-		if need.Count == 0 {
-			continue
+		if rotation.Size == 0 && len(unsatisfiedNeeds) == 0 {
+			api.Logger.Debugf("Met all needs.")
+			break
 		}
 
-		if autofill {
-			var picked store.UserList
-			picked, err := api.pickUsersForNeed(r, need, pool, shiftNumber)
-			if err != nil {
-				return err
-			}
-			for _, u := range picked {
-				shiftUsers[u.MattermostUserID] = u
-			}
-			need.Count = 0
+		// Choose next user from the pool, weighted-randomly.
+		ids, cdf := cdf(rotation, pool, shiftNumber)
+		random := rand.Float64() * cdf[len(cdf)-1]
+		i := sort.Search(len(cdf), func(i int) bool {
+			return cdf[i] > random
+		})
+		user := pool[ids[i]]
+
+		if api.userIsQualifiedForShift(user, rotation, chosen, shift.StartTime, shift.EndTime, unsatisfiedNeeds) {
+			api.Logger.Debugf("`%v` needs remain, `%v` users in the pool, user %v ACCEPTED",
+				len(unsatisfiedNeeds), len(pool), usernameWithSkills(user))
+
+			chosen[user.MattermostUserID] = user
+			logChosen = append(logChosen, usernameWithSkills(user))
+			delete(pool, user.MattermostUserID)
+		} else {
+			// api.Logger.Debugf("%v needs remain, %v users in the pool, user %v rejected.",
+			// 	len(unsatisfiedNeeds), len(pool), usernameWithSkills(user))
+			unqualified[user.MattermostUserID] = user
+		}
+
+		unsatisfiedNeeds = api.unsatisfiedNeeds(rotation.Needs, chosen)
+	}
+
+	if len(unsatisfiedNeeds) > 0 {
+		if len(pool) == 0 {
+			return errors.Errorf("%v needs could not be satisfied", len(unsatisfiedNeeds))
+		} else {
+			return errors.Errorf("reached rotation capacity %v before %v needs could be satisfied",
+				rotation.Size, len(unsatisfiedNeeds))
 		}
 	}
 
-	if unsatisfied {
-		// TODO analyze failure
-		return errors.New("<><> impossible")
+	// Second pass: backfill the rest from any unqualified
+	for len(chosen) < rotation.Size && len(unqualified) > 0 {
+		// Choose next user from the pool, weighted-randomly.
+		ids, cdf := cdf(rotation, unqualified, shiftNumber)
+		random := rand.Float64() * cdf[len(cdf)-1]
+		i := sort.Search(len(cdf), func(i int) bool {
+			return cdf[i] > random
+		})
+		user := unqualified[ids[i]]
+
+		api.Logger.Debugf("backfilling `%v` unqualified, `%v` users in the pool, user %s ACCEPTED",
+			rotation.Size-len(chosen), len(chosen), usernameWithSkills(user))
+
+		chosen[user.MattermostUserID] = user
+		logChosen = append(logChosen, usernameWithSkills(user))
+		delete(unqualified, user.MattermostUserID)
 	}
 
-	// Backfill any remaining headcount from the remaining pool
-	picked, err := api.pickUsersN(r, pool, shiftNumber, r.Size-len(shiftUsers))
-	if err != nil {
-		return err
-	}
-	for _, u := range picked {
-		shiftUsers[u.MattermostUserID] = u
+	if len(chosen) < rotation.Size {
+		return errors.Errorf("%v unqualified users coulf not be filled", rotation.Size-len(chosen))
 	}
 
-	for _, u := range shiftUsers {
-		shift.MattermostUserIDs[u.MattermostUserID] = u.MattermostUserID
+	for _, user := range chosen {
+		shift.Users[user.MattermostUserID] = user
+		shift.MattermostUserIDs[user.MattermostUserID] = user.MattermostUserID
 	}
+	api.Logger.Debugf("Shift %v (%v to %v) prepared, chose **%v** users %s **from** %s", shiftNumber, shift.Start, shift.End, len(logChosen), logChosen, logPool)
 
 	return nil
 }
 
-func (api *api) unsatisfiedNeed(need store.Need, users store.UserList) int {
-	c := need.Count
-	for _, u := range users {
-		skillLevel, _ := u.SkillLevels[need.Skill]
-		if skillLevel < need.Level {
-			continue
-		}
-
-		c--
-		if c == 0 {
-			return 0
-		}
-	}
-	return c
-}
-
-func (api *api) pickUsersForNeed(r *store.Rotation, need store.Need, users store.UserList, shiftNumber int) (store.UserList, error) {
-	qualified := store.UserList{}
-	for _, user := range users {
-		skillLevel, _ := user.SkillLevels[need.Skill]
-		if skillLevel >= need.Level {
-			qualified[user.MattermostUserID] = user
-		}
-	}
-
-	picked, err := api.pickUsersN(r, qualified, shiftNumber, need.Count)
-	if err != nil {
-		return nil, err
-	}
-	for k := range picked {
-		delete(users, k)
-	}
-	return picked, nil
-}
-
-func (api *api) pickUsersN(r *store.Rotation, users store.UserList, shiftNumber int, numUsers int) (store.UserList, error) {
-	picked := store.UserList{}
-	for c := numUsers; c > 0; c-- {
-		user, err := api.pickOne(r, users, shiftNumber)
-		if err != nil {
-			return nil, err
-		}
-		picked[user.MattermostUserID] = user
-		delete(users, user.MattermostUserID)
-	}
-
-	return picked, nil
-}
-
-func (api *api) pickOne(r *store.Rotation, users store.UserList, shiftNumber int) (*store.User, error) {
-	ids := []string{}
-	weights := []float64{}
+func cdf(rotation *Rotation, users UserMap, shiftNumber int) (ids []string, cdf []float64) {
+	var weights []float64
 	for _, user := range users {
 		ids = append(ids, user.MattermostUserID)
-		weights = append(weights, userWeight(r, user, shiftNumber))
+		weights = append(weights, userWeight(rotation, user, shiftNumber))
 	}
 
-	cdf := make([]float64, len(weights))
+	cdf = make([]float64, len(weights))
 	floats.CumSum(cdf, weights)
-
-	random := rand.Float64() * cdf[len(cdf)-1]
-	i := sort.Search(len(cdf), func(i int) bool {
-		return cdf[i] > random
-	})
-
-	return users[ids[i]], nil
+	return ids, cdf
 }
 
-func userWeight(r *store.Rotation, user *store.User, shiftNumber int) float64 {
-	last, _ := user.Rotations[r.Name]
+func userWeight(rotation *Rotation, user *User, shiftNumber int) float64 {
+	last, _ := user.Rotations[rotation.RotationID]
 	return math.Pow(2.0, float64(shiftNumber-last))
 }
 
-func IsUserAvailable(user *store.User, start, end time.Time) bool {
+func userIsAvailable(user *User, start, end time.Time) bool {
+	//TODO userIsAvailable
 	return true
+}
+
+// To simplify redundant checks, users that are currently serving in shift(s),
+// qualify but will have 0 probability anyway so should never be chosen.
+func (api *api) userIsQualifiedForShift(user *User, rotation *Rotation, shiftUsers UserMap,
+	start, end time.Time, unsatisfiedNeeds map[string]store.Need) bool {
+
+	if !userIsAvailable(user, start, end) {
+		api.Logger.Debugf("DISQUALIFY user %v: NOT AVAILABLE", usernameWithSkills(user))
+		return false
+	}
+
+	// disqualify from any maxed out needs
+	for needName, need := range rotation.Needs {
+		if need.Max <= 0 || !api.userIsQualifiedForNeed(user, need) {
+			continue
+		}
+
+		if len(api.usersQualifiedForNeed(shiftUsers, need)) >= need.Max {
+			api.Logger.Debugf("DISQUALIFY user %s, would exceed the max `%v` on `%s`",
+				usernameWithSkills(user), need.Max, needName)
+			return false
+		}
+	}
+
+	// see if qualifies
+	if len(unsatisfiedNeeds) == 0 {
+		api.Logger.Debugf("QUALIFY user %v for NO NEED", usernameWithSkills(user))
+		return true
+	}
+	for _, need := range unsatisfiedNeeds {
+		if !api.userIsQualifiedForNeed(user, need) {
+			continue
+		}
+		return true
+	}
+	api.Logger.Debugf("DISQUALIFY user %s skills did not qualify.", usernameWithSkills(user))
+	return false
+}
+
+func (api *api) userIsQualifiedForNeed(user *User, need store.Need) bool {
+	skillLevel, _ := user.SkillLevels[need.Skill]
+	return skillLevel >= need.Level
+}
+
+func (api *api) usersQualifiedForNeed(users UserMap, need store.Need) UserMap {
+	qualified := UserMap{}
+	for id, user := range users {
+		if api.userIsQualifiedForNeed(user, need) {
+			qualified[id] = user
+		}
+	}
+	return qualified
+}
+
+func (api *api) unsatisfiedNeeds(needs map[string]store.Need, users UserMap) map[string]store.Need {
+	unsatisfied := map[string]store.Need{}
+	for name, need := range needs {
+		cQualified := 0
+		for _, user := range users {
+			if api.userIsQualifiedForNeed(user, need) {
+				cQualified++
+			}
+		}
+		if cQualified < need.Min {
+			unsatisfied[name] = need
+		}
+	}
+	return unsatisfied
+}
+
+func usernameWithSkills(user *User) string {
+	return fmt.Sprintf("%s %s", MarkdownUser(user), MarkdownUserSkills(user))
 }
