@@ -13,12 +13,14 @@ import (
 type ShiftStore interface {
 	LoadShift(rotationID string, shiftNumber int) (*Shift, error)
 	StoreShift(rotationID string, shiftNumber int, shift *Shift) error
+	DeleteShift(rotationID string, shiftNumber int) error
 }
 
 const (
-	ShiftStatusScheduled  = "scheduled"
-	ShiftStatusClosed     = "closed"
-	ShiftStatusInProgress = "inprogress"
+	ShiftStatusOpen      = "open"
+	ShiftStatusCommitted = "committed"
+	ShiftStatusFinished  = "finished"
+	ShiftStatusStarted   = "started"
 )
 
 type Shift struct {
@@ -44,12 +46,12 @@ func NewShift(start, end string, mattermostUserIDs IDMap) *Shift {
 
 func (s *pluginStore) LoadShift(rotationID string, shiftNumber int) (*Shift, error) {
 	key := fmt.Sprintf("%v-%v", rotationID, shiftNumber)
-	shift := Shift{}
-	err := kvstore.LoadJSON(s.shiftKV, key, &shift)
+	shift := NewShift("", "", nil)
+	err := kvstore.LoadJSON(s.shiftKV, key, shift)
 	if err != nil {
 		return nil, err
 	}
-	return &shift, nil
+	return shift, nil
 }
 
 func (s *pluginStore) StoreShift(rotationID string, shiftNumber int, shift *Shift) error {
@@ -60,6 +62,16 @@ func (s *pluginStore) StoreShift(rotationID string, shiftNumber int, shift *Shif
 	}
 	s.Logger.With(bot.LogContext{
 		"Shift": shift,
-	}).Debugf("store: Stored shift")
+	}).Debugf("store: Stored shift %s %v", rotationID, shiftNumber)
+	return nil
+}
+
+func (s *pluginStore) DeleteShift(rotationID string, shiftNumber int) error {
+	key := fmt.Sprintf("%v-%v", rotationID, shiftNumber)
+	err := s.shiftKV.Delete(key)
+	if err != nil {
+		return err
+	}
+	s.Logger.Debugf("store: Deleted shift %s %v", rotationID, shiftNumber)
 	return nil
 }

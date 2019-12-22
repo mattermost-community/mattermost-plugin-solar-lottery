@@ -18,6 +18,13 @@ func (c *Command) help(parameters ...string) (string, error) {
 		c.Config.BuildHash,
 		c.Config.BuildDate)
 	resp += `
+- [ ] shift:
+	- [x] commit: closes the shift for volunteers, notifies selected users.
+	- [ ] fill: adds users to a shift.
+	- [x] finish: finishes a shift.
+	- [x] list: list shifts for a rotation.
+	- [x] open: creates a shift and invites users to volunteer.
+	- [x] start: starts a shift.
 - [x] info: display plugin information.
 - [x] join: add user(s) to rotation.
 - [x] leave: remove user(s) from rotation.
@@ -28,20 +35,13 @@ func (c *Command) help(parameters ...string) (string, error) {
 	- [x] create: create a new rotation.
 	- [x] archive: archives a rotation.
 	- [x] update: modiy rotation's parameters.
-- [ ] shift:
-	- [ ] schedule: creates/updates a scheduled shift for a rotation.
-		- [ ] --in: schedules a user into shift.
-		- [ ] --out: schedules a user in  shift.
-		- [ ] --create: create a new shift
-	- [ ] delete: deletes (resets) a scheduled shift.
-	- [ ] start: starts a shift (??).
-	- [ ] finish: finishes a shift.
 - [x] skill: manage known skills.
 	- [x] list: list skills.
 	- [x] add: add a new skill.
 	- [x] delete: delete a skill.
 - [x] user: manage my profile.
 	- [x] show: show user details.
+- [x] volunteer: add user(s) to an open shift
 `
 	return resp, nil
 }

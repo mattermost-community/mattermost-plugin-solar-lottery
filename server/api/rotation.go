@@ -31,7 +31,7 @@ func (rotation *Rotation) init(api *api) error {
 	return nil
 }
 
-func (api *api) ExpandRotation(rotation *Rotation) error {
+func (api *api) expandRotation(rotation *Rotation) error {
 	if !rotation.StartTime.IsZero() && len(rotation.Users) == len(rotation.MattermostUserIDs) {
 		return nil
 	}
@@ -62,7 +62,7 @@ func withRotation(rotationID string) func(api *api) error {
 
 func withRotationExpanded(rotation *Rotation) func(api *api) error {
 	return func(api *api) error {
-		return api.ExpandRotation(rotation)
+		return api.expandRotation(rotation)
 	}
 }
 
@@ -75,7 +75,7 @@ func withRotationIsNotArchived(rotation *Rotation) func(api *api) error {
 	}
 }
 
-func (rotation *Rotation) shiftNumberForTime(t time.Time) (int, error) {
+func (rotation *Rotation) ShiftNumberForTime(t time.Time) (int, error) {
 	if t.Before(rotation.StartTime) {
 		return 0, errors.Errorf("Time %v is before rotation start %v", t, rotation.StartTime)
 	}
@@ -89,8 +89,11 @@ func (rotation *Rotation) shiftNumberForTime(t time.Time) (int, error) {
 		y, m, d := rotation.StartTime.Date()
 		ty, tm, td := t.Date()
 		n := (ty*12 + int(tm)) - (y*12 + int(m))
-		if td >= d {
-			n++
+		if n <= 0 {
+			return 0, nil
+		}
+		if td < d {
+			n--
 		}
 		return n, nil
 	default:
@@ -98,7 +101,7 @@ func (rotation *Rotation) shiftNumberForTime(t time.Time) (int, error) {
 	}
 }
 
-func (rotation *Rotation) shiftDatesForNumber(shiftNumber int) (time.Time, time.Time, error) {
+func (rotation *Rotation) ShiftDatesForNumber(shiftNumber int) (time.Time, time.Time, error) {
 	var begin, end time.Time
 	switch rotation.Period {
 	case EveryWeek:

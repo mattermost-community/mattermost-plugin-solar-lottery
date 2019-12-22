@@ -33,6 +33,20 @@ func (m *MockShiftStore) EXPECT() *MockShiftStoreMockRecorder {
 	return m.recorder
 }
 
+// DeleteShift mocks base method
+func (m *MockShiftStore) DeleteShift(arg0 string, arg1 int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteShift", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteShift indicates an expected call of DeleteShift
+func (mr *MockShiftStoreMockRecorder) DeleteShift(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteShift", reflect.TypeOf((*MockShiftStore)(nil).DeleteShift), arg0, arg1)
+}
+
 // LoadShift mocks base method
 func (m *MockShiftStore) LoadShift(arg0 string, arg1 int) (*store.Shift, error) {
 	m.ctrl.T.Helper()

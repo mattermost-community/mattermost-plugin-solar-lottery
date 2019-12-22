@@ -12,13 +12,13 @@ import (
 )
 
 type API interface {
-	Users
-	Skills
-	Rotations
-	Forecaster
-
 	bot.Logger
+	Forecaster
 	PluginAPI
+	Rotations
+	Shifts
+	Skills
+	Users
 }
 
 type PluginAPI interface {

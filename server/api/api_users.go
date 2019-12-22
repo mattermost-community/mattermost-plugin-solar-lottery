@@ -20,12 +20,14 @@ type Users interface {
 	// Loads a list of Mattermost usernames as fully-expanded User's
 	AddSkillToUsers(mattermostUsernames, skillName string, level int) error
 	DeleteSkillFromUsers(mattermostUsernames, skillName string) error
-	LoadMattermostUsers(mattermostUsernames string) (UserMap, error)
+	VolunteerUsers(mattermostUsernames string, rotation *Rotation, shiftNumber int) error
 
-	// LoadStoredUser(s) loads only the store.User, leaves MattermostUser as nil
-	// LoadStoredUser(mattermostUserID string) (*User, error)
+	// LoadStoredUsers loads only the store.User, leaves MattermostUser as nil
 	LoadStoredUsers(mattermostUserIDs store.IDMap) (UserMap, error)
+	LoadMattermostUsers(mattermostUsernames string) (UserMap, error)
 }
+
+var ErrUserAlreadyInShift = errors.New("user is already in shift")
 
 func (api *api) GetActingUser() (*User, error) {
 	err := api.Filter(withActingUser)
@@ -93,6 +95,52 @@ func (api *api) DeleteSkillFromUsers(mattermostUsernames, skillName string) erro
 
 	logger.Infof("%s removed skill %s from %s.",
 		MarkdownUser(api.actingUser), skillName, MarkdownUserMapWithSkills(api.users))
+	return nil
+}
+
+func (api *api) VolunteerUsers(mattermostUsernames string, rotation *Rotation, shiftNumber int) error {
+	err := api.Filter(
+		withActingUserExpanded,
+		withMattermostUsersExpanded(mattermostUsernames),
+	)
+	if err != nil {
+		return err
+	}
+	logger := api.Logger.Timed().With(bot.LogContext{
+		"Location":            "api.VolunteerUsers",
+		"ActingUsername":      api.actingUser.MattermostUsername(),
+		"MattermostUsernames": mattermostUsernames,
+		"RotationID":          rotation.RotationID,
+		"ShiftNumber":         shiftNumber,
+	})
+
+	shift, err := api.loadShift(rotation, shiftNumber)
+	if err != nil {
+		return err
+	}
+	if shift.ShiftStatus != store.ShiftStatusOpen {
+		return errors.Errorf("can't volunteer for a status which is %s, must be Open", shift.ShiftStatus)
+	}
+
+	volunteered := UserMap{}
+	for _, user := range api.users {
+		// TODO error if the shift has no vacancies? Or allow volunteering above the limit, and let the committer choose?
+		if shift.Shift.MattermostUserIDs[user.MattermostUserID] != "" {
+			return ErrUserAlreadyInShift
+		}
+		shift.Shift.MattermostUserIDs[user.MattermostUserID] = store.NotEmpty
+		shift.Users[user.MattermostUserID] = user
+		volunteered[user.MattermostUserID] = user
+	}
+
+	err = api.ShiftStore.StoreShift(rotation.RotationID, shiftNumber, shift.Shift)
+	if err != nil {
+		return err
+	}
+
+	api.messageShiftVolunteers(volunteered, rotation, shiftNumber, shift)
+	logger.Infof("%s volunteered %s to %s shift %s.",
+		MarkdownUser(api.actingUser), MarkdownUserMapWithSkills(volunteered), MarkdownRotation(rotation), MarkdownShift(shiftNumber, shift))
 	return nil
 }
 

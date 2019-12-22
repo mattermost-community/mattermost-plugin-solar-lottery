@@ -19,8 +19,8 @@ type Shift struct {
 	Users     UserMap
 }
 
-func (api *api) makeShift(rotation *Rotation, shiftNumber int, users UserMap) (*Shift, error) {
-	start, end, err := rotation.shiftDatesForNumber(shiftNumber)
+func (rotation *Rotation) makeShift(shiftNumber int, users UserMap) (*Shift, error) {
+	start, end, err := rotation.ShiftDatesForNumber(shiftNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (api *api) makeShift(rotation *Rotation, shiftNumber int, users UserMap) (*
 	}, nil
 }
 
-func (shift *Shift) init(api *api) error {
+func (shift *Shift) init() error {
 	start, err := time.Parse(DateFormat, shift.Start)
 	if err != nil {
 		return err
@@ -50,12 +50,12 @@ func (shift *Shift) init(api *api) error {
 	return nil
 }
 
-func (api *api) ExpandShift(shift *Shift) error {
+func (api *api) expandShift(shift *Shift) error {
 	if !shift.StartTime.IsZero() && len(shift.Users) == len(shift.MattermostUserIDs) {
 		return nil
 	}
 
-	err := shift.init(api)
+	err := shift.init()
 	if err != nil {
 		return err
 	}

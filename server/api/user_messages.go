@@ -45,6 +45,76 @@ func (api *api) messageAddedSkill(user *User, skillName string, level int) {
 	}
 }
 
+func (api *api) messageShiftOpened(rotation *Rotation, shiftNumber int, shift *Shift) {
+	api.expandRotation(rotation)
+	api.expandShift(shift)
+
+	for _, user := range rotation.Users {
+		api.Poster.DM(user.MattermostUserID,
+			"Shift %s opened in %s%s.\n"+
+				"Use `/%s volunteer` if you would like to participate.\n",
+			MarkdownShift(shiftNumber, shift), MarkdownRotation(rotation), api.by(user), config.CommandTrigger)
+	}
+}
+
+func (api *api) messageShiftCommitted(rotation *Rotation, shiftNumber int, shift *Shift) {
+	api.expandRotation(rotation)
+	api.expandShift(shift)
+
+	for _, user := range shift.Users {
+		api.Poster.DM(user.MattermostUserID,
+			"You are now committed to shift %s in %s%s.",
+			MarkdownShift(shiftNumber, shift), MarkdownRotation(rotation), api.by(user))
+	}
+}
+
+func (api *api) messageShiftStarted(rotation *Rotation, shiftNumber int, shift *Shift) {
+	api.expandRotation(rotation)
+	api.expandShift(shift)
+
+	for _, user := range shift.Users {
+		api.Poster.DM(user.MattermostUserID,
+			"###### Welcome to your shift in %s!\n"+
+				"Your shift in %s is now started%s. Details:",
+			MarkdownRotation(rotation),
+			MarkdownRotation(rotation), api.by(user), MarkdownShift(shiftNumber, shift))
+	}
+}
+
+func (api *api) messageShiftFinished(rotation *Rotation, shiftNumber int, shift *Shift) {
+	api.expandRotation(rotation)
+	api.expandShift(shift)
+
+	for _, user := range shift.Users {
+		api.Poster.DM(user.MattermostUserID,
+			"###### Done with your shift in %s!\n"+
+				"Your shift in %s is now finished%s. Details:",
+			MarkdownRotation(rotation),
+			MarkdownRotation(rotation), api.by(user), MarkdownShift(shiftNumber, shift))
+	}
+}
+
+func (api *api) messageShiftVolunteers(volunteers UserMap, rotation *Rotation, shiftNumber int, shift *Shift) {
+	api.expandRotation(rotation)
+	api.expandShift(shift)
+
+	// Notify the previous shift users that new volunteers have been added
+	for _, user := range shift.Users {
+		if volunteers[user.MattermostUserID] != nil {
+			continue
+		}
+		api.Poster.DM(user.MattermostUserID,
+			"New volunteers %s added your shift %s %s%s",
+			MarkdownUserMap(volunteers), MarkdownShift(shiftNumber, shift), MarkdownRotation(rotation), api.by(user))
+	}
+
+	for _, user := range volunteers {
+		api.Poster.DM(user.MattermostUserID,
+			"You volunteered for shift %s in %s%s",
+			MarkdownShift(shiftNumber, shift), MarkdownRotation(rotation), api.by(user))
+	}
+}
+
 func (api *api) by(forUser *User) string {
 	if forUser.MattermostUserID == api.actingMattermostUserID {
 		return ""

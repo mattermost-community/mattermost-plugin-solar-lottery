@@ -33,7 +33,7 @@ func (c *Command) forecast(parameters ...string) (string, error) {
 	out := fmt.Sprintf("Rotation %s %v shifts, starting %v:\n", api.MarkdownRotation(rotation), numShifts, startDate)
 	for shiftNumber, shift := range shifts {
 		if shift != nil {
-			out += "- " + api.MarkdownShift(shiftNumber, shift)
+			out += "- " + api.MarkdownShift(shiftNumber, shift) + "\n"
 		}
 	}
 	return out, nil

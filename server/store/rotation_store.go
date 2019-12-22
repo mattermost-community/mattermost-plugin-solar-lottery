@@ -57,12 +57,12 @@ func (s *pluginStore) LoadKnownRotations() (IDMap, error) {
 }
 
 func (s *pluginStore) LoadRotation(rotationID string) (*Rotation, error) {
-	rotation := Rotation{}
-	err := kvstore.LoadJSON(s.rotationKV, rotationID, &rotation)
+	rotation := NewRotation("")
+	err := kvstore.LoadJSON(s.rotationKV, rotationID, rotation)
 	if err != nil {
 		return nil, err
 	}
-	return &rotation, nil
+	return rotation, nil
 }
 
 func (s *pluginStore) StoreKnownRotations(rotations IDMap) error {

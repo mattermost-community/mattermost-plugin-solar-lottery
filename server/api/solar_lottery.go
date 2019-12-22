@@ -17,7 +17,7 @@ import (
 )
 
 func (api *api) loadOrMakeOneShift(rotation *Rotation, shiftNumber int, autofill bool) (*Shift, bool, error) {
-	start, end, err := rotation.shiftDatesForNumber(shiftNumber)
+	start, end, err := rotation.ShiftDatesForNumber(shiftNumber)
 	if err != nil {
 		return nil, false, err
 	}
@@ -30,13 +30,13 @@ func (api *api) loadOrMakeOneShift(rotation *Rotation, shiftNumber int, autofill
 		shift = &Shift{
 			Shift: storedShift,
 		}
-		err = api.ExpandShift(shift)
+		err = api.expandShift(shift)
 
 	case store.ErrNotFound:
 		if !autofill {
 			return nil, false, err
 		}
-		shift, err = api.makeShift(rotation, shiftNumber, nil)
+		shift, err = rotation.makeShift(shiftNumber, nil)
 		if err != nil {
 			return nil, false, err
 		}
@@ -46,15 +46,12 @@ func (api *api) loadOrMakeOneShift(rotation *Rotation, shiftNumber int, autofill
 		return nil, false, err
 	}
 
-	if shift.ShiftStatus != "" {
-		return nil, false, errors.Errorf("can not be scheduled, it is %q", shift.ShiftStatus)
-	}
 	if shift.Start != start.Format(DateFormat) || shift.End != end.Format(DateFormat) {
 		return nil, false, errors.Errorf("loaded shift has wrong dates %v-%v, expected %v-%v",
 			shift.Start, shift.End, start, end)
 	}
 
-	err = api.ExpandShift(shift)
+	err = api.expandShift(shift)
 	if err != nil {
 		return nil, false, err
 	}

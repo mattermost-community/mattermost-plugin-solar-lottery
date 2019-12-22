@@ -99,7 +99,7 @@ func (api *api) AddRotationUsers(rotation *Rotation, mattermostUsernames string,
 		"GraceShifts":         graceShifts,
 	})
 
-	shiftNumber, _ := rotation.shiftNumberForTime(time.Now())
+	shiftNumber, _ := rotation.ShiftNumberForTime(time.Now())
 	added := UserMap{}
 	for _, user := range api.users {
 		if len(rotation.MattermostUserIDs[user.MattermostUserID]) != 0 {

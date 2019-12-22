@@ -78,7 +78,7 @@ func (user *User) Clone() *User {
 }
 
 func (s *pluginStore) LoadUser(mattermostUserId string) (*User, error) {
-	user := NewUser(mattermostUserId)
+	user := NewUser("")
 	err := kvstore.LoadJSON(s.userKV, mattermostUserId, user)
 	if err != nil {
 		return nil, err

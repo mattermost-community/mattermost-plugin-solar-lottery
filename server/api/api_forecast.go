@@ -6,16 +6,13 @@ package api
 import (
 	"time"
 
-	"github.com/pkg/errors"
-
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
 type Forecaster interface {
 	Forecast(rotation *Rotation, startDate string, numShifts int, autofill bool) ([]*Shift, error)
 }
-
-var ErrShiftAlreadyExists = errors.New("Shift already exists")
 
 func (api *api) Forecast(rotation *Rotation, startDate string, numShifts int, autofill bool) ([]*Shift, error) {
 	err := api.Filter(
@@ -38,7 +35,7 @@ func (api *api) Forecast(rotation *Rotation, startDate string, numShifts int, au
 	if err != nil {
 		return nil, err
 	}
-	startingShiftNumber, err := rotation.shiftNumberForTime(startingTime)
+	startingShiftNumber, err := rotation.ShiftNumberForTime(startingTime)
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +51,10 @@ func (api *api) Forecast(rotation *Rotation, startDate string, numShifts int, au
 		var shift *Shift
 		shift, _, err := api.loadOrMakeOneShift(rotation, shiftNumber, autofill)
 		if err != nil {
+			if !autofill && err == store.ErrNotFound {
+				shifts = append(shifts, nil)
+				continue
+			}
 			return nil, err
 		}
 
@@ -66,9 +67,11 @@ func (api *api) Forecast(rotation *Rotation, startDate string, numShifts int, au
 			}
 		}
 
-		err = api.autofillShift(rotation, shiftNumber, shift, autofill)
-		if err != nil {
-			return nil, err
+		if autofill && (shift.ShiftStatus == "" || shift.ShiftStatus == store.ShiftStatusOpen) {
+			err = api.autofillShift(rotation, shiftNumber, shift, autofill)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		// Update shift's users' last served counter, and update the cache in

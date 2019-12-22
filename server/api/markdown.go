@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/mattermost/mattermost-server/v5/model"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
@@ -27,11 +25,11 @@ func MarkdownUserMapWithSkills(m UserMap) string {
 	for _, user := range m {
 		out = append(out, fmt.Sprintf("%s: %s", MarkdownUser(user), MarkdownUserSkills(user)))
 	}
-	return "[" + strings.Join(out, ", ") + "]"
+	return strings.Join(out, ", ")
 }
 
 func MarkdownShift(shiftNumber int, shift *Shift) string {
-	return fmt.Sprintf("%v: %s to %s: %s\n",
+	return fmt.Sprintf("%v: %s to %s: %s",
 		shiftNumber, shift.Start, shift.End, MarkdownUserMapWithSkills(shift.Users))
 }
 func MarkdownUserMap(m UserMap) string {
@@ -39,7 +37,7 @@ func MarkdownUserMap(m UserMap) string {
 	for _, user := range m {
 		out = append(out, MarkdownUser(user))
 	}
-	return "[" + strings.Join(out, ", ") + "]"
+	return strings.Join(out, ", ")
 }
 
 func MarkdownUserWithSkills(user *User) string {
@@ -48,7 +46,7 @@ func MarkdownUserWithSkills(user *User) string {
 
 func MarkdownUser(user *User) string {
 	if user.MattermostUser != nil {
-		return fmt.Sprintf("[%s](@%s)", user.MattermostUser.GetDisplayName(model.SHOW_NICKNAME_FULLNAME), user.MattermostUser.Username)
+		return fmt.Sprintf("@%s", user.MattermostUser.Username)
 	} else {
 		return fmt.Sprintf("userID:`%s`", user.MattermostUserID)
 	}

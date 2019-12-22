@@ -211,31 +211,39 @@ func withRotationOptions(fs *pflag.FlagSet, size *int, paddingWeeks *int) {
 	fs.IntVar(paddingWeeks, "padding", 0, "makes each user's shift  padded by this many weeks of unavailability, on each side")
 }
 
-func withRotationID(fs *pflag.FlagSet, rotationID *string) {
-	fs.StringVar(rotationID, "id", "", "provide rotation ID instead of name")
+func withRotationID(fs *pflag.FlagSet, rotationID, rotationName *string) {
+	fs.StringVar(rotationID, "rotation-id", "", "specify rotation ID")
+	fs.StringVar(rotationName, "rotation-name", "", "specify rotation name")
 }
 
 func (c *Command) parseRotationFlagsAndLoad(fs *pflag.FlagSet, parameters []string, subcommand string) (*api.Rotation, error) {
-	var id string
-	withRotationID(fs, &id)
+	var id, name string
+	withRotationID(fs, &id, &name)
 	err := fs.Parse(parameters)
+	arg := fs.Arg(0)
 	switch {
 	case err != nil:
 		return nil, errors.Errorf("**%s**\n\n%s", err.Error(), commandUsage(subcommand, fs))
 
-	case id != "" && len(fs.Args()) != 0:
-		return nil, errors.Errorf("**can not specify rotation name and --id**\n\n%s", commandUsage(subcommand, fs))
+	case id == "" && arg == "" && name == "":
+		return nil, errors.Errorf("**Rotation is not specified**\n\n%s", commandUsage(subcommand, fs))
+
+	case id != "" && arg != "" && name != "",
+		id != "" && name != "",
+		id != "" && arg != "",
+		arg != "" && name != "":
+		return nil, errors.Errorf("**rotation is specified multiple times**\n\n%s", commandUsage(subcommand, fs))
 
 	case id != "":
 		return c.API.LoadRotation(id)
 
-	case len(fs.Args()) > 1:
-		return nil, errors.New(commandUsage(subcommand, fs))
-
-	case fs.Arg(0) != "":
-		return c.API.LoadRotationNamed(fs.Arg(0))
+	case arg != "", name != "":
+		if name == "" {
+			name = arg
+		}
+		return c.API.LoadRotationNamed(name)
 	}
-	return nil, errors.New("unreachable)")
+	return nil, errors.New("unreachable go silly")
 }
 
 func withRotationNeed(fs *pflag.FlagSet, name, skill, level *string, min, max *int, removeName *string) {

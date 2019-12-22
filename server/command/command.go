@@ -66,10 +66,14 @@ func (c *Command) Handle() (string, error) {
 		handler = c.rotation
 	case "user":
 		handler = c.user
+	case "shift":
+		handler = c.shift
 	case "join":
 		handler = c.join
 	case "leave":
 		handler = c.leave
+	case "volunteer":
+		handler = c.volunteer
 	}
 	out, err := handler(parameters...)
 	if err != nil {
