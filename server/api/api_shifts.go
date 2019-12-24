@@ -4,8 +4,6 @@
 package api
 
 import (
-	"time"
-
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
@@ -14,7 +12,7 @@ import (
 
 type Shifts interface {
 	CommitShift(rotation *Rotation, shiftNumber int) error
-	ListShifts(rotation *Rotation, startDate string, numShifts int) ([]*Shift, error)
+	ListShifts(rotation *Rotation, shiftNumber, numShifts int) ([]*Shift, error)
 	OpenShift(*Rotation, int) (*Shift, error)
 	StartShift(rotation *Rotation, shiftNumber int) error
 	FinishShift(rotation *Rotation, shiftNumber int) error
@@ -140,7 +138,7 @@ func (api *api) FinishShift(rotation *Rotation, shiftNumber int) error {
 	return nil
 }
 
-func (api *api) ListShifts(rotation *Rotation, startDate string, numShifts int) ([]*Shift, error) {
+func (api *api) ListShifts(rotation *Rotation, shiftNumber, numShifts int) ([]*Shift, error) {
 	err := api.Filter(
 	// withActingUser,
 	)
@@ -148,17 +146,8 @@ func (api *api) ListShifts(rotation *Rotation, startDate string, numShifts int) 
 		return nil, err
 	}
 
-	starting, err := time.Parse(DateFormat, startDate)
-	if err != nil {
-		return nil, err
-	}
-	n, err := rotation.ShiftNumberForTime(starting)
-	if err != nil {
-		return nil, err
-	}
-
 	shifts := []*Shift{}
-	for i := n; i < n+numShifts; i++ {
+	for i := shiftNumber; i < shiftNumber+numShifts; i++ {
 		var shift *Shift
 		shift, err = api.loadShift(rotation, i)
 		if err != nil {
@@ -167,7 +156,6 @@ func (api *api) ListShifts(rotation *Rotation, startDate string, numShifts int) 
 			}
 			continue
 		}
-
 		shifts = append(shifts, shift)
 	}
 

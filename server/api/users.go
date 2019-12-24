@@ -25,7 +25,7 @@ func (m UserMap) IDMap() store.IDMap {
 
 func (api *api) ExpandUserMap(users UserMap) error {
 	for _, user := range users {
-		err := api.ExpandUser(user)
+		err := api.expandUser(user)
 		if err != nil {
 			return err
 		}

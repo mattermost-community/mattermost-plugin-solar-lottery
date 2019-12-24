@@ -23,7 +23,8 @@ type Rotations interface {
 	DeleteRotationUsers(rotation *Rotation, mattermostUsernames string) (deleted UserMap, err error)
 	LoadKnownRotations() (store.IDMap, error)
 	LoadRotation(string) (*Rotation, error)
-	LoadRotationNamed(namePattern string) (*Rotation, error)
+	DebugDeleteRotation(string) error
+	ResolveRotationName(namePattern string) ([]string, error)
 	UpdateRotation(*Rotation, func(*Rotation) error) error
 }
 
@@ -164,6 +165,33 @@ func (api *api) ArchiveRotation(rotation *Rotation) error {
 	return nil
 }
 
+func (api *api) DebugDeleteRotation(rotationID string) error {
+	err := api.Filter(
+		withActingUserExpanded,
+	)
+	if err != nil {
+		return err
+	}
+	logger := api.Logger.Timed().With(bot.LogContext{
+		"Location":       "api.DebugDeleteRotation",
+		"ActingUsername": api.actingUser.MattermostUsername(),
+		"RotationID":     rotationID,
+	})
+
+	err = api.RotationStore.DeleteRotation(rotationID)
+	if err != nil {
+		return err
+	}
+	delete(api.knownRotations, rotationID)
+	err = api.RotationStore.StoreKnownRotations(api.knownRotations)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to store rotation %s", rotationID)
+	}
+
+	logger.Infof("%s deleted rotation %s.", MarkdownUser(api.actingUser), rotationID)
+	return nil
+}
+
 func (api *api) DeleteRotationUsers(rotation *Rotation, mattermostUsernames string) (UserMap, error) {
 	err := api.Filter(
 		withActingUserExpanded,
@@ -245,7 +273,7 @@ func (api *api) LoadRotation(rotationID string) (*Rotation, error) {
 	return rotation, nil
 }
 
-func (api *api) LoadRotationNamed(namePattern string) (*Rotation, error) {
+func (api *api) ResolveRotationName(namePattern string) ([]string, error) {
 	err := api.Filter(
 		withKnownRotations,
 	)
@@ -253,20 +281,17 @@ func (api *api) LoadRotationNamed(namePattern string) (*Rotation, error) {
 		return nil, err
 	}
 
-	found := ""
+	ids := []string{}
 	re, err := regexp.Compile(`.*` + namePattern + `.*`)
 	if err != nil {
 		return nil, err
 	}
 	for id, name := range api.knownRotations {
 		if re.MatchString(name) {
-			if found != "" {
-				return nil, ErrMultipleResults
-			}
-			found = id
+			ids = append(ids, id)
 		}
 	}
-	return api.LoadRotation(found)
+	return ids, nil
 }
 
 func (api *api) UpdateRotation(rotation *Rotation, updatef func(*Rotation) error) error {

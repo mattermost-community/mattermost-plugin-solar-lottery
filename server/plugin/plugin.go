@@ -113,24 +113,16 @@ func (p *Plugin) OnConfigurationChange() error {
 
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
 	apiconf := p.newAPIConfig()
-	api := api.New(apiconf, args.UserId)
 	command := command.Command{
 		Context:   c,
 		Args:      args,
 		ChannelID: args.ChannelId,
 		Config:    apiconf.Config,
-		API:       api,
+		API:       api.New(apiconf, args.UserId),
 	}
 
-	out, err := command.Handle()
-	if err != nil {
-		p.API.LogError(err.Error())
-		return &model.CommandResponse{
-			ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-			Text:         err.Error(),
-		}, nil
-	}
-	// apiconf.Poster.Ephemeral(args.UserId, args.ChannelId, out)
+	out, _ := command.Handle()
+
 	return &model.CommandResponse{
 		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
 		Text:         out,

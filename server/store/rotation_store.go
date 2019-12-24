@@ -12,6 +12,7 @@ type RotationStore interface {
 	LoadKnownRotations() (IDMap, error)
 	StoreKnownRotations(IDMap) error
 	LoadRotation(string) (*Rotation, error)
+	DeleteRotation(rotationID string) error
 	StoreRotation(*Rotation) error
 }
 
@@ -26,10 +27,10 @@ type Rotation struct {
 	Start  string
 
 	// Optional attributes
-	Size              int             `json:",omitempty"`
-	PaddingWeeks      int             `json:",omitempty"`
-	MattermostUserIDs IDMap           `json:",omitempty"`
-	Needs             map[string]Need `json:",omitempty"`
+	Size              int    `json:",omitempty"`
+	PaddingWeeks      int    `json:",omitempty"`
+	MattermostUserIDs IDMap  `json:",omitempty"`
+	Needs             []Need `json:",omitempty"`
 }
 
 type Need struct {
@@ -43,7 +44,7 @@ func NewRotation(name string) *Rotation {
 	return &Rotation{
 		Name:              name,
 		MattermostUserIDs: IDMap{},
-		Needs:             map[string]Need{},
+		Needs:             []Need{},
 	}
 }
 

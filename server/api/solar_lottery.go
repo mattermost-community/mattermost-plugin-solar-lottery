@@ -189,30 +189,25 @@ func userWeight(rotation *Rotation, user *User, shiftNumber int) float64 {
 	return math.Pow(2.0, float64(shiftNumber-last))
 }
 
-func userIsAvailable(user *User, start, end time.Time) bool {
-	//TODO userIsAvailable
-	return true
-}
-
 // To simplify redundant checks, users that are currently serving in shift(s),
 // qualify but will have 0 probability anyway so should never be chosen.
 func (api *api) userIsQualifiedForShift(user *User, rotation *Rotation, shiftUsers UserMap,
-	start, end time.Time, unsatisfiedNeeds map[string]store.Need) bool {
+	start, end time.Time, unsatisfiedNeeds []store.Need) bool {
 
-	if !userIsAvailable(user, start, end) {
+	if !user.IsAvailable(start, end) {
 		api.Logger.Debugf("DISQUALIFY user %v: NOT AVAILABLE", usernameWithSkills(user))
 		return false
 	}
 
 	// disqualify from any maxed out needs
-	for needName, need := range rotation.Needs {
+	for _, need := range rotation.Needs {
 		if need.Max <= 0 || !api.userIsQualifiedForNeed(user, need) {
 			continue
 		}
 
 		if len(api.usersQualifiedForNeed(shiftUsers, need)) >= need.Max {
-			api.Logger.Debugf("DISQUALIFY user %s, would exceed the max `%v` on `%s`",
-				usernameWithSkills(user), need.Max, needName)
+			// api.Logger.Debugf("DISQUALIFY user %s, would exceed the max `%v` on %s",
+			// 	usernameWithSkills(user), need.Max, MarkdownNeed(need))
 			return false
 		}
 	}
@@ -228,7 +223,7 @@ func (api *api) userIsQualifiedForShift(user *User, rotation *Rotation, shiftUse
 		}
 		return true
 	}
-	api.Logger.Debugf("DISQUALIFY user %s skills did not qualify.", usernameWithSkills(user))
+	// api.Logger.Debugf("DISQUALIFY user %s skills did not qualify.", usernameWithSkills(user))
 	return false
 }
 
@@ -247,9 +242,9 @@ func (api *api) usersQualifiedForNeed(users UserMap, need store.Need) UserMap {
 	return qualified
 }
 
-func (api *api) unsatisfiedNeeds(needs map[string]store.Need, users UserMap) map[string]store.Need {
-	unsatisfied := map[string]store.Need{}
-	for name, need := range needs {
+func (api *api) unsatisfiedNeeds(needs []store.Need, users UserMap) []store.Need {
+	unsatisfied := []store.Need{}
+	for _, need := range needs {
 		cQualified := 0
 		for _, user := range users {
 			if api.userIsQualifiedForNeed(user, need) {
@@ -257,7 +252,7 @@ func (api *api) unsatisfiedNeeds(needs map[string]store.Need, users UserMap) map
 			}
 		}
 		if cQualified < need.Min {
-			unsatisfied[name] = need
+			unsatisfied = append(unsatisfied, need)
 		}
 	}
 	return unsatisfied

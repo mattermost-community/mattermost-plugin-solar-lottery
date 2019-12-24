@@ -9,7 +9,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 )
 
-func (c *Command) info(parameters ...string) (string, error) {
+func (c *Command) info(parameters []string) (string, error) {
 	resp := fmt.Sprintf("Mattermost Solar Lottery plugin version: %s, "+
 		"[%s](https://github.com/mattermost/%s/commit/%s), built %s\n",
 		c.Config.PluginVersion,

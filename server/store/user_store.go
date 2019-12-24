@@ -46,14 +46,20 @@ type User struct {
 }
 
 const (
-	EventTypeShift = "shift"
-	EventTypeOther = "other"
+	EventTypeShift   = "shift"
+	EventTypePadding = "padding"
+	EventTypeOther   = "other"
 )
 
 type Event struct {
 	Type string
 	From string // time.RFC3339
 	To   string // time.RFC3339
+
+	// Rotation and ShiftNumber identify the shift for Shift and Padding event
+	// types.
+	RotationID  string
+	ShiftNumber int
 }
 
 type Settings struct {

@@ -18,7 +18,7 @@ type Users interface {
 
 	// Operations on lists of Mattermost usernames
 	// Loads a list of Mattermost usernames as fully-expanded User's
-	AddSkillToUsers(mattermostUsernames, skillName string, level int) error
+	AddSkillToUsers(mattermostUsernames, skillName string, level Level) error
 	DeleteSkillFromUsers(mattermostUsernames, skillName string) error
 	VolunteerUsers(mattermostUsernames string, rotation *Rotation, shiftNumber int) error
 
@@ -37,7 +37,7 @@ func (api *api) GetActingUser() (*User, error) {
 	return api.actingUser, nil
 }
 
-func (api *api) AddSkillToUsers(mattermostUsernames, skillName string, level int) error {
+func (api *api) AddSkillToUsers(mattermostUsernames, skillName string, level Level) error {
 	err := api.Filter(
 		withActingUserExpanded,
 		withMattermostUsersExpanded(mattermostUsernames),
@@ -116,7 +116,7 @@ func (api *api) VolunteerUsers(mattermostUsernames string, rotation *Rotation, s
 
 	shift, err := api.loadShift(rotation, shiftNumber)
 	if err != nil {
-		return err
+		return errors.Errorf("failed to load shift %v for rotation %s", shiftNumber, rotation.RotationID)
 	}
 	if shift.ShiftStatus != store.ShiftStatusOpen {
 		return errors.Errorf("can't volunteer for a status which is %s, must be Open", shift.ShiftStatus)

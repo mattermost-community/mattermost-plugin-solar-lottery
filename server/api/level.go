@@ -3,10 +3,17 @@
 
 package api
 
-import "github.com/pkg/errors"
+import (
+	"github.com/pkg/errors"
+	"github.com/spf13/pflag"
+)
+
+type Level int
+
+var _ pflag.Value = (*Level)(nil)
 
 const (
-	Beginner = 1 + iota
+	Beginner = Level(1) + iota
 	Intermediate
 	Advanced
 	Expert
@@ -23,22 +30,8 @@ const (
 	LevelIntermediateSymbol = "▣"
 )
 
-func ParseLevel(l string) (int, error) {
-	switch l {
-	case LevelBeginner, LevelBeginnerSymbol:
-		return Beginner, nil
-	case LevelIntermediate, LevelIntermediateSymbol:
-		return Intermediate, nil
-	case LevelAdvanced, LevelAdvancedSymbol:
-		return Advanced, nil
-	case LevelExpert, LevelExpertSymbol:
-		return Expert, nil
-	}
-	return 0, errors.Errorf("%s is not a valid skill level", l)
-}
-
-func LevelToString(l int) string {
-	switch l {
+func (level Level) String() string {
+	switch level {
 	case Beginner:
 		return LevelBeginnerSymbol
 	case Intermediate:
@@ -49,4 +42,36 @@ func LevelToString(l int) string {
 		return LevelExpertSymbol
 	}
 	return "none"
+}
+
+func (level *Level) Type() string {
+	return "skill_level"
+}
+
+func (level *Level) Set(in string) error {
+	switch in {
+	case LevelBeginner,
+		LevelBeginnerSymbol,
+		LevelBeginner + LevelBeginnerSymbol:
+		*level = Beginner
+
+	case LevelIntermediate,
+		LevelIntermediateSymbol,
+		LevelIntermediate + LevelIntermediateSymbol:
+		*level = Intermediate
+
+	case LevelAdvanced,
+		LevelAdvancedSymbol,
+		LevelAdvanced + LevelAdvancedSymbol:
+		*level = Advanced
+
+	case LevelExpert,
+		LevelExpertSymbol,
+		LevelExpert + LevelExpertSymbol:
+		*level = Expert
+
+	default:
+		return errors.Errorf("%s is not a valid skill level", in)
+	}
+	return nil
 }

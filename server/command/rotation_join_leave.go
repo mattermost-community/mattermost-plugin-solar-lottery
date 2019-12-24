@@ -11,14 +11,24 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-func (c *Command) join(parameters ...string) (string, error) {
+func (c *Command) join(parameters []string) (string, error) {
+	var rotationID, rotationName string
 	users := ""
 	graceShifts := 0
-	fs := flag.NewFlagSet("join", flag.ContinueOnError)
-	fs.StringVar(&users, "users", "", "add nother users to rotation.")
-	fs.IntVar(&graceShifts, "grace", 0, "start with N grace shifts.")
+	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs.StringVar(&users, flagUsers, "", "add nother users to rotation.")
+	fs.IntVar(&graceShifts, flagGrace, 0, "start with N grace shifts.")
+	withRotationFlags(fs, &rotationID, &rotationName)
+	err := fs.Parse(parameters)
+	if err != nil {
+		return subusage("rotation archive", fs), err
+	}
 
-	rotation, err := c.parseRotationFlagsAndLoad(fs, parameters, "join <rotation-name>")
+	rotationID, err = c.parseRotationFlags(rotationID, rotationName)
+	if err != nil {
+		return "", err
+	}
+	rotation, err := c.API.LoadRotation(rotationID)
 	if err != nil {
 		return "", err
 	}
@@ -31,12 +41,22 @@ func (c *Command) join(parameters ...string) (string, error) {
 	return fmt.Sprintf("%s joined rotation %s", api.MarkdownUserMap(added), rotation.Name), nil
 }
 
-func (c *Command) leave(parameters ...string) (string, error) {
+func (c *Command) leave(parameters []string) (string, error) {
+	var rotationID, rotationName string
 	users := ""
-	fs := flag.NewFlagSet("leave", flag.ContinueOnError)
-	fs.StringVar(&users, "users", "", "remove other users from rotation.")
+	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs.StringVar(&users, flagUsers, "", "remove other users from rotation.")
+	withRotationFlags(fs, &rotationID, &rotationName)
+	err := fs.Parse(parameters)
+	if err != nil {
+		return subusage("rotation archive", fs), err
+	}
 
-	rotation, err := c.parseRotationFlagsAndLoad(fs, parameters, "leave <rotation-name>")
+	rotationID, err = c.parseRotationFlags(rotationID, rotationName)
+	if err != nil {
+		return "", err
+	}
+	rotation, err := c.API.LoadRotation(rotationID)
 	if err != nil {
 		return "", err
 	}

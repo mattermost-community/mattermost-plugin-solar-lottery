@@ -7,8 +7,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (api *api) updateUserSkill(user *User, skillName string, level int) (*User, error) {
-	if user.SkillLevels[skillName] == level {
+func (api *api) updateUserSkill(user *User, skillName string, level Level) (*User, error) {
+	if user.SkillLevels[skillName] == int(level) {
 		// nothing to do
 		api.Logger.Debugf("nothing to do for user %s, already has skill %s (%v)", MarkdownUser(user), skillName, level)
 		return user, nil
@@ -21,7 +21,7 @@ func (api *api) updateUserSkill(user *User, skillName string, level int) (*User,
 		}
 		delete(user.SkillLevels, skillName)
 	} else {
-		user.SkillLevels[skillName] = level
+		user.SkillLevels[skillName] = int(level)
 	}
 
 	user, err := api.storeUserWelcomeNew(user)

@@ -10,7 +10,7 @@ func (api *api) messageWelcomeNewUser(user *User) {
 		return
 	}
 
-	api.ExpandUser(user)
+	api.expandUser(user)
 	api.Poster.DM(user.MattermostUserID,
 		"###### Welcome to Solar Lottery!\n"+
 			"You have been added to the Solar Lottery team rotation scheduler%s. Please use `%s help` for more information."+
@@ -31,16 +31,16 @@ func (api *api) messageLeftRotation(user *User, rotation *Rotation) {
 }
 
 func (api *api) messageAddedSkill(user *User, skillName string, level int) {
-	api.ExpandUser(user)
+	api.expandUser(user)
 	if level == 0 {
 		api.Poster.DM(user.MattermostUserID,
-			"Skill %v, level %v was added to your profile%s.\n"+
-				"Your current skills are: %s\n",
-			skillName, LevelToString(level), api.by(user), MarkdownUserSkills(user))
+			"Skill %s, level %s was added to your profile%s.\n"+
+				"Your current skills are: %s.\n",
+			skillName, Level(level), api.by(user), MarkdownUserSkills(user))
 	} else {
 		api.Poster.DM(user.MattermostUserID,
 			"Skill %v was deleted from your profile%s.\n"+
-				"Your current skills are: %s\n",
+				"Your current skills are: %s.\n",
 			skillName, api.by(user), MarkdownUserSkills(user))
 	}
 }
@@ -119,6 +119,6 @@ func (api *api) by(forUser *User) string {
 	if forUser.MattermostUserID == api.actingMattermostUserID {
 		return ""
 	}
-	api.ExpandUser(api.actingUser)
+	api.expandUser(api.actingUser)
 	return " by " + MarkdownUser(api.actingUser)
 }

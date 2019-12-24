@@ -12,12 +12,11 @@ import (
 
 	"github.com/mattermost/mattermost-server/v5/model"
 
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api/mock_api"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
-
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api/mock_api"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store/mock_store"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
 // A rotation requires 3 users, 4 different skills.
@@ -224,10 +223,10 @@ func TestPrepareShiftHappy(t *testing.T) {
 			Start:      "2020-01-16",
 			Period:     EveryMonth,
 			Size:       3,
-			Needs: map[string]store.Need{
-				"server-junior": needOne("server", 1),
-				"webapp":        needOne("webapp", 2),
-				"mobile":        needOne("mobile", 1),
+			Needs: []store.Need{
+				needOne("server", 1),
+				needOne("webapp", 2),
+				needOne("mobile", 1),
 			},
 		},
 		Users: UserMap{},
@@ -255,8 +254,8 @@ func TestPrepareShiftEvenDistribution(t *testing.T) {
 			Start:  "2020-01-16",
 			Period: EveryMonth,
 			Size:   1,
-			Needs: map[string]store.Need{
-				"webapp": needOne("webapp", 1),
+			Needs: []store.Need{
+				needOne("webapp", 1),
 			},
 		},
 	}

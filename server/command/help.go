@@ -7,9 +7,10 @@ import (
 	"fmt"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
+	"github.com/spf13/pflag"
 )
 
-func (c *Command) help(parameters ...string) (string, error) {
+func (c *Command) help(parameters []string) (string, error) {
 	resp := fmt.Sprintf("Mattermost Solar Lottery plugin version: %s, "+
 		"[%s](https://github.com/mattermost/%s/commit/%s), built %s\n",
 		c.Config.PluginVersion,
@@ -17,31 +18,70 @@ func (c *Command) help(parameters ...string) (string, error) {
 		config.Repository,
 		c.Config.BuildHash,
 		c.Config.BuildDate)
+
 	resp += `
-- [ ] shift:
-	- [x] commit: closes the shift for volunteers, notifies selected users.
-	- [ ] fill: adds users to a shift.
-	- [x] finish: finishes a shift.
-	- [x] list: list shifts for a rotation.
-	- [x] open: creates a shift and invites users to volunteer.
-	- [x] start: starts a shift.
+- [-] add
+	- [x] rotation
+	- [-] shift
+	- [x] skill
+
+- [ ] delete
+	- [-] debug-rotation
+	- [-] debug-shift
+	- [-] skill
+
+- [ ] show
+	- [x] rotation
+	- [ ] shift
+	- [x] user
+
+- [ ] forecast
+	- [ ] schedule
+	- [ ] heat
+
+- [ ] list
+	- [x] rotation
+	- [-] shift
+	- [x] skill
+	- [ ] user
+
+- [ ] rotation
+	- [x] archive: archive rotation.
+	- [ ] debug-delete
+	- [ ] show: same as "show rotation"
+	- [ ] add: same as "add rotation"
+	- [x] update
+	
+- [ ] need
+
+- [ ] join: add user(s) to rotation.
+
+- [ ] leave: remove user(s) from rotation.
+
+- [ ] shift
+	- [-] join: add user(s) to shift.
+	- [ ] leave: remove user(s) from shift.
+	- [ ] fill: evaluates shift readiness, autofills.
+	- [-] commit: closes the shift for volunteers, notifies selected users.
+	- [-] finish: finishes a shift.
+	- [-] start: starts a shift.
+	- [x] add
+
 - [x] info: display plugin information.
-- [x] join: add user(s) to rotation.
-- [x] leave: remove user(s) from rotation.
-- [x] rotation: manage rotations.
-	- [x] list: list rotations.
-	- [x] show: show rotation details.
-	- [x] forecast: show rotation forecast.
-	- [x] create: create a new rotation.
-	- [x] archive: archives a rotation.
-	- [x] update: modiy rotation's parameters.
-- [x] skill: manage known skills.
-	- [x] list: list skills.
-	- [x] add: add a new skill.
-	- [x] delete: delete a skill.
-- [x] user: manage my profile.
-	- [x] show: show user details.
-- [x] volunteer: add user(s) to an open shift
+
+- [ ] user: manage my profile.
+	- [x] show [--users] 
+	- [ ] unavailable: --from --to [--clear] [--type=unavailable]
+	- [-] qualify --skill --level --users
+	- [ ] disqualify --skill --users
 `
 	return resp, nil
+}
+
+func subusage(command string, fs *pflag.FlagSet) string {
+	if fs == nil {
+		return fmt.Sprintf("Usage:\n```\n/%s %s```\n", config.CommandTrigger, command)
+	}
+	return fmt.Sprintf("Usage:\n```\n/%s %s [flags...]\n\n%s```\n",
+		config.CommandTrigger, command, fs.FlagUsages())
 }

@@ -55,7 +55,7 @@ func MarkdownUser(user *User) string {
 func MarkdownUserSkills(user *User) string {
 	skills := []string{}
 	for s, l := range user.SkillLevels {
-		skills = append(skills, MarkdownSkillLevel(s, l))
+		skills = append(skills, MarkdownSkillLevel(s, Level(l)))
 	}
 
 	if len(skills) == 0 {
@@ -65,34 +65,30 @@ func MarkdownUserSkills(user *User) string {
 	return fmt.Sprintf("(%s)", ss)
 }
 
-func MarkdownSkillLevel(skillName string, level int) string {
-	return fmt.Sprintf("%s%s", LevelToString(level), skillName)
+func MarkdownSkillLevel(skillName string, level Level) string {
+	return fmt.Sprintf("%s%s", Level(level).String(), skillName)
 }
 
-func MarkdownNeed(needName string, need store.Need) string {
-	prefix := ""
-	if needName != "" {
-		prefix += "**" + needName + "**: "
-	}
+func MarkdownNeed(need store.Need) string {
 	if need.Max == 0 {
-		return fmt.Sprintf("%s%v %s", prefix, need.Min, MarkdownSkillLevel(need.Skill, need.Level))
+		return fmt.Sprintf("%v of %s", need.Min, MarkdownSkillLevel(need.Skill, Level(need.Level)))
 	} else {
-		return fmt.Sprintf("%s%v(%v) %s", prefix, need.Min, need.Max, MarkdownSkillLevel(need.Skill, need.Level))
+		return fmt.Sprintf("%v(%v) of %s", need.Min, need.Max, MarkdownSkillLevel(need.Skill, Level(need.Level)))
 	}
 }
 
-func MarkdownNeeds(needs map[string]store.Need) string {
+func MarkdownNeeds(needs []store.Need) string {
 	out := []string{}
 	for _, need := range needs {
-		out = append(out, MarkdownNeed("", need))
+		out = append(out, MarkdownNeed(need))
 	}
 	return strings.Join(out, ", ")
 }
 
 func MarkdownNeedsList(needs map[string]store.Need, indent string) string {
 	out := ""
-	for name, need := range needs {
-		out += indent + "- " + MarkdownNeed(name, need) + "\n"
+	for _, need := range needs {
+		out += indent + "- " + MarkdownNeed(need) + "\n"
 	}
 	return out
 }

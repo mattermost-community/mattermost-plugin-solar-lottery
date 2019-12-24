@@ -17,9 +17,9 @@ type Period struct {
 var _ pflag.Value = (*Period)(nil)
 
 const (
-	EveryWeek     = "1week"
-	EveryTwoWeeks = "2weeks"
-	EveryMonth    = "month"
+	EveryWeek     = "1w"
+	EveryTwoWeeks = "2w"
+	EveryMonth    = "1m"
 )
 
 func (p *Period) String() string {
@@ -32,11 +32,11 @@ func (p *Period) Type() string {
 
 func (p *Period) Set(in string) error {
 	switch strings.ToLower(in) {
-	case EveryWeek, "w", "1w":
+	case EveryWeek, "w", "week":
 		p.value = EveryWeek
-	case EveryTwoWeeks, "2w":
+	case EveryTwoWeeks, "2weeks", "biweekly", "bi-weekly":
 		p.value = EveryTwoWeeks
-	case EveryMonth, "m", "1m":
+	case EveryMonth, "m", "month":
 		p.value = EveryMonth
 	default:
 		return errors.Errorf("period must be `%s`, `%s` or `%s`", EveryWeek, EveryTwoWeeks, EveryMonth)

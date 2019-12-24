@@ -4,6 +4,8 @@
 package api
 
 import (
+	"time"
+
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
@@ -16,7 +18,32 @@ type User struct {
 	MattermostUser *model.User
 }
 
-func (api *api) ExpandUser(user *User) error {
+func (user *User) IsAvailable(start, end time.Time) bool {
+	for _, event := range user.Calendar {
+		s, err := time.Parse(DateFormat, event.From)
+		if err != nil {
+			return false
+		}
+		e, err := time.Parse(DateFormat, event.To)
+		if err != nil {
+			return false
+		}
+
+		if s.Before(start) {
+			s = start
+		}
+		if e.After(end) {
+			e = end
+		}
+
+		if s.Before(e) {
+			return false
+		}
+	}
+	return true
+}
+
+func (api *api) expandUser(user *User) error {
 	if user.MattermostUser != nil {
 		return nil
 	}
@@ -61,7 +88,7 @@ func withActingUserExpanded(api *api) error {
 	if err != nil {
 		return err
 	}
-	return api.ExpandUser(api.actingUser)
+	return api.expandUser(api.actingUser)
 }
 
 func (api *api) loadOrMakeStoredUser(mattermostUserID string) (*User, bool, error) {

@@ -129,20 +129,28 @@ func (rotation *Rotation) ShiftDatesForNumber(shiftNumber int) (time.Time, time.
 	return begin, end, nil
 }
 
-func (rotation *Rotation) ChangeNeed(needName string, need store.Need) {
-	if rotation.Needs == nil {
-		rotation.Needs = map[string]store.Need{}
+func (rotation *Rotation) ChangeNeed(skill string, level Level, newNeed store.Need) {
+	for i, need := range rotation.Needs {
+		if need.Skill == skill && need.Level == int(level) {
+			rotation.Needs[i] = newNeed
+			return
+		}
 	}
-	rotation.Needs[needName] = need
+	rotation.Needs = append(rotation.Needs, newNeed)
 }
 
-func (rotation *Rotation) DeleteNeed(needName string) error {
-	_, ok := rotation.Needs[needName]
-	if !ok {
-		return errors.Errorf("%s is not found in rotation %s", needName, MarkdownRotation(rotation))
+func (rotation *Rotation) DeleteNeed(skill string, level Level) error {
+	for i, need := range rotation.Needs {
+		if need.Skill == skill && need.Level == int(level) {
+			newNeeds := append([]store.Need{}, rotation.Needs[:i]...)
+			if i+1 < len(rotation.Needs) {
+				newNeeds = append(newNeeds, rotation.Needs[i+1:]...)
+			}
+			rotation.Needs = newNeeds
+			return nil
+		}
 	}
-	delete(rotation.Needs, needName)
-	return nil
+	return errors.Errorf("%s is not found in rotation %s", MarkdownSkillLevel(skill, level), MarkdownRotation(rotation))
 }
 
 func (api *api) deleteUsersFromRotation(users UserMap, rotation *Rotation) error {

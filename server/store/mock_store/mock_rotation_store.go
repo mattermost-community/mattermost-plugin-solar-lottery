@@ -33,6 +33,20 @@ func (m *MockRotationStore) EXPECT() *MockRotationStoreMockRecorder {
 	return m.recorder
 }
 
+// DeleteRotation mocks base method
+func (m *MockRotationStore) DeleteRotation(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteRotation", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteRotation indicates an expected call of DeleteRotation
+func (mr *MockRotationStoreMockRecorder) DeleteRotation(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRotation", reflect.TypeOf((*MockRotationStore)(nil).DeleteRotation), arg0)
+}
+
 // LoadKnownRotations mocks base method
 func (m *MockRotationStore) LoadKnownRotations() (store.IDMap, error) {
 	m.ctrl.T.Helper()

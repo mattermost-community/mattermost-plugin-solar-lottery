@@ -10,11 +10,11 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func (c *Command) volunteer(parameters ...string) (string, error) {
+func (c *Command) joinShift(parameters []string) (string, error) {
 	var usernames string
 	return c.doShift(parameters,
 		func(fs *pflag.FlagSet) {
-			fs.StringVar(&usernames, "users", "", "add nother users to rotation.")
+			fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "add nother users to rotation.")
 		},
 		func(rotation *api.Rotation, shiftNumber int) (string, error) {
 			err := c.API.VolunteerUsers(usernames, rotation, shiftNumber)
