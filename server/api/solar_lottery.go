@@ -74,6 +74,17 @@ func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift,
 			delete(pool, id)
 		}
 	}
+	// remove any unavailable users from the pool
+	for _, user := range pool {
+		overlappingEvents, err := user.overlapEvents(shift.StartTime, shift.EndTime, false)
+		if err != nil {
+			return err
+		}
+		if len(overlappingEvents) > 0 {
+			api.Logger.Debugf("DISQUALIFY user %v: NOT AVAILABLE", usernameWithSkills(user))
+			delete(pool, user.MattermostUserID)
+		}
+	}
 
 	unsatisfiedNeeds := api.unsatisfiedNeeds(rotation.Needs, chosen)
 
@@ -193,11 +204,6 @@ func userWeight(rotation *Rotation, user *User, shiftNumber int) float64 {
 // qualify but will have 0 probability anyway so should never be chosen.
 func (api *api) userIsQualifiedForShift(user *User, rotation *Rotation, shiftUsers UserMap,
 	start, end time.Time, unsatisfiedNeeds []store.Need) bool {
-
-	if !user.IsAvailable(start, end) {
-		api.Logger.Debugf("DISQUALIFY user %v: NOT AVAILABLE", usernameWithSkills(user))
-		return false
-	}
 
 	// disqualify from any maxed out needs
 	for _, need := range rotation.Needs {

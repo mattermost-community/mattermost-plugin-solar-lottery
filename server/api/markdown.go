@@ -32,6 +32,12 @@ func MarkdownShift(shiftNumber int, shift *Shift) string {
 	return fmt.Sprintf("%v: %s to %s: %s",
 		shiftNumber, shift.Start, shift.End, MarkdownUserMapWithSkills(shift.Users))
 }
+
+func MarkdownEvent(event store.Event) string {
+	return fmt.Sprintf("%s: %s to %s",
+		event.Type, event.Start, event.End)
+}
+
 func MarkdownUserMap(m UserMap) string {
 	out := []string{}
 	for _, user := range m {

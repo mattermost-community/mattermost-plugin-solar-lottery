@@ -35,18 +35,6 @@ func (api *api) ExpandUserMap(users UserMap) error {
 
 func withMattermostUsersExpanded(mattermostUsernames string) func(api *api) error {
 	return func(api *api) error {
-		err := api.Filter(withActingUserExpanded)
-		if err != nil {
-			return err
-		}
-
-		if mattermostUsernames == "" {
-			api.users = UserMap{
-				api.actingMattermostUserID: api.actingUser,
-			}
-			return nil
-		}
-
 		users, err := api.LoadMattermostUsers(mattermostUsernames)
 		if err != nil {
 			return err

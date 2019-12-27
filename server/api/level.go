@@ -52,22 +52,26 @@ func (level *Level) Set(in string) error {
 	switch in {
 	case LevelBeginner,
 		LevelBeginnerSymbol,
-		LevelBeginner + LevelBeginnerSymbol:
+		LevelBeginner + LevelBeginnerSymbol,
+		"1":
 		*level = Beginner
 
 	case LevelIntermediate,
 		LevelIntermediateSymbol,
-		LevelIntermediate + LevelIntermediateSymbol:
+		LevelIntermediate + LevelIntermediateSymbol,
+		"2":
 		*level = Intermediate
 
 	case LevelAdvanced,
 		LevelAdvancedSymbol,
-		LevelAdvanced + LevelAdvancedSymbol:
+		LevelAdvanced + LevelAdvancedSymbol,
+		"3":
 		*level = Advanced
 
 	case LevelExpert,
 		LevelExpertSymbol,
-		LevelExpert + LevelExpertSymbol:
+		LevelExpert + LevelExpertSymbol,
+		"4":
 		*level = Expert
 
 	default:

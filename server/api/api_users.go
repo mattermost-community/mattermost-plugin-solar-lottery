@@ -21,6 +21,8 @@ type Users interface {
 	AddSkillToUsers(mattermostUsernames, skillName string, level Level) error
 	DeleteSkillFromUsers(mattermostUsernames, skillName string) error
 	VolunteerUsers(mattermostUsernames string, rotation *Rotation, shiftNumber int) error
+	AddEventToUsers(mattermostUsernames string, event store.Event) error
+	DeleteEventsFromUsers(mattermostUsernames string, startDate, endDate string) error
 
 	// LoadStoredUsers loads only the store.User, leaves MattermostUser as nil
 	LoadStoredUsers(mattermostUserIDs store.IDMap) (UserMap, error)
@@ -67,6 +69,76 @@ func (api *api) AddSkillToUsers(mattermostUsernames, skillName string, level Lev
 
 	logger.Infof("%s added skill %s to %s.",
 		MarkdownUser(api.actingUser), MarkdownSkillLevel(skillName, level), MarkdownUserMapWithSkills(api.users))
+	return nil
+}
+
+func (api *api) AddEventToUsers(mattermostUsernames string, event store.Event) error {
+	err := api.Filter(
+		withActingUserExpanded,
+		withMattermostUsersExpanded(mattermostUsernames),
+	)
+	if err != nil {
+		return err
+	}
+	logger := api.Logger.Timed().With(bot.LogContext{
+		"Location":            "api.AddSkillToUsers",
+		"ActingUsername":      api.actingUser.MattermostUsername(),
+		"MattermostUsernames": mattermostUsernames,
+		"Event":               event,
+	})
+
+	for _, user := range api.users {
+		err = user.AddEvent(event)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to add event %s to %s", MarkdownEvent(event), MarkdownUser(user))
+		}
+
+		_, err = api.storeUserWelcomeNew(user)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to update user %s", MarkdownUser(user))
+		}
+	}
+
+	logger.Infof("%s added event %s to %s.",
+		MarkdownUser(api.actingUser), MarkdownEvent(event), MarkdownUserMapWithSkills(api.users))
+	return nil
+}
+
+func (api *api) DeleteEventsFromUsers(mattermostUsernames string, startDate, endDate string) error {
+	err := api.Filter(
+		withActingUserExpanded,
+		withMattermostUsersExpanded(mattermostUsernames),
+	)
+	if err != nil {
+		return err
+	}
+	logger := api.Logger.Timed().With(bot.LogContext{
+		"Location":            "api.AddSkillToUsers",
+		"ActingUsername":      api.actingUser.MattermostUsername(),
+		"MattermostUsernames": mattermostUsernames,
+		"StartDate":           startDate,
+		"EndDate":             endDate,
+	})
+
+	for _, user := range api.users {
+		intervalStart, intervalEnd, err := parseEventDates(startDate, endDate)
+		if err != nil {
+			return err
+		}
+
+		_, err = user.overlapEvents(intervalStart, intervalEnd, true)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to remove events from %s to %s", startDate, endDate)
+		}
+
+		_, err = api.storeUserWelcomeNew(user)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to update user %s", MarkdownUser(user))
+		}
+	}
+
+	logger.Infof("%s deleted events from %s to %s from users %s.",
+		MarkdownUser(api.actingUser), startDate, endDate, MarkdownUserMapWithSkills(api.users))
 	return nil
 }
 
@@ -145,6 +217,17 @@ func (api *api) VolunteerUsers(mattermostUsernames string, rotation *Rotation, s
 }
 
 func (api *api) LoadMattermostUsers(mattermostUsernames string) (UserMap, error) {
+	err := api.Filter(withActingUserExpanded)
+	if err != nil {
+		return nil, err
+	}
+
+	if mattermostUsernames == "" {
+		return UserMap{
+			api.actingMattermostUserID: api.actingUser,
+		}, nil
+	}
+
 	users := UserMap{}
 	names := strings.Split(mattermostUsernames, ",")
 	for _, name := range names {
@@ -160,7 +243,6 @@ func (api *api) LoadMattermostUsers(mattermostUsernames string) (UserMap, error)
 			return nil, errors.WithMessagef(err, "failed to load User %s", name)
 		}
 		user.MattermostUser = mmuser
-
 		users[mmuser.Id] = user
 	}
 	return users, nil

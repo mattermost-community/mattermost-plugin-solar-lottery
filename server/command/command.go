@@ -63,6 +63,7 @@ const (
 	flagShifts     = "shifts"
 	flagDeleteNeed = "delete-need"
 	flagEnd        = "end"
+	flagClear      = "clear"
 	flagGrace      = "grace"
 	flagLevel      = "level"
 	flagMax        = "max"
@@ -75,6 +76,7 @@ const (
 	flagSize       = "size"
 	flagSkill      = "skill"
 	flagStart      = "start"
+	flagType       = "type"
 	flagUsers      = "users"
 )
 

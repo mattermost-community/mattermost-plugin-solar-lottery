@@ -41,8 +41,8 @@ type User struct {
 	// not be selected until then.
 	Rotations IntMap
 
-	// Calendar is sorted by start date of the events
-	Calendar []Event
+	// Events is sorted by start date of the events.
+	Events []Event
 }
 
 const (
@@ -52,9 +52,9 @@ const (
 )
 
 type Event struct {
-	Type string
-	From string // time.RFC3339
-	To   string // time.RFC3339
+	Type  string
+	Start string // time.RFC3339
+	End   string // time.RFC3339
 
 	// Rotation and ShiftNumber identify the shift for Shift and Padding event
 	// types.
@@ -71,7 +71,7 @@ func NewUser(mattermostUserID string) *User {
 		MattermostUserID: mattermostUserID,
 		SkillLevels:      IntMap{},
 		Rotations:        IntMap{},
-		Calendar:         []Event{},
+		Events:           []Event{},
 	}
 }
 
@@ -79,7 +79,7 @@ func (user *User) Clone() *User {
 	clone := NewUser(user.MattermostUserID)
 	clone.SkillLevels = user.SkillLevels.Clone()
 	clone.Rotations = user.Rotations.Clone()
-	clone.Calendar = append([]Event{}, user.Calendar...)
+	clone.Events = append([]Event{}, user.Events...)
 	return clone
 }
 

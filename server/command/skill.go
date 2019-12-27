@@ -59,7 +59,7 @@ func (c *Command) qualifyUsers(parameters []string) (string, error) {
 	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to show")
 	err := fs.Parse(parameters)
 	if err != nil {
-		return subusage("qualify", fs), err
+		return subusage("user qualify", fs), err
 	}
 
 	err = c.API.AddSkillToUsers(usernames, skillName, level)
@@ -70,7 +70,20 @@ func (c *Command) qualifyUsers(parameters []string) (string, error) {
 }
 
 func (c *Command) disqualifyUsers(parameters []string) (string, error) {
-	return fmt.Sprintf("TODO!! disqualify"), nil
+	var usernames, skillName string
+	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	withSkillFlags(fs, &skillName, nil)
+	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to disqualify from skill")
+	err := fs.Parse(parameters)
+	if err != nil {
+		return subusage("user disqualify", fs), err
+	}
+
+	err = c.API.DeleteSkillFromUsers(usernames, skillName)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("Disqualified %s from %s", usernames, skillName), nil
 }
 
 func withSkillFlags(fs *pflag.FlagSet, skillName *string, level *api.Level) {

@@ -69,11 +69,11 @@ func (c *Command) help(parameters []string) (string, error) {
 
 - [x] info: display plugin information.
 
-- [ ] user: manage my profile.
+- [x] user: manage my profile.
 	- [x] show [--users] 
-	- [ ] unavailable: --from --to [--clear] [--type=unavailable]
-	- [-] qualify --skill --level --users
-	- [ ] disqualify --skill --users
+	- [x] unavailable: --from --to [--clear] [--type=unavailable]
+	- [x] qualify --skill --level --users
+	- [x] disqualify --skill --users
 `
 	return resp, nil
 }

@@ -28,7 +28,7 @@ func (api *api) updateUserSkill(user *User, skillName string, level Level) (*Use
 	if err != nil {
 		return nil, err
 	}
-	api.Logger.Debugf("%s (%v) skill added to user %s", skillName, level, MarkdownUser(user))
+	api.Logger.Debugf("%s (%v) skill updated user %s", skillName, level, MarkdownUser(user))
 	return user, nil
 }
 
@@ -38,7 +38,7 @@ func withValidSkillName(skillName string) func(api *api) error {
 		if err != nil {
 			return err
 		}
-		for _, s := range api.knownSkills {
+		for s := range api.knownSkills {
 			if s == skillName {
 				return nil
 			}
