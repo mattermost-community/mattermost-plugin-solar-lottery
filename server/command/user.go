@@ -9,6 +9,7 @@ func (c *Command) user(parameters []string) (string, error) {
 		commandQualify:     c.qualifyUsers,
 		commandShow:        c.showUser,
 		commandUnavailable: c.userUnavailable,
+		commandForecast:    c.userForecast,
 	}
 	return c.handleCommand(subcommands, parameters)
 }

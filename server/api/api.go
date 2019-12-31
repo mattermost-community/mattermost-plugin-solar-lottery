@@ -63,6 +63,7 @@ type UserActions interface {
 type Forecaster interface {
 	Guess(rotation *Rotation, startingShiftNumber, numShifts int, autofill bool) ([]*Shift, error)
 	ForecastRotation(rotation *Rotation, startingShiftNumber, numShifts, sampleSize int) (*Forecast, error)
+	ForecastUser(mattermostUsername string, rotation *Rotation, numShifts, sampleSize int) ([]float64, error)
 }
 
 type Skills interface {

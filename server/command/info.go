@@ -38,7 +38,7 @@ func (c *Command) info(parameters []string) (string, error) {
 	- [x] open
 	- [x] commit: closes the shift for volunteers, notifies selected users.
 	- [x] debug-delete
-	- [ ] fill: evaluates shift readiness, autofills.
+	- [x] fill: evaluates shift readiness, autofills.
 	- [x] finish: finishes a shift.
 	- [x] join: add user(s) to shift.
 	- [ ] leave: remove user(s) from shift.
@@ -52,7 +52,7 @@ func (c *Command) info(parameters []string) (string, error) {
 	- [x] delete
 
 - [x] user: manage my profile.
-	- [-TODO-] forecast
+	- [x] forecast
 	- [x] show [--users] 
 	- [x] unavailable: --from --to [--clear] [--type=unavailable]
 	- [x] qualify --skill --level --users
