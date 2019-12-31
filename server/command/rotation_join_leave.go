@@ -16,12 +16,12 @@ func (c *Command) join(parameters []string) (string, error) {
 	users := ""
 	graceShifts := 0
 	fs := flag.NewFlagSet("", flag.ContinueOnError)
-	fs.StringVar(&users, flagUsers, "", "add nother users to rotation.")
+	fs.StringVarP(&users, flagUsers, flagPUsers, "", "add nother users to rotation.")
 	fs.IntVar(&graceShifts, flagGrace, 0, "start with N grace shifts.")
 	withRotationFlags(fs, &rotationID, &rotationName)
 	err := fs.Parse(parameters)
 	if err != nil {
-		return subusage("rotation archive", fs), err
+		return c.subUsage(fs), err
 	}
 
 	rotationID, err = c.parseRotationFlags(rotationID, rotationName)
@@ -49,7 +49,7 @@ func (c *Command) leave(parameters []string) (string, error) {
 	withRotationFlags(fs, &rotationID, &rotationName)
 	err := fs.Parse(parameters)
 	if err != nil {
-		return subusage("rotation archive", fs), err
+		return c.subUsage(fs), err
 	}
 
 	rotationID, err = c.parseRotationFlags(rotationID, rotationName)

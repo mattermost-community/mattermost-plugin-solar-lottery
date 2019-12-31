@@ -7,10 +7,14 @@ import "github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 
 type UserMap map[string]*User
 
-func (m UserMap) Clone() UserMap {
+func (m UserMap) Clone(deep bool) UserMap {
 	users := UserMap{}
 	for id, user := range m {
-		users[id] = user
+		if deep {
+			users[id] = user.Clone()
+		} else {
+			users[id] = user
+		}
 	}
 	return users
 }
@@ -25,7 +29,7 @@ func (m UserMap) IDMap() store.IDMap {
 
 func (api *api) ExpandUserMap(users UserMap) error {
 	for _, user := range users {
-		err := api.expandUser(user)
+		err := api.ExpandUser(user)
 		if err != nil {
 			return err
 		}

@@ -6,5 +6,6 @@ package api
 type Expander interface {
 	ExpandUserMap(UserMap) error
 	ExpandUser(*User) error
+	ExpandShift(*Shift) error
 	ExpandRotation(*Rotation) error
 }

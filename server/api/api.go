@@ -19,6 +19,7 @@ type API interface {
 	Shifts
 	Skills
 	Users
+	Expander
 }
 
 type PluginAPI interface {

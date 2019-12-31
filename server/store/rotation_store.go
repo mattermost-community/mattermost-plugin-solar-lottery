@@ -4,6 +4,8 @@
 package store
 
 import (
+	"fmt"
+
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
 )
@@ -28,7 +30,7 @@ type Rotation struct {
 
 	// Optional attributes
 	Size              int    `json:",omitempty"`
-	PaddingWeeks      int    `json:",omitempty"`
+	Grace             int    `json:",omitempty"`
 	MattermostUserIDs IDMap  `json:",omitempty"`
 	Needs             []Need `json:",omitempty"`
 }
@@ -38,6 +40,10 @@ type Need struct {
 	Max   int
 	Skill string
 	Level int
+}
+
+func (need Need) String() string {
+	return fmt.Sprintf("%s-%v-%v-%v", need.Skill, need.Level, need.Min, need.Max)
 }
 
 func NewRotation(name string) *Rotation {

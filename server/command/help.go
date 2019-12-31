@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
-	"github.com/spf13/pflag"
 )
 
 func (c *Command) help(parameters []string) (string, error) {
@@ -26,18 +25,14 @@ func (c *Command) help(parameters []string) (string, error) {
 	- [x] skill
 
 - [ ] delete
-	- [-] debug-rotation
+	- [x] debug-rotation
 	- [-] debug-shift
-	- [-] skill
+	- [x] skill
 
 - [ ] show
 	- [x] rotation
 	- [ ] shift
 	- [x] user
-
-- [ ] forecast
-	- [ ] schedule
-	- [ ] heat
 
 - [ ] list
 	- [x] rotation
@@ -45,19 +40,18 @@ func (c *Command) help(parameters []string) (string, error) {
 	- [x] skill
 	- [ ] user
 
-- [ ] rotation
+- [x] rotation
 	- [x] archive: archive rotation.
-	- [ ] debug-delete
-	- [ ] show: same as "show rotation"
-	- [ ] add: same as "add rotation"
+	- [x] debug-delete
+	- [x] show: same as "show rotation"
+	- [x] add: same as "add rotation"
 	- [x] update
+
+- [ ] forecast
+	- [x] guess
+	- [x] rotation
+	- [ ] user
 	
-- [ ] need
-
-- [ ] join: add user(s) to rotation.
-
-- [ ] leave: remove user(s) from rotation.
-
 - [ ] shift
 	- [-] join: add user(s) to shift.
 	- [ ] leave: remove user(s) from shift.
@@ -67,21 +61,20 @@ func (c *Command) help(parameters []string) (string, error) {
 	- [-] start: starts a shift.
 	- [x] add
 
-- [x] info: display plugin information.
-
 - [x] user: manage my profile.
 	- [x] show [--users] 
 	- [x] unavailable: --from --to [--clear] [--type=unavailable]
 	- [x] qualify --skill --level --users
 	- [x] disqualify --skill --users
-`
-	return resp, nil
-}
 
-func subusage(command string, fs *pflag.FlagSet) string {
-	if fs == nil {
-		return fmt.Sprintf("Usage:\n```\n/%s %s```\n", config.CommandTrigger, command)
-	}
-	return fmt.Sprintf("Usage:\n```\n/%s %s [flags...]\n\n%s```\n",
-		config.CommandTrigger, command, fs.FlagUsages())
+- [x] need (add/delete)
+
+- [x] join: add user(s) to rotation.
+
+- [x] leave: remove user(s) from rotation.
+
+- [x] info: display plugin information.
+	
+	`
+	return resp, nil
 }

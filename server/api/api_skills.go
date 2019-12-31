@@ -73,7 +73,7 @@ func (api *api) DeleteSkill(skillName string) error {
 	})
 
 	newSkills := store.IDMap{}
-	for _, s := range api.knownSkills {
+	for s := range api.knownSkills {
 		if s != skillName {
 			newSkills[s] = store.NotEmpty
 		}

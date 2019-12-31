@@ -16,7 +16,7 @@ type User struct {
 	MattermostUser *model.User
 }
 
-func (api *api) expandUser(user *User) error {
+func (api *api) ExpandUser(user *User) error {
 	if user.MattermostUser != nil {
 		return nil
 	}
@@ -61,7 +61,7 @@ func withActingUserExpanded(api *api) error {
 	if err != nil {
 		return err
 	}
-	return api.expandUser(api.actingUser)
+	return api.ExpandUser(api.actingUser)
 }
 
 func (api *api) loadOrMakeStoredUser(mattermostUserID string) (*User, bool, error) {

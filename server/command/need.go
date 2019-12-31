@@ -22,10 +22,10 @@ func (c *Command) need(parameters []string) (string, error) {
 	withRotationNeedFlags(fs, &skill, &level, &min, &max, &deleteNeed)
 	err := fs.Parse(parameters)
 	if err != nil {
-		return subusage("show rotation", fs), err
+		return c.subUsage(fs), err
 	}
 	if level == 0 || skill == "" {
-		return subusage("rotation need", fs),
+		return c.subUsage(fs),
 			errors.Errorf("requires `%s` and `%s` to be specified.", flagSkill, flagLevel)
 	}
 
@@ -44,7 +44,7 @@ func (c *Command) need(parameters []string) (string, error) {
 	}
 	if !deleteNeed {
 		if min == 0 {
-			return subusage("rotation need", fs),
+			return c.subUsage(fs),
 				errors.Errorf("requires `%s` to be specified.", flagMin)
 		}
 		updatef = func(rotation *api.Rotation) error {
@@ -67,8 +67,8 @@ func (c *Command) need(parameters []string) (string, error) {
 }
 
 func withRotationNeedFlags(fs *pflag.FlagSet, skill *string, level *api.Level, min, max *int, deleteNeed *bool) {
-	fs.StringVar(skill, flagSkill, "", "if used with --need, indicates the needed skill")
-	fs.Var(level, flagLevel, "if used with --need, indicates the needed skill level")
+	fs.StringVarP(skill, flagSkill, flagPSkill, "", "if used with --need, indicates the needed skill")
+	fs.VarP(level, flagLevel, flagPLevel, "if used with --need, indicates the needed skill level")
 	fs.IntVar(min, flagMin, 0, "if used with --need, indicates the minimum needed headcount")
 	fs.IntVar(max, flagMax, 0, "if used with --need, indicates the maximum needed headcount")
 	fs.BoolVar(deleteNeed, flagDeleteNeed, false, "remove a need from rotation")

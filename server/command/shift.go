@@ -5,9 +5,7 @@ package command
 
 import (
 	"fmt"
-	"time"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 	flag "github.com/spf13/pflag"
 
@@ -33,12 +31,12 @@ func (c *Command) shift(parameters []string) (string, error) {
 
 func (c *Command) commitShift(parameters []string) (string, error) {
 	return c.doShift(parameters, nil,
-		func(rotation *api.Rotation, shiftNumber int) (string, error) {
-			err := c.API.CommitShift(rotation, shiftNumber)
+		func(rotation *api.Rotation, start int) (string, error) {
+			err := c.API.CommitShift(rotation, start)
 			if err != nil {
 				return "", err
 			}
-			return fmt.Sprintf("Committed shift #%v", shiftNumber), nil
+			return fmt.Sprintf("Committed shift #%v", start), nil
 		})
 }
 
@@ -59,10 +57,10 @@ func (c *Command) finishShift(parameters []string) (string, error) {
 }
 
 func (c *Command) listShifts(parameters []string) (string, error) {
-	numShifts := 3
+	numShifts := 0
 	return c.doShift(parameters,
 		func(fs *pflag.FlagSet) {
-			fs.IntVar(&numShifts, flagShifts, 3, "Number of shifts to list")
+			fs.IntVarP(&numShifts, flagNumber, flagPNumber, 3, "Number of shifts to list")
 		},
 		func(rotation *api.Rotation, shiftNumber int) (string, error) {
 			shifts, err := c.API.ListShifts(rotation, shiftNumber, numShifts)
@@ -119,21 +117,21 @@ func (c *Command) debugDeleteShift(parameters []string) (string, error) {
 		})
 }
 
-func (c *Command) doShift(parameters []string, initf func(*pflag.FlagSet),
-	updatef func(*api.Rotation, int) (string, error)) (string, error) {
-
-	var rotationID, rotationName, start string
-	var shiftNumber int
+func (c *Command) doShift(parameters []string,
+	initF func(fs *pflag.FlagSet),
+	doF func(*api.Rotation, int) (string, error)) (string, error) {
+	var rotationID, rotationName string
+	var start int
 	fs := flag.NewFlagSet("", flag.ContinueOnError)
-	fs.StringVarP(&start, flagStart, flagPStart, "", fmt.Sprintf("A date that would be in the shift, formatted as %s.", api.DateFormat))
-	fs.IntVarP(&shiftNumber, flagNumber, flagPNumber, -1, "Shift number")
-	if initf != nil {
-		initf(fs)
+	fs.IntVarP(&start, flagStart, flagPStart, 0, "starting shift number")
+	// fs.IntVarP(&numShifts, flagNumber, flagPNumber, -1, "number of shifts")
+	if initF != nil {
+		initF(fs)
 	}
 	withRotationFlags(fs, &rotationID, &rotationName)
 	err := fs.Parse(parameters)
 	if err != nil {
-		return subusage("list shift", fs), err
+		return c.subUsage(fs), err
 	}
 
 	rotationID, err = c.parseRotationFlags(rotationID, rotationName)
@@ -145,28 +143,5 @@ func (c *Command) doShift(parameters []string, initf func(*pflag.FlagSet),
 		return "", err
 	}
 
-	shiftNumber, err = c.shiftNumber(rotation, shiftNumber, start)
-	if err != nil {
-		return "", err
-	}
-
-	return updatef(rotation, shiftNumber)
-}
-
-func (c *Command) shiftNumber(rotation *api.Rotation, shiftNumber int, start string) (int, error) {
-	if shiftNumber != -1 {
-		if start != "" {
-			return 0, errors.New("**Must specify --start or --number**")
-		}
-	} else {
-		startTime, err := time.Parse(api.DateFormat, start)
-		if err != nil {
-			return 0, err
-		}
-		shiftNumber, err = rotation.ShiftNumberForTime(startTime)
-		if err != nil {
-			return 0, err
-		}
-	}
-	return shiftNumber, nil
+	return doF(rotation, start)
 }

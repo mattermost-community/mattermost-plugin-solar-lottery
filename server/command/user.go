@@ -31,7 +31,7 @@ func (c *Command) showUser(parameters []string) (string, error) {
 	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to show")
 	err := fs.Parse(parameters)
 	if err != nil {
-		return subusage("user show", fs), err
+		return c.subUsage(fs), err
 	}
 
 	users, err := c.API.LoadMattermostUsers(usernames)
@@ -46,13 +46,13 @@ func (c *Command) userUnavailable(parameters []string) (string, error) {
 	var clear bool
 	fs := flag.NewFlagSet("", flag.ContinueOnError)
 	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to show")
-	fs.StringVar(&start, flagStart, "", "start of the unavailability")
-	fs.StringVar(&end, flagEnd, "", "end of unavailability (last day)")
+	fs.StringVarP(&start, flagStart, flagPStart, "", "start of the unavailability")
+	fs.StringVarP(&end, flagEnd, flagPEnd, "", "end of unavailability (last day)")
 	fs.BoolVar(&clear, flagClear, false, "clear all overlapping events")
 	fs.StringVar(&typ, flagType, store.EventTypeOther, "event type")
 	err := fs.Parse(parameters)
 	if err != nil {
-		return subusage("user unavailable", fs), err
+		return c.subUsage(fs), err
 	}
 
 	endTime, err := time.Parse(api.DateFormat, end)

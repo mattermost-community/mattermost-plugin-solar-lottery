@@ -10,7 +10,7 @@ func (api *api) messageWelcomeNewUser(user *User) {
 		return
 	}
 
-	api.expandUser(user)
+	api.ExpandUser(user)
 	api.Poster.DM(user.MattermostUserID,
 		"###### Welcome to Solar Lottery!\n"+
 			"You have been added to the Solar Lottery team rotation scheduler%s. Please use `%s help` for more information."+
@@ -31,7 +31,7 @@ func (api *api) messageLeftRotation(user *User, rotation *Rotation) {
 }
 
 func (api *api) messageAddedSkill(user *User, skillName string, level int) {
-	api.expandUser(user)
+	api.ExpandUser(user)
 	if level == 0 {
 		api.Poster.DM(user.MattermostUserID,
 			"Skill %s, level %s was added to your profile%s.\n"+
@@ -46,8 +46,8 @@ func (api *api) messageAddedSkill(user *User, skillName string, level int) {
 }
 
 func (api *api) messageShiftOpened(rotation *Rotation, shiftNumber int, shift *Shift) {
-	api.expandRotation(rotation)
-	api.expandShift(shift)
+	api.ExpandRotation(rotation)
+	api.ExpandShift(shift)
 
 	for _, user := range rotation.Users {
 		api.Poster.DM(user.MattermostUserID,
@@ -58,8 +58,8 @@ func (api *api) messageShiftOpened(rotation *Rotation, shiftNumber int, shift *S
 }
 
 func (api *api) messageShiftCommitted(rotation *Rotation, shiftNumber int, shift *Shift) {
-	api.expandRotation(rotation)
-	api.expandShift(shift)
+	api.ExpandRotation(rotation)
+	api.ExpandShift(shift)
 
 	for _, user := range shift.Users {
 		api.Poster.DM(user.MattermostUserID,
@@ -69,8 +69,8 @@ func (api *api) messageShiftCommitted(rotation *Rotation, shiftNumber int, shift
 }
 
 func (api *api) messageShiftStarted(rotation *Rotation, shiftNumber int, shift *Shift) {
-	api.expandRotation(rotation)
-	api.expandShift(shift)
+	api.ExpandRotation(rotation)
+	api.ExpandShift(shift)
 
 	for _, user := range shift.Users {
 		api.Poster.DM(user.MattermostUserID,
@@ -82,8 +82,8 @@ func (api *api) messageShiftStarted(rotation *Rotation, shiftNumber int, shift *
 }
 
 func (api *api) messageShiftFinished(rotation *Rotation, shiftNumber int, shift *Shift) {
-	api.expandRotation(rotation)
-	api.expandShift(shift)
+	api.ExpandRotation(rotation)
+	api.ExpandShift(shift)
 
 	for _, user := range shift.Users {
 		api.Poster.DM(user.MattermostUserID,
@@ -95,8 +95,8 @@ func (api *api) messageShiftFinished(rotation *Rotation, shiftNumber int, shift 
 }
 
 func (api *api) messageShiftVolunteers(volunteers UserMap, rotation *Rotation, shiftNumber int, shift *Shift) {
-	api.expandRotation(rotation)
-	api.expandShift(shift)
+	api.ExpandRotation(rotation)
+	api.ExpandShift(shift)
 
 	// Notify the previous shift users that new volunteers have been added
 	for _, user := range shift.Users {
@@ -119,6 +119,6 @@ func (api *api) by(forUser *User) string {
 	if forUser.MattermostUserID == api.actingMattermostUserID {
 		return ""
 	}
-	api.expandUser(api.actingUser)
+	api.ExpandUser(api.actingUser)
 	return " by " + MarkdownUser(api.actingUser)
 }

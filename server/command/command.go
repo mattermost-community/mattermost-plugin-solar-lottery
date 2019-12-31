@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/spf13/pflag"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
@@ -29,7 +30,7 @@ const (
 	commandFill          = "fill"
 	commandFinish        = "finish"
 	commandForecast      = "forecast"
-	commandHeat          = "heat"
+	commandGuess         = "guess"
 	commandHelp          = "help"
 	commandInfo          = "info"
 	commandJoin          = "join"
@@ -38,7 +39,6 @@ const (
 	commandNeed          = "need"
 	commandQualify       = "qualify"
 	commandRotation      = "rotation"
-	commandSchedule      = "schedule"
 	commandShift         = "shift"
 	commandShow          = "show"
 	commandSkill         = "skill"
@@ -60,19 +60,18 @@ const (
 
 const (
 	flagAutofill   = "autofill"
-	flagShifts     = "shifts"
+	flagClear      = "clear"
 	flagDeleteNeed = "delete-need"
 	flagEnd        = "end"
-	flagClear      = "clear"
 	flagGrace      = "grace"
 	flagLevel      = "level"
 	flagMax        = "max"
 	flagMin        = "min"
 	flagNumber     = "number"
-	flagPadding    = "padding"
 	flagPeriod     = "period"
 	flagRotation   = "rotation"
 	flagRotationID = "rotation-id"
+	flagSampleSize = "sample"
 	flagSize       = "size"
 	flagSkill      = "skill"
 	flagStart      = "start"
@@ -87,6 +86,8 @@ type Command struct {
 	ChannelID string
 	Config    *config.Config
 	API       api.API
+
+	subcommand string
 }
 
 // RegisterFunc is a function that allows the runner to register commands with the mattermost server.
@@ -115,6 +116,7 @@ func (c *Command) handleCommand(subcommands map[string]func([]string) (string, e
 	if f == nil {
 		return usage, errors.Errorf("unknown command: %s", parameters[0])
 	}
+	c.subcommand += " " + parameters[0]
 
 	return f(parameters[1:])
 }
@@ -145,26 +147,34 @@ func (c *Command) Handle() (out string, err error) {
 		out = prefix + out
 	}()
 
-	parameters, err := c.validate()
+	command, parameters, err := c.validate()
 	if err != nil {
 		return "", err
 	}
-
+	c.subcommand = command
 	return c.handleCommand(subcommands, parameters, "TODO Usage: /slottery do stuff")
 }
 
-func (c *Command) validate() ([]string, error) {
+func (c *Command) validate() (string, []string, error) {
 	if c.Context == nil || c.Args == nil {
-		return nil, errors.New("invalid arguments to command.Handler. Please contact your system administrator")
+		return "", nil, errors.New("invalid arguments to command.Handler. Please contact your system administrator")
 	}
 	split := strings.Fields(c.Args.Command)
 	if len(split) < 2 {
-		return nil, errors.New("io subcommand specify, nothing to do")
+		return "", nil, errors.New("io subcommand specify, nothing to do")
 	}
 	command := split[0]
 	if command != "/"+config.CommandTrigger {
-		return nil, errors.Errorf("%q is not a supported command and should not have been invoked. Please contact your system administrator", command)
+		return "", nil, errors.Errorf("%q is not a supported command and should not have been invoked. Please contact your system administrator", command)
 	}
 
-	return split[1:], nil
+	return command, split[1:], nil
+}
+
+func (c *Command) subUsage(fs *pflag.FlagSet) string {
+	if fs == nil {
+		return fmt.Sprintf("Usage:\n```\n/%s %s```\n", config.CommandTrigger, c.subcommand)
+	}
+	return fmt.Sprintf("Usage:\n```\n/%s %s [flags...]\n\n%s```\n",
+		config.CommandTrigger, c.subcommand, fs.FlagUsages())
 }

@@ -35,7 +35,7 @@ var testUserGuru = makeUser(&store.User{
 		"server":  4,
 		"plugins": 4,
 	},
-	Rotations: lastRotation0,
+	NextRotationShift: lastRotation0,
 })
 
 var testUserServer1 = makeUser(&store.User{
@@ -45,7 +45,7 @@ var testUserServer1 = makeUser(&store.User{
 		"server":  3,
 		"plugins": 1,
 	},
-	Rotations: lastRotation0,
+	NextRotationShift: lastRotation0,
 })
 
 var testUserServer2 = makeUser(&store.User{
@@ -55,7 +55,7 @@ var testUserServer2 = makeUser(&store.User{
 		"server":  3,
 		"plugins": 1,
 	},
-	Rotations: lastRotation0,
+	NextRotationShift: lastRotation0,
 })
 
 var testUserServer3 = makeUser(&store.User{
@@ -65,7 +65,7 @@ var testUserServer3 = makeUser(&store.User{
 		"server":  3,
 		"plugins": 1,
 	},
-	Rotations: lastRotation0,
+	NextRotationShift: lastRotation0,
 })
 
 var testUserWebapp1 = makeUser(&store.User{
@@ -74,7 +74,7 @@ var testUserWebapp1 = makeUser(&store.User{
 		"webapp": 3,
 		"server": 1,
 	},
-	Rotations: lastRotation0,
+	NextRotationShift: lastRotation0,
 })
 
 var testUserWebapp2 = makeUser(&store.User{
@@ -83,7 +83,7 @@ var testUserWebapp2 = makeUser(&store.User{
 		"webapp": 2,
 		"server": 1,
 	},
-	Rotations: lastRotation0,
+	NextRotationShift: lastRotation0,
 })
 
 var testUserWebapp3 = makeUser(&store.User{
@@ -92,7 +92,7 @@ var testUserWebapp3 = makeUser(&store.User{
 		"webapp": 3,
 		"server": 1,
 	},
-	Rotations: lastRotation0,
+	NextRotationShift: lastRotation0,
 })
 
 var testUserMobile1 = makeUser(&store.User{
@@ -101,7 +101,7 @@ var testUserMobile1 = makeUser(&store.User{
 		"webapp": 1,
 		"mobile": 3,
 	},
-	Rotations: lastRotation0,
+	NextRotationShift: lastRotation0,
 })
 
 var testUserMobile2 = makeUser(&store.User{
@@ -110,7 +110,7 @@ var testUserMobile2 = makeUser(&store.User{
 		"webapp": 1,
 		"mobile": 3,
 	},
-	Rotations: lastRotation0,
+	NextRotationShift: lastRotation0,
 })
 
 var testUsers = UserMap{
@@ -238,7 +238,7 @@ func TestPrepareShiftHappy(t *testing.T) {
 
 	api := setupAPIForCrystalBall(t, ctrl, rotation, testUsers)
 
-	shifts, err := api.Forecast(rotation, "2020-01-16", 1, true)
+	shifts, err := api.Guess(rotation, 0, 1, true)
 	require.Nil(t, err)
 	assert.Len(t, shifts, 1)
 	require.Equal(t, rotation.Size, len(shifts[0].MattermostUserIDs))
@@ -267,7 +267,7 @@ func TestPrepareShiftEvenDistribution(t *testing.T) {
 	api := setupAPIForCrystalBall(t, ctrl, rotation, testUsers)
 
 	counters := store.IntMap{}
-	shifts, err := api.Forecast(rotation, "2020-03-03", len(testUsers)*1000, true)
+	shifts, err := api.Guess(rotation, 3, len(testUsers)*1000, true)
 	require.Nil(t, err)
 	require.Len(t, shifts, len(testUsers)*1000)
 

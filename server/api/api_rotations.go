@@ -111,7 +111,7 @@ func (api *api) AddRotationUsers(rotation *Rotation, mattermostUsernames string,
 
 		// A new person may be given some slack - setting LastShiftNumber in the
 		// future guarantees they won't be selected until then.
-		user.Rotations[rotation.RotationID] = shiftNumber + graceShifts
+		user.NextRotationShift[rotation.RotationID] = shiftNumber + graceShifts
 
 		user, err = api.storeUserWelcomeNew(user)
 		if err != nil {
@@ -215,7 +215,7 @@ func (api *api) DeleteRotationUsers(rotation *Rotation, mattermostUsernames stri
 			continue
 		}
 
-		delete(user.Rotations, rotation.RotationID)
+		delete(user.NextRotationShift, rotation.RotationID)
 		_, err = api.storeUserWelcomeNew(user)
 		if err != nil {
 			return deleted, err

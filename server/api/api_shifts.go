@@ -210,7 +210,7 @@ func (api *api) loadShift(rotation *Rotation, shiftNumber int) (*Shift, error) {
 		return nil, err
 	}
 	shift.Shift = s
-	err = api.expandShift(shift)
+	err = api.ExpandShift(shift)
 	if err != nil {
 		return nil, err
 	}

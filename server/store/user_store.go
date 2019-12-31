@@ -32,14 +32,7 @@ type User struct {
 
 	SkillLevels IntMap
 
-	// Rotations is a map of all rotations (IDs) the user has joined. The
-	// value is the last shift number served, for the rotation. When a user
-	// joins a new rotation, their "last shift number" is set to the current
-	// shift by default, offsetting it forward or backwards with a graceShifts
-	// affects the new users likelihood of being selected for the next shift.
-	// Setting it N shifts into the future guarantees that the new user will
-	// not be selected until then.
-	Rotations IntMap
+	NextRotationShift IntMap
 
 	// Events is sorted by start date of the events.
 	Events []Event
@@ -68,17 +61,17 @@ type Settings struct {
 
 func NewUser(mattermostUserID string) *User {
 	return &User{
-		MattermostUserID: mattermostUserID,
-		SkillLevels:      IntMap{},
-		Rotations:        IntMap{},
-		Events:           []Event{},
+		MattermostUserID:  mattermostUserID,
+		SkillLevels:       IntMap{},
+		NextRotationShift: IntMap{},
+		Events:            []Event{},
 	}
 }
 
 func (user *User) Clone() *User {
 	clone := NewUser(user.MattermostUserID)
 	clone.SkillLevels = user.SkillLevels.Clone()
-	clone.Rotations = user.Rotations.Clone()
+	clone.NextRotationShift = user.NextRotationShift.Clone()
 	clone.Events = append([]Event{}, user.Events...)
 	return clone
 }

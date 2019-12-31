@@ -15,9 +15,15 @@ func MarkdownRotation(rotation *Rotation) string {
 }
 
 func MarkdownRotationWithDetails(rotation *Rotation) string {
-	return fmt.Sprintf("**%s**: period %s, starting %s, %v users joined, needs %s",
-		rotation.RotationID, rotation.Period, rotation.Start,
-		len(rotation.MattermostUserIDs), MarkdownNeeds(rotation.Needs))
+	out := fmt.Sprintf("###### %s\n", rotation.Name)
+	out += fmt.Sprintf("- ID: `%s`\n", rotation.RotationID)
+	out += fmt.Sprintf("- Starting: `%s`\n", rotation.Start)
+	out += fmt.Sprintf("- Period: `%s`\n", rotation.Period)
+	out += fmt.Sprintf("- Needs: %s\n", MarkdownNeeds(rotation.Needs))
+	out += fmt.Sprintf("- Grace: `%v`\n", rotation.Grace)
+	out += fmt.Sprintf("- Users (%v): %s\n", len(rotation.MattermostUserIDs), MarkdownUserMapWithSkills(rotation.Users))
+
+	return out
 }
 
 func MarkdownUserMapWithSkills(m UserMap) string {

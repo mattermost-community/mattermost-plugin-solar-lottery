@@ -29,17 +29,17 @@ func (c *Command) rotation(parameters []string) (string, error) {
 func (c *Command) addRotation(parameters []string) (string, error) {
 	var rotationName, start string
 	var period api.Period
-	var size, paddingWeeks int
+	var size, grace int
 	fs := flag.NewFlagSet("addRotation", flag.ContinueOnError)
 	withRotationCreateFlags(fs, &start, &period)
-	withRotationUpdateFlags(fs, &size, &paddingWeeks)
-	fs.StringVar(&rotationName, flagRotation, "", "specify rotation name")
+	withRotationUpdateFlags(fs, &size, &grace)
+	fs.StringVarP(&rotationName, flagRotation, flagPRotation, "", "specify rotation name")
 	err := fs.Parse(parameters)
 	if err != nil {
-		return subusage("add rotation", fs), err
+		return c.subUsage(fs), err
 	}
 	if rotationName == "" {
-		return subusage("add rotation", fs), errors.Errorf("must specify rotation name, use `--%s`", flagRotation)
+		return c.subUsage(fs), errors.Errorf("must specify rotation name, use `--%s`", flagRotation)
 	}
 
 	rotation, err := c.API.MakeRotation(rotationName)
@@ -49,7 +49,7 @@ func (c *Command) addRotation(parameters []string) (string, error) {
 	rotation.Period = period.String()
 	rotation.Start = start
 	rotation.Size = size
-	rotation.PaddingWeeks = paddingWeeks
+	rotation.Grace = grace
 
 	err = c.API.AddRotation(rotation)
 	if err != nil {
@@ -65,7 +65,7 @@ func (c *Command) archiveRotation(parameters []string) (string, error) {
 	withRotationFlags(fs, &rotationID, &rotationName)
 	err := fs.Parse(parameters)
 	if err != nil {
-		return subusage("rotation archive", fs), err
+		return c.subUsage(fs), err
 	}
 
 	rotationID, err = c.parseRotationFlags(rotationID, rotationName)
@@ -91,7 +91,7 @@ func (c *Command) debugDeleteRotation(parameters []string) (string, error) {
 	withRotationFlags(fs, &rotationID, &rotationName)
 	err := fs.Parse(parameters)
 	if err != nil {
-		return subusage("delete debug-rotation", fs), err
+		return c.subUsage(fs), err
 	}
 
 	rotationID, err = c.parseRotationFlags(rotationID, rotationName)
@@ -113,7 +113,7 @@ func (c *Command) showRotation(parameters []string) (string, error) {
 	withRotationFlags(fs, &rotationID, &rotationName)
 	err := fs.Parse(parameters)
 	if err != nil {
-		return subusage("show rotation", fs), err
+		return c.subUsage(fs), err
 	}
 
 	rotationID, err = c.parseRotationFlags(rotationID, rotationName)
@@ -124,13 +124,16 @@ func (c *Command) showRotation(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
+	err = c.API.ExpandRotation(rotation)
+	if err != nil {
+		return "", err
+	}
 	return api.MarkdownRotationWithDetails(rotation), nil
 }
 
 func (c *Command) listRotations(parameters []string) (string, error) {
 	if len(parameters) > 0 {
-		return subusage("list rotations", nil), errors.New("unexpected parameters")
+		return c.subUsage(nil), errors.New("unexpected parameters")
 	}
 	rotations, err := c.API.LoadKnownRotations()
 	if err != nil {
@@ -149,13 +152,13 @@ func (c *Command) listRotations(parameters []string) (string, error) {
 
 func (c *Command) updateRotation(parameters []string) (string, error) {
 	var rotationID, rotationName string
-	var size, paddingWeeks int
+	var size, grace int
 	fs := flag.NewFlagSet("updateRotation", flag.ContinueOnError)
 	withRotationFlags(fs, &rotationID, &rotationName)
-	withRotationUpdateFlags(fs, &size, &paddingWeeks)
+	withRotationUpdateFlags(fs, &size, &grace)
 	err := fs.Parse(parameters)
 	if err != nil {
-		return subusage("update rotation", fs), err
+		return c.subUsage(fs), err
 	}
 
 	rotationID, err = c.parseRotationFlags(rotationID, rotationName)
@@ -168,8 +171,8 @@ func (c *Command) updateRotation(parameters []string) (string, error) {
 	}
 
 	err = c.API.UpdateRotation(rotation, func(rotation *api.Rotation) error {
-		if paddingWeeks != 0 {
-			rotation.PaddingWeeks = paddingWeeks
+		if grace != 0 {
+			rotation.Grace = grace
 		}
 		if size != 0 {
 			rotation.Size = size
@@ -184,18 +187,18 @@ func (c *Command) updateRotation(parameters []string) (string, error) {
 }
 
 func withRotationCreateFlags(fs *pflag.FlagSet, start *string, period *api.Period) {
-	fs.StringVar(start, flagStart, "", fmt.Sprintf("rotation start date formatted as %s. It must be provided at creation and **can not be modified** later.", api.DateFormat))
+	fs.StringVarP(start, flagStart, flagPStart, "", fmt.Sprintf("rotation start date formatted as %s. It must be provided at creation and **can not be modified** later.", api.DateFormat))
 	fs.Var(period, flagPeriod, "rotation period 1w, 2w, or 1m")
 }
 
-func withRotationUpdateFlags(fs *pflag.FlagSet, size *int, paddingWeeks *int) {
+func withRotationUpdateFlags(fs *pflag.FlagSet, size *int, grace *int) {
 	fs.IntVar(size, flagSize, 0, "target number of people in each shift. 0 (default) means unlimited, based on needs")
-	fs.IntVar(paddingWeeks, flagPadding, 0, "makes each user's shift  padded by this many weeks of unavailability, on each side")
+	fs.IntVar(grace, flagGrace, 1, "blocks for serving this many shifts after one served")
 }
 
 func withRotationFlags(fs *pflag.FlagSet, rotationID, rotationName *string) {
 	fs.StringVar(rotationID, flagRotationID, "", "specify rotation ID")
-	fs.StringVar(rotationName, flagRotation, "", "specify rotation name")
+	fs.StringVarP(rotationName, flagRotation, flagPRotation, "", "specify rotation name")
 }
 
 func (c *Command) parseRotationFlags(id, name string) (rotationID string, err error) {

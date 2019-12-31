@@ -16,48 +16,34 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
-func (api *api) loadOrMakeOneShift(rotation *Rotation, shiftNumber int, autofill bool) (*Shift, bool, error) {
-	start, end, err := rotation.ShiftDatesForNumber(shiftNumber)
-	if err != nil {
-		return nil, false, err
-	}
-
-	var shift *Shift
-	created := false
-	storedShift, err := api.ShiftStore.LoadShift(rotation.RotationID, shiftNumber)
-	switch err {
-	case nil:
-		shift = &Shift{
-			Shift: storedShift,
-		}
-		err = api.expandShift(shift)
-
-	case store.ErrNotFound:
-		if !autofill {
-			return nil, false, err
-		}
-		shift, err = rotation.makeShift(shiftNumber, nil)
-		if err != nil {
-			return nil, false, err
-		}
-		created = true
-
-	default:
-		return nil, false, err
-	}
-
-	if shift.Start != start.Format(DateFormat) || shift.End != end.Format(DateFormat) {
-		return nil, false, errors.Errorf("loaded shift has wrong dates %v-%v, expected %v-%v",
-			shift.Start, shift.End, start, end)
-	}
-
-	err = api.expandShift(shift)
-	if err != nil {
-		return nil, false, err
-	}
-
-	return shift, created, nil
+type autofillError struct {
+	orig                error
+	unfulfilledNeeds    []store.Need
+	unfulfilledCapacity int
+	shiftNumber         int
 }
+
+func (e autofillError) Error() string {
+	message := ""
+	if e.unfulfilledCapacity > 0 {
+		message = fmt.Sprintf("couldn't fill shift %v to capacity, missing %v", e.shiftNumber, e.unfulfilledCapacity)
+	}
+	if len(e.unfulfilledNeeds) > 0 {
+		if message != "" {
+			message += ", "
+		}
+		message += fmt.Sprintf("couldn't fill shift %v needs %s", e.shiftNumber, MarkdownNeeds(e.unfulfilledNeeds))
+	}
+	if e.orig != nil {
+		return errors.WithMessage(e.orig, message).Error()
+	} else {
+		return message
+	}
+}
+
+var ErrFailedInsufficientForNeeds = errors.New("failed to satisfy needs, not enough skilled users available")
+var ErrFailedSizeExceeded = errors.New("failed to satisfy needs, exceeded rotation size")
+var ErrFailedInsufficientForSize = errors.New("failed to satisfy rotation size requirement")
 
 func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift, autofill bool) error {
 	if len(shift.Users) > 0 {
@@ -65,8 +51,8 @@ func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift,
 			shiftNumber, len(shift.Users), MarkdownUserMapWithSkills(shift.Users))
 	}
 
-	pool := rotation.Users.Clone()
-	chosen := shift.Users.Clone()
+	pool := rotation.Users.Clone(false)
+	chosen := shift.Users.Clone(false)
 	// remove any users already chosen from the pool
 	for id := range chosen {
 		_, ok := pool[id]
@@ -78,126 +64,97 @@ func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift,
 	for _, user := range pool {
 		overlappingEvents, err := user.overlapEvents(shift.StartTime, shift.EndTime, false)
 		if err != nil {
-			return err
+			return autofillError{orig: err}
 		}
 		if len(overlappingEvents) > 0 {
-			api.Logger.Debugf("DISQUALIFY user %v: NOT AVAILABLE", usernameWithSkills(user))
+			// api.Logger.Debugf("Unavailable user %s", MarkdownUserWithSkills(user))
 			delete(pool, user.MattermostUserID)
 		}
 	}
 
+	// Calculate the initial probability distribution of the pool to log later.
+	logPool := []string{}
+	func() {
+		cdf := calculateCDF(rotation, pool, shiftNumber)
+		for i, id := range cdf.ids {
+			logPool = append(logPool, fmt.Sprintf("%s: (%.2f)", MarkdownUser(pool[id]), cdf.weights[i]/cdf.total))
+		}
+	}()
+
 	unsatisfiedNeeds := api.unsatisfiedNeeds(rotation.Needs, chosen)
+	aErr := func(err error) error {
+		return autofillError{
+			unfulfilledNeeds:    unsatisfiedNeeds,
+			unfulfilledCapacity: rotation.Size - len(chosen),
+			orig:                err,
+			shiftNumber:         shiftNumber,
+		}
+	}
 
 	if !autofill {
 		if len(unsatisfiedNeeds) > 0 {
-			return errors.Errorf("%v needs could not be satisfied, %v users in the shift, not autofilled.",
-				len(unsatisfiedNeeds), len(chosen))
+			return aErr(errors.New("not autofilled"))
 		}
 		return nil
 	}
 
-	// Take a snapshot of the initial probability distribution for logging later
-	logIDs, logCDF := cdf(rotation, pool, shiftNumber)
-	logPool := []string{}
-	logChosen := []string{}
-	prev := float64(0)
-	for i, id := range logIDs {
-		logPool = append(logPool,
-			fmt.Sprintf("%s: (%.2f)", MarkdownUser(pool[id]), (logCDF[i]-prev)/logCDF[len(logCDF)-1]))
-		prev = logCDF[i]
-	}
-
 	// First pass: start with the qualified, backfill the rest if any left
 	unqualified := UserMap{}
-	for len(pool) > 0 {
+	for len(pool) > 0 && len(unsatisfiedNeeds) > 0 {
 		if rotation.Size != 0 && len(chosen) >= rotation.Size {
-			api.Logger.Debugf("Reached capacity `%v`.", rotation.Size)
-			break
-		}
-		if rotation.Size == 0 && len(unsatisfiedNeeds) == 0 {
-			api.Logger.Debugf("Met all needs.")
+			// Reached capacity.
 			break
 		}
 
-		// Choose next user from the pool, weighted-randomly.
-		ids, cdf := cdf(rotation, pool, shiftNumber)
-		random := rand.Float64() * cdf[len(cdf)-1]
-		i := sort.Search(len(cdf), func(i int) bool {
-			return cdf[i] > random
-		})
-		user := pool[ids[i]]
+		user, cdf := api.pickUser(rotation, pool, shiftNumber)
+		if user == nil {
+			return aErr(ErrFailedInsufficientForNeeds)
+		}
 
 		if api.userIsQualifiedForShift(user, rotation, chosen, shift.StartTime, shift.EndTime, unsatisfiedNeeds) {
-			api.Logger.Debugf("`%v` needs remain, `%v` users in the pool, user %v ACCEPTED",
-				len(unsatisfiedNeeds), len(pool), usernameWithSkills(user))
-
 			chosen[user.MattermostUserID] = user
-			logChosen = append(logChosen, usernameWithSkills(user))
 			delete(pool, user.MattermostUserID)
+			unsatisfiedNeeds = api.unsatisfiedNeedsSorted(rotation, cdf, chosen)
+			// api.Logger.Debugf("Accepted user %s, shift: %v, pool: %v, %v unmet needs: %v", MarkdownUserWithSkills(user), len(chosen), len(pool), len(unsatisfiedNeeds), MarkdownNeeds(unsatisfiedNeeds))
 		} else {
-			// api.Logger.Debugf("%v needs remain, %v users in the pool, user %v rejected.",
-			// 	len(unsatisfiedNeeds), len(pool), usernameWithSkills(user))
 			unqualified[user.MattermostUserID] = user
+			delete(pool, user.MattermostUserID)
+			// api.Logger.Debugf("Disqualified user %s, shift: %v, pool: %v, %v unmet needs: %v", MarkdownUserWithSkills(user), len(chosen), len(pool), len(unsatisfiedNeeds), MarkdownNeeds(unsatisfiedNeeds))
 		}
-
-		unsatisfiedNeeds = api.unsatisfiedNeeds(rotation.Needs, chosen)
 	}
 
 	if len(unsatisfiedNeeds) > 0 {
 		if len(pool) == 0 {
-			return errors.Errorf("%v needs could not be satisfied", len(unsatisfiedNeeds))
+			return aErr(ErrFailedInsufficientForNeeds)
 		} else {
-			return errors.Errorf("reached rotation capacity %v before %v needs could be satisfied",
-				rotation.Size, len(unsatisfiedNeeds))
+			return aErr(ErrFailedSizeExceeded)
 		}
 	}
 
 	// Second pass: backfill the rest from any unqualified
 	for len(chosen) < rotation.Size && len(unqualified) > 0 {
 		// Choose next user from the pool, weighted-randomly.
-		ids, cdf := cdf(rotation, unqualified, shiftNumber)
-		random := rand.Float64() * cdf[len(cdf)-1]
-		i := sort.Search(len(cdf), func(i int) bool {
-			return cdf[i] > random
-		})
-		user := unqualified[ids[i]]
-
-		api.Logger.Debugf("backfilling `%v` unqualified, `%v` users in the pool, user %s ACCEPTED",
-			rotation.Size-len(chosen), len(chosen), usernameWithSkills(user))
+		user, _ := api.pickUser(rotation, unqualified, shiftNumber)
+		if user == nil {
+			return aErr(ErrFailedInsufficientForSize)
+		}
 
 		chosen[user.MattermostUserID] = user
-		logChosen = append(logChosen, usernameWithSkills(user))
 		delete(unqualified, user.MattermostUserID)
+		// api.Logger.Debugf("Accepted user %s for backfill, shift: %v, pool: %v", MarkdownUserWithSkills(user), len(chosen), len(pool))
 	}
 
 	if len(chosen) < rotation.Size {
-		return errors.Errorf("%v unqualified users coulf not be filled", rotation.Size-len(chosen))
+		return aErr(ErrFailedInsufficientForSize)
 	}
 
 	for _, user := range chosen {
 		shift.Users[user.MattermostUserID] = user
 		shift.MattermostUserIDs[user.MattermostUserID] = user.MattermostUserID
 	}
-	api.Logger.Debugf("Shift %v (%v to %v) prepared, chose **%v** users %s **from** %s", shiftNumber, shift.Start, shift.End, len(logChosen), logChosen, logPool)
+	// api.Logger.Debugf("Shift %v (%v to %v) prepared, chose users %s **from** %s", shiftNumber, shift.Start, shift.End, MarkdownUserMapWithSkills(chosen), logPool)
 
 	return nil
-}
-
-func cdf(rotation *Rotation, users UserMap, shiftNumber int) (ids []string, cdf []float64) {
-	var weights []float64
-	for _, user := range users {
-		ids = append(ids, user.MattermostUserID)
-		weights = append(weights, userWeight(rotation, user, shiftNumber))
-	}
-
-	cdf = make([]float64, len(weights))
-	floats.CumSum(cdf, weights)
-	return ids, cdf
-}
-
-func userWeight(rotation *Rotation, user *User, shiftNumber int) float64 {
-	last, _ := user.Rotations[rotation.RotationID]
-	return math.Pow(2.0, float64(shiftNumber-last))
 }
 
 // To simplify redundant checks, users that are currently serving in shift(s),
@@ -212,15 +169,12 @@ func (api *api) userIsQualifiedForShift(user *User, rotation *Rotation, shiftUse
 		}
 
 		if len(api.usersQualifiedForNeed(shiftUsers, need)) >= need.Max {
-			// api.Logger.Debugf("DISQUALIFY user %s, would exceed the max `%v` on %s",
-			// 	usernameWithSkills(user), need.Max, MarkdownNeed(need))
 			return false
 		}
 	}
 
 	// see if qualifies
 	if len(unsatisfiedNeeds) == 0 {
-		api.Logger.Debugf("QUALIFY user %v for NO NEED", usernameWithSkills(user))
 		return true
 	}
 	for _, need := range unsatisfiedNeeds {
@@ -229,7 +183,6 @@ func (api *api) userIsQualifiedForShift(user *User, rotation *Rotation, shiftUse
 		}
 		return true
 	}
-	// api.Logger.Debugf("DISQUALIFY user %s skills did not qualify.", usernameWithSkills(user))
 	return false
 }
 
@@ -248,6 +201,55 @@ func (api *api) usersQualifiedForNeed(users UserMap, need store.Need) UserMap {
 	return qualified
 }
 
+func (api *api) pickUser(rotation *Rotation, pool UserMap, shiftNumber int) (*User, *cdf) {
+	cdf := calculateCDF(rotation, pool, shiftNumber)
+	random := rand.Float64() * cdf.total
+	i := sort.Search(len(cdf.cdf), func(i int) bool {
+		return cdf.cdf[i] >= random
+	})
+	if i < 0 || i >= len(cdf.cdf) {
+		return nil, nil
+	}
+
+	return pool[cdf.ids[i]], cdf
+}
+
+func (api *api) unsatisfiedNeedsSorted(rotation *Rotation, poolCDF *cdf, chosen UserMap) []store.Need {
+	unsatisfied := []store.Need{}
+	unsatisfiedWeights := []float64{}
+	for _, need := range rotation.Needs {
+		cQualified := 0
+		for _, user := range chosen {
+			if api.userIsQualifiedForNeed(user, need) {
+				cQualified++
+			}
+		}
+
+		toFill := need.Min - cQualified
+		if toFill > 0 {
+			unsatisfied = append(unsatisfied, need)
+
+			if poolCDF != nil {
+				w := float64(0)
+				for i, id := range poolCDF.ids {
+					user := poolCDF.users[id]
+					if api.userIsQualifiedForNeed(user, need) {
+						w += poolCDF.weights[i]
+					}
+				}
+				unsatisfiedWeights = append(unsatisfiedWeights, w/float64(toFill))
+			}
+		}
+	}
+
+	sort.Sort(&unsatisfiedNeedSorter{
+		needs:   unsatisfied,
+		weights: unsatisfiedWeights,
+	})
+
+	return unsatisfied
+}
+
 func (api *api) unsatisfiedNeeds(needs []store.Need, users UserMap) []store.Need {
 	unsatisfied := []store.Need{}
 	for _, need := range needs {
@@ -261,9 +263,59 @@ func (api *api) unsatisfiedNeeds(needs []store.Need, users UserMap) []store.Need
 			unsatisfied = append(unsatisfied, need)
 		}
 	}
+
 	return unsatisfied
 }
 
-func usernameWithSkills(user *User) string {
-	return fmt.Sprintf("%s %s", MarkdownUser(user), MarkdownUserSkills(user))
+type unsatisfiedNeedSorter struct {
+	needs   []store.Need
+	weights []float64
+}
+
+func (s *unsatisfiedNeedSorter) Len() int {
+	return len(s.needs)
+}
+func (s *unsatisfiedNeedSorter) Less(i, j int) bool {
+	return s.weights[i] < s.weights[j]
+}
+func (s *unsatisfiedNeedSorter) Swap(i, j int) {
+	s.weights[i], s.weights[j] = s.weights[j], s.weights[i]
+}
+
+type cdf struct {
+	ids     []string
+	weights []float64
+	cdf     []float64
+	users   UserMap
+	total   float64
+}
+
+func calculateCDF(rotation *Rotation, users UserMap, shiftNumber int) *cdf {
+	cdf := &cdf{
+		ids:     []string{},
+		weights: []float64{},
+		users:   UserMap{},
+	}
+
+	for _, user := range users {
+		weight := userWeight(rotation, user, shiftNumber)
+		if weight > 0 {
+			cdf.ids = append(cdf.ids, user.MattermostUserID)
+			cdf.weights = append(cdf.weights, weight)
+			cdf.total += weight
+			cdf.users[user.MattermostUserID] = user
+		}
+	}
+
+	cdf.cdf = make([]float64, len(cdf.weights))
+	floats.CumSum(cdf.cdf, cdf.weights)
+	return cdf
+}
+
+func userWeight(rotation *Rotation, user *User, shiftNumber int) float64 {
+	next, _ := user.NextRotationShift[rotation.RotationID]
+	if next > shiftNumber {
+		return 0
+	}
+	return math.Pow(2.0, float64(shiftNumber-next))
 }

@@ -1,4 +1,21 @@
 ```
+/slottery user qualify -k webapp -l beginner -u @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston
+/slottery user qualify -k server -l beginner -u @benjamin.bennett,@betty.campbell,@brenda.boyd,@christina.wilson,@craig.reed
+/slottery user qualify -k lead -l beginner -u @emily.meyer,@eugene.rodriguez,@frances.elliott,@helen.hunter,@janice.armstrong
+
+/slottery add rotation -r simple --period m -s 2019-12-17 --grace 1 --size 3
+/slottery need -r simple -k webapp -l beginner --min 1 
+/slottery need -r simple -k server -l beginner --min 1
+/slottery need -r simple -k lead -l beginner --min 1 --max 1
+
+/slottery join -r simple -u @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston,@benjamin.bennett,@betty.campbell,@brenda.boyd,@christina.wilson,@craig.reed,@emily.meyer,@eugene.rodriguez,@frances.elliott,@helen.hunter,@janice.armstrong
+
+/slottery forecast guess -r simple -s 0 -n 6 --autofill
+/slottery forecast rotation -r simple -s 0 -n 3 --sample 100
+
+
+
+
 /slottery skill list
 
 /slottery user qualify -k webapp -l beginner -u @aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston

@@ -19,7 +19,7 @@ func (c *Command) addSkill(parameters []string) (string, error) {
 	withSkillFlags(fs, &skillName, nil)
 	err := fs.Parse(parameters)
 	if err != nil {
-		return subusage("add skill", fs), err
+		return c.subUsage(fs), err
 	}
 	err = c.API.AddSkill(skillName)
 	if err != nil {
@@ -34,7 +34,7 @@ func (c *Command) deleteSkill(parameters []string) (string, error) {
 	withSkillFlags(fs, &skillName, nil)
 	err := fs.Parse(parameters)
 	if err != nil {
-		return subusage("delete skill", fs), err
+		return c.subUsage(fs), err
 	}
 	err = c.API.DeleteSkill(skillName)
 	if err != nil {
@@ -59,7 +59,7 @@ func (c *Command) qualifyUsers(parameters []string) (string, error) {
 	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to show")
 	err := fs.Parse(parameters)
 	if err != nil {
-		return subusage("user qualify", fs), err
+		return c.subUsage(fs), err
 	}
 
 	err = c.API.AddSkillToUsers(usernames, skillName, level)
@@ -76,7 +76,7 @@ func (c *Command) disqualifyUsers(parameters []string) (string, error) {
 	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to disqualify from skill")
 	err := fs.Parse(parameters)
 	if err != nil {
-		return subusage("user disqualify", fs), err
+		return c.subUsage(fs), err
 	}
 
 	err = c.API.DeleteSkillFromUsers(usernames, skillName)

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
+	"github.com/pkg/errors"
 )
 
 const WeekDuration = time.Hour * 24 * 7
@@ -17,6 +18,49 @@ type Shift struct {
 	StartTime time.Time
 	EndTime   time.Time
 	Users     UserMap
+}
+
+func (api *api) loadOrMakeOneShift(rotation *Rotation, shiftNumber int, autofill bool) (*Shift, bool, error) {
+	start, end, err := rotation.ShiftDatesForNumber(shiftNumber)
+	if err != nil {
+		return nil, false, err
+	}
+
+	var shift *Shift
+	created := false
+	storedShift, err := api.ShiftStore.LoadShift(rotation.RotationID, shiftNumber)
+	switch err {
+	case nil:
+		shift = &Shift{
+			Shift: storedShift,
+		}
+		err = api.ExpandShift(shift)
+
+	case store.ErrNotFound:
+		if !autofill {
+			return nil, false, err
+		}
+		shift, err = rotation.makeShift(shiftNumber, nil)
+		if err != nil {
+			return nil, false, err
+		}
+		created = true
+
+	default:
+		return nil, false, err
+	}
+
+	if shift.Start != start.Format(DateFormat) || shift.End != end.Format(DateFormat) {
+		return nil, false, errors.Errorf("loaded shift has wrong dates %v-%v, expected %v-%v",
+			shift.Start, shift.End, start, end)
+	}
+
+	err = api.ExpandShift(shift)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return shift, created, nil
 }
 
 func (rotation *Rotation) makeShift(shiftNumber int, users UserMap) (*Shift, error) {
@@ -50,7 +94,7 @@ func (shift *Shift) init() error {
 	return nil
 }
 
-func (api *api) expandShift(shift *Shift) error {
+func (api *api) ExpandShift(shift *Shift) error {
 	if !shift.StartTime.IsZero() && len(shift.Users) == len(shift.MattermostUserIDs) {
 		return nil
 	}

@@ -31,7 +31,7 @@ func (rotation *Rotation) init(api *api) error {
 	return nil
 }
 
-func (api *api) expandRotation(rotation *Rotation) error {
+func (api *api) ExpandRotation(rotation *Rotation) error {
 	if !rotation.StartTime.IsZero() && len(rotation.Users) == len(rotation.MattermostUserIDs) {
 		return nil
 	}
@@ -62,7 +62,7 @@ func withRotation(rotationID string) func(api *api) error {
 
 func withRotationExpanded(rotation *Rotation) func(api *api) error {
 	return func(api *api) error {
-		return api.expandRotation(rotation)
+		return api.ExpandRotation(rotation)
 	}
 }
 
@@ -73,60 +73,6 @@ func withRotationIsNotArchived(rotation *Rotation) func(api *api) error {
 		}
 		return nil
 	}
-}
-
-func (rotation *Rotation) ShiftNumberForTime(t time.Time) (int, error) {
-	if t.Before(rotation.StartTime) {
-		return 0, errors.Errorf("Time %v is before rotation start %v", t, rotation.StartTime)
-	}
-
-	switch rotation.Period {
-	case EveryWeek:
-		return int(t.Sub(rotation.StartTime) / WeekDuration), nil
-	case EveryTwoWeeks:
-		return int(t.Sub(rotation.StartTime) / (2 * WeekDuration)), nil
-	case EveryMonth:
-		y, m, d := rotation.StartTime.Date()
-		ty, tm, td := t.Date()
-		n := (ty*12 + int(tm)) - (y*12 + int(m))
-		if n <= 0 {
-			return 0, nil
-		}
-		if td < d {
-			n--
-		}
-		return n, nil
-	default:
-		return 0, errors.Errorf("Invalid rotation period value %q", rotation.Period)
-	}
-}
-
-func (rotation *Rotation) ShiftDatesForNumber(shiftNumber int) (time.Time, time.Time, error) {
-	var begin, end time.Time
-	switch rotation.Period {
-	case EveryWeek:
-		begin = rotation.StartTime.Add(time.Duration(shiftNumber) * WeekDuration)
-		end = begin.Add(WeekDuration)
-
-	case EveryTwoWeeks:
-		begin = rotation.StartTime.Add(time.Duration(shiftNumber) * 2 * WeekDuration)
-		end = begin.Add(2 * WeekDuration)
-
-	case EveryMonth:
-		y, month, d := rotation.StartTime.Date()
-		m := int(month-1) + shiftNumber
-		year := y + m/12
-		month = time.Month((m % 12) + 1)
-		begin = time.Date(year, month, d, 0, 0, 0, 0, rotation.StartTime.Location())
-		m++
-		year = y + m/12
-		month = time.Month((m % 12) + 1)
-		end = time.Date(year, month, d, 0, 0, 0, 0, rotation.StartTime.Location())
-
-	default:
-		return time.Time{}, time.Time{}, errors.Errorf("Invalid rotation period value %q", rotation.Period)
-	}
-	return begin, end, nil
 }
 
 func (rotation *Rotation) ChangeNeed(skill string, level Level, newNeed store.Need) {
@@ -160,7 +106,7 @@ func (api *api) deleteUsersFromRotation(users UserMap, rotation *Rotation) error
 			return errors.Errorf("%s is not found in rotation %s", MarkdownUser(user), MarkdownRotation(rotation))
 		}
 
-		delete(user.Rotations, rotation.RotationID)
+		delete(user.NextRotationShift, rotation.RotationID)
 		_, err := api.storeUserWelcomeNew(user)
 		if err != nil {
 			return err
