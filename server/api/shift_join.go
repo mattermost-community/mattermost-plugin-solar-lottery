@@ -32,8 +32,8 @@ func (api *api) JoinShift(mattermostUsernames string, rotation *Rotation, shiftN
 	if err != nil {
 		return errors.Errorf("failed to load shift %v for rotation %s", shiftNumber, rotation.RotationID)
 	}
-	if shift.ShiftStatus != store.ShiftStatusOpen {
-		return errors.Errorf("can't volunteer for a status which is %s, must be Open", shift.ShiftStatus)
+	if shift.Status != store.ShiftStatusOpen {
+		return errors.Errorf("can't volunteer for a status which is %s, must be Open", shift.Status)
 	}
 
 	volunteered := UserMap{}
@@ -53,7 +53,7 @@ func (api *api) JoinShift(mattermostUsernames string, rotation *Rotation, shiftN
 	}
 
 	api.messageShiftVolunteers(volunteered, rotation, shiftNumber, shift)
-	logger.Infof("%s volunteered %s to %s shift %s.",
-		MarkdownUser(api.actingUser), MarkdownUserMapWithSkills(volunteered), MarkdownRotation(rotation), MarkdownShift(shiftNumber, shift))
+	logger.Infof("%s volunteered %s to %s.",
+		MarkdownUser(api.actingUser), MarkdownUserMapWithSkills(volunteered), MarkdownShift(rotation, shiftNumber, shift))
 	return nil
 }

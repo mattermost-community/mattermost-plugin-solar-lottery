@@ -38,7 +38,7 @@ func (api *api) OpenShift(rotation *Rotation, shiftNumber int) (*Shift, error) {
 	if err != nil {
 		return nil, err
 	}
-	shift.ShiftStatus = store.ShiftStatusOpen
+	shift.Status = store.ShiftStatusOpen
 
 	err = api.ShiftStore.StoreShift(rotation.RotationID, shiftNumber, shift.Shift)
 	if err != nil {
@@ -46,6 +46,6 @@ func (api *api) OpenShift(rotation *Rotation, shiftNumber int) (*Shift, error) {
 	}
 
 	api.messageShiftOpened(rotation, shiftNumber, shift)
-	logger.Infof("%s opened shift %s in %s.", MarkdownUser(api.actingUser), MarkdownShift(shiftNumber, shift), MarkdownRotation(rotation))
+	logger.Infof("%s opened %s.", MarkdownUser(api.actingUser), MarkdownShift(rotation, shiftNumber, shift))
 	return shift, nil
 }

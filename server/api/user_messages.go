@@ -51,9 +51,10 @@ func (api *api) messageShiftOpened(rotation *Rotation, shiftNumber int, shift *S
 
 	for _, user := range rotation.Users {
 		api.Poster.DM(user.MattermostUserID,
-			"Shift %s opened in %s%s.\n"+
-				"Use `/%s volunteer` if you would like to participate.\n",
-			MarkdownShift(shiftNumber, shift), MarkdownRotation(rotation), api.by(user), config.CommandTrigger)
+			"%s opened%s.\n"+
+				"Use `/%s shift join -r %s -s %v` if you would like to participate.\n",
+			MarkdownShift(rotation, shiftNumber, shift), api.by(user),
+			config.CommandTrigger, rotation.Name, shiftNumber)
 	}
 }
 
@@ -63,8 +64,8 @@ func (api *api) messageShiftCommitted(rotation *Rotation, shiftNumber int, shift
 
 	for _, user := range shift.Users {
 		api.Poster.DM(user.MattermostUserID,
-			"You are now committed to shift %s in %s%s.",
-			MarkdownShift(shiftNumber, shift), MarkdownRotation(rotation), api.by(user))
+			"You are now committed to %s%s.",
+			MarkdownShift(rotation, shiftNumber, shift), api.by(user))
 	}
 }
 
@@ -75,9 +76,9 @@ func (api *api) messageShiftStarted(rotation *Rotation, shiftNumber int, shift *
 	for _, user := range shift.Users {
 		api.Poster.DM(user.MattermostUserID,
 			"###### Welcome to your shift in %s!\n"+
-				"Your shift in %s is now started%s. Details:",
+				"Your shift in %s is now started%s. Details:\n%s",
 			MarkdownRotation(rotation),
-			MarkdownRotation(rotation), api.by(user), MarkdownShift(shiftNumber, shift))
+			MarkdownRotation(rotation), api.by(user), MarkdownShift(rotation, shiftNumber, shift))
 	}
 }
 
@@ -88,9 +89,9 @@ func (api *api) messageShiftFinished(rotation *Rotation, shiftNumber int, shift 
 	for _, user := range shift.Users {
 		api.Poster.DM(user.MattermostUserID,
 			"###### Done with your shift in %s!\n"+
-				"Your shift in %s is now finished%s. Details:",
+				"Your shift in %s is now finished%s. Details:\n%s",
 			MarkdownRotation(rotation),
-			MarkdownRotation(rotation), api.by(user), MarkdownShift(shiftNumber, shift))
+			MarkdownRotation(rotation), api.by(user), MarkdownShift(rotation, shiftNumber, shift))
 	}
 }
 
@@ -104,14 +105,14 @@ func (api *api) messageShiftVolunteers(volunteers UserMap, rotation *Rotation, s
 			continue
 		}
 		api.Poster.DM(user.MattermostUserID,
-			"New volunteers %s added your shift %s %s%s",
-			MarkdownUserMap(volunteers), MarkdownShift(shiftNumber, shift), MarkdownRotation(rotation), api.by(user))
+			"New users %s added your %s%s",
+			MarkdownUserMap(volunteers), MarkdownShift(rotation, shiftNumber, shift), api.by(user))
 	}
 
 	for _, user := range volunteers {
 		api.Poster.DM(user.MattermostUserID,
-			"You volunteered for shift %s in %s%s",
-			MarkdownShift(shiftNumber, shift), MarkdownRotation(rotation), api.by(user))
+			"You volunteered for shift %s%s",
+			MarkdownShift(rotation, shiftNumber, shift), api.by(user))
 	}
 }
 

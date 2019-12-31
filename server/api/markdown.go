@@ -34,9 +34,9 @@ func MarkdownUserMapWithSkills(m UserMap) string {
 	return strings.Join(out, ", ")
 }
 
-func MarkdownShift(shiftNumber int, shift *Shift) string {
-	return fmt.Sprintf("%v: %s to %s: %s",
-		shiftNumber, shift.Start, shift.End, MarkdownUserMapWithSkills(shift.Users))
+func MarkdownShift(rotation *Rotation, shiftNumber int, shift *Shift) string {
+	return fmt.Sprintf("rotation %s shift #%v (%s to %s), status:%s, users: %s",
+		rotation.Name, shiftNumber, shift.Start, shift.End, shift.Status, MarkdownUserMapWithSkills(shift.Users))
 }
 
 func MarkdownEvent(event store.Event) string {

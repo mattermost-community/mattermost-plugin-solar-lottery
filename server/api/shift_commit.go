@@ -27,7 +27,7 @@ func (api *api) CommitShift(rotation *Rotation, shiftNumber int) error {
 		return err
 	}
 
-	shift.ShiftStatus = store.ShiftStatusCommitted
+	shift.Status = store.ShiftStatusCommitted
 
 	err = api.ShiftStore.StoreShift(rotation.RotationID, shiftNumber, shift.Shift)
 	if err != nil {
@@ -35,6 +35,6 @@ func (api *api) CommitShift(rotation *Rotation, shiftNumber int) error {
 	}
 
 	api.messageShiftCommitted(rotation, shiftNumber, shift)
-	logger.Infof("%s committed shift %s in %s.", MarkdownUser(api.actingUser), MarkdownShift(shiftNumber, shift), MarkdownRotation(rotation))
+	logger.Infof("%s committed %s.", MarkdownUser(api.actingUser), MarkdownShift(rotation, shiftNumber, shift))
 	return nil
 }

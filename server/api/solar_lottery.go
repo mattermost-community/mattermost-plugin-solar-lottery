@@ -47,8 +47,8 @@ var ErrFailedInsufficientForSize = errors.New("failed to satisfy rotation size r
 
 func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift, autofill bool) error {
 	if len(shift.Users) > 0 {
-		// api.Logger.Debugf("Shift %v already has users %v: %v",
-		// 	shiftNumber, len(shift.Users), MarkdownUserMapWithSkills(shift.Users))
+		api.Logger.Debugf("Shift %v already has users %v: %v",
+			shiftNumber, len(shift.Users), MarkdownUserMapWithSkills(shift.Users))
 	}
 
 	pool := rotation.Users.Clone(false)
@@ -67,7 +67,7 @@ func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift,
 			return autofillError{orig: err}
 		}
 		if len(overlappingEvents) > 0 {
-			// api.Logger.Debugf("Unavailable user %s", MarkdownUserWithSkills(user))
+			api.Logger.Debugf("Unavailable user %s", MarkdownUserWithSkills(user))
 			delete(pool, user.MattermostUserID)
 		}
 	}
@@ -115,11 +115,11 @@ func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift,
 			chosen[user.MattermostUserID] = user
 			delete(pool, user.MattermostUserID)
 			unsatisfiedNeeds = api.unsatisfiedNeedsSorted(rotation, cdf, chosen)
-			// api.Logger.Debugf("Accepted user %s, shift: %v, pool: %v, %v unmet needs: %v", MarkdownUserWithSkills(user), len(chosen), len(pool), len(unsatisfiedNeeds), MarkdownNeeds(unsatisfiedNeeds))
+			api.Logger.Debugf("Accepted user %s, shift: %v, pool: %v, %v unmet needs: %v", MarkdownUserWithSkills(user), len(chosen), len(pool), len(unsatisfiedNeeds), MarkdownNeeds(unsatisfiedNeeds))
 		} else {
 			unqualified[user.MattermostUserID] = user
 			delete(pool, user.MattermostUserID)
-			// api.Logger.Debugf("Disqualified user %s, shift: %v, pool: %v, %v unmet needs: %v", MarkdownUserWithSkills(user), len(chosen), len(pool), len(unsatisfiedNeeds), MarkdownNeeds(unsatisfiedNeeds))
+			api.Logger.Debugf("Disqualified user %s, shift: %v, pool: %v, %v unmet needs: %v", MarkdownUserWithSkills(user), len(chosen), len(pool), len(unsatisfiedNeeds), MarkdownNeeds(unsatisfiedNeeds))
 		}
 	}
 
@@ -146,7 +146,7 @@ func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift,
 
 		chosen[user.MattermostUserID] = user
 		delete(unqualified, user.MattermostUserID)
-		// api.Logger.Debugf("Accepted user %s for backfill, shift: %v, pool: %v", MarkdownUserWithSkills(user), len(chosen), len(pool))
+		api.Logger.Debugf("Accepted user %s for backfill, shift: %v, pool: %v", MarkdownUserWithSkills(user), len(chosen), len(pool))
 	}
 
 	if len(chosen) < rotation.Size {
@@ -157,7 +157,7 @@ func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift,
 		shift.Users[user.MattermostUserID] = user
 		shift.MattermostUserIDs[user.MattermostUserID] = user.MattermostUserID
 	}
-	// api.Logger.Debugf("Shift %v (%v to %v) prepared, chose users %s **from** %s", shiftNumber, shift.Start, shift.End, MarkdownUserMapWithSkills(chosen), logPool)
+	api.Logger.Debugf("Shift %v (%v to %v) prepared, chose users %s **from** %s", shiftNumber, shift.Start, shift.End, MarkdownUserMapWithSkills(chosen), logPool)
 
 	return nil
 }

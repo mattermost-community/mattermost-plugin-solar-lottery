@@ -50,7 +50,7 @@ func (api *api) FinishShift(rotation *Rotation, shiftNumber int) error {
 		return err
 	}
 
-	shift.ShiftStatus = store.ShiftStatusFinished
+	shift.Status = store.ShiftStatusFinished
 
 	err = api.ShiftStore.StoreShift(rotation.RotationID, shiftNumber, shift.Shift)
 	if err != nil {
@@ -58,6 +58,6 @@ func (api *api) FinishShift(rotation *Rotation, shiftNumber int) error {
 	}
 
 	api.messageShiftFinished(rotation, shiftNumber, shift)
-	logger.Infof("%s finished shift %s in %s.", MarkdownUser(api.actingUser), MarkdownShift(shiftNumber, shift), MarkdownRotation(rotation))
+	logger.Infof("%s finished %s.", MarkdownUser(api.actingUser), MarkdownShift(rotation, shiftNumber, shift))
 	return nil
 }

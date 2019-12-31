@@ -27,9 +27,9 @@ type Shift struct {
 	PluginVersion string
 
 	// Mandatory attributes
-	ShiftStatus string
-	Start       string
-	End         string
+	Status string
+	Start  string
+	End    string
 
 	// Optional
 	MattermostUserIDs IDMap `json:",omitempty"`

@@ -35,12 +35,13 @@ type Rotations interface {
 }
 
 type Shifts interface {
-	CommitShift(rotation *Rotation, shiftNumber int) error
-	ListShifts(rotation *Rotation, shiftNumber, numShifts int) ([]*Shift, error)
+	CommitShift(*Rotation, int) error
+	ListShifts(*Rotation, int, int) ([]*Shift, error)
 	OpenShift(*Rotation, int) (*Shift, error)
-	StartShift(rotation *Rotation, shiftNumber int) error
-	FinishShift(rotation *Rotation, shiftNumber int) error
-	DebugDeleteShift(rotation *Rotation, shiftNumber int) error
+	StartShift(*Rotation, int) error
+	FinishShift(*Rotation, int) error
+	DebugDeleteShift(*Rotation, int) error
+	FillShift(*Rotation, int, bool) (shift *Shift, ready bool, whyNot string, before, added UserMap, err error)
 }
 
 type Users interface {

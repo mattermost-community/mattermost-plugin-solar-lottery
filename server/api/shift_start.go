@@ -27,7 +27,7 @@ func (api *api) StartShift(rotation *Rotation, shiftNumber int) error {
 		return err
 	}
 
-	shift.ShiftStatus = store.ShiftStatusStarted
+	shift.Status = store.ShiftStatusStarted
 
 	err = api.ShiftStore.StoreShift(rotation.RotationID, shiftNumber, shift.Shift)
 	if err != nil {
@@ -35,6 +35,6 @@ func (api *api) StartShift(rotation *Rotation, shiftNumber int) error {
 	}
 
 	api.messageShiftStarted(rotation, shiftNumber, shift)
-	logger.Infof("%s started shift %s in %s.", MarkdownUser(api.actingUser), MarkdownShift(shiftNumber, shift), MarkdownRotation(rotation))
+	logger.Infof("%s started %s.", MarkdownUser(api.actingUser), MarkdownShift(rotation, shiftNumber, shift))
 	return nil
 }
