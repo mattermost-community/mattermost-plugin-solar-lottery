@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func (c *Command) addShift(parameters []string) (string, error) {
+func (c *Command) openShift(parameters []string) (string, error) {
 	return c.doShift(parameters, nil,
 		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
 			shift, err := c.API.OpenShift(rotation, shiftNumber)

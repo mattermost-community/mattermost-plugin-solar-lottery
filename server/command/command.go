@@ -33,6 +33,7 @@ const (
 	commandLeave       = "leave"
 	commandList        = "list"
 	commandNeed        = "need"
+	commandOpen        = "open"
 	commandQualify     = "qualify"
 	commandRotation    = "rotation"
 	commandShift       = "shift"
@@ -51,6 +52,7 @@ const (
 	flagPRotation = "r"
 	flagPSkill    = "k"
 	flagPStart    = "s"
+	flagPShift    = "s"
 	flagPUsers    = "u"
 )
 
@@ -73,6 +75,7 @@ const (
 	flagSampleSize = "sample"
 	flagSize       = "size"
 	flagSkill      = "skill"
+	flagShift      = "shift"
 	flagStart      = "start"
 	flagType       = "type"
 	flagUsers      = "users"

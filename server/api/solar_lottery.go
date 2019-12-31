@@ -47,8 +47,8 @@ var ErrFailedInsufficientForSize = errors.New("failed to satisfy rotation size r
 
 func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift, autofill bool) error {
 	if len(shift.Users) > 0 {
-		api.Logger.Debugf("Shift %v already has users %v: %v",
-			shiftNumber, len(shift.Users), MarkdownUserMapWithSkills(shift.Users))
+		// api.Logger.Debugf("Shift %v already has users %v: %v",
+		// 	shiftNumber, len(shift.Users), MarkdownUserMapWithSkills(shift.Users))
 	}
 
 	pool := rotation.Users.Clone(false)
@@ -131,7 +131,12 @@ func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift,
 		}
 	}
 
-	// Second pass: backfill the rest from any unqualified
+	// Second pass: backfill the rest from unqualified, merge any remaining in
+	// the pool first.
+	for id, user := range pool {
+		unqualified[id] = user
+	}
+
 	for len(chosen) < rotation.Size && len(unqualified) > 0 {
 		// Choose next user from the pool, weighted-randomly.
 		user, _ := api.pickUser(rotation, unqualified, shiftNumber)
@@ -299,12 +304,14 @@ func calculateCDF(rotation *Rotation, users UserMap, shiftNumber int) *cdf {
 
 	for _, user := range users {
 		weight := userWeight(rotation, user, shiftNumber)
-		if weight > 0 {
-			cdf.ids = append(cdf.ids, user.MattermostUserID)
-			cdf.weights = append(cdf.weights, weight)
-			cdf.total += weight
-			cdf.users[user.MattermostUserID] = user
+		if weight <= 0 {
+			continue
 		}
+		cdf.ids = append(cdf.ids, user.MattermostUserID)
+		cdf.weights = append(cdf.weights, weight)
+		cdf.total += weight
+		cdf.users[user.MattermostUserID] = user
+
 	}
 
 	cdf.cdf = make([]float64, len(cdf.weights))

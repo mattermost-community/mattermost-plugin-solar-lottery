@@ -35,16 +35,16 @@ func (c *Command) info(parameters []string) (string, error) {
 	- [x] update
 
 - [ ] shift
-	- [ ] add
-	- [ ] commit: closes the shift for volunteers, notifies selected users.
-	- [ ] debug-delete
+	- [x] open
+	- [x] commit: closes the shift for volunteers, notifies selected users.
+	- [x] debug-delete
 	- [ ] fill: evaluates shift readiness, autofills.
-	- [ ] finish: finishes a shift.
-	- [ ] join: add user(s) to shift.
+	- [x] finish: finishes a shift.
+	- [x] join: add user(s) to shift.
 	- [ ] leave: remove user(s) from shift.
-	- [ ] list
+	- [x] list
 	- [ ] show
-	- [ ] start: starts a shift.
+	- [x] start: starts a shift.
 
 - [x] skill
 	- [x] add

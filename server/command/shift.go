@@ -12,11 +12,12 @@ import (
 
 func (c *Command) shift(parameters []string) (string, error) {
 	subcommands := map[string]func([]string) (string, error){
-		commandAdd:         c.addShift,
-		commandTransition:  c.transitionShift,
+		commandOpen:        c.openShift,
 		commandDebugDelete: c.debugDeleteShift,
 		commandFill:        c.fillShift,
 		commandJoin:        c.joinShift,
+		commandList:        c.listShifts,
+		commandTransition:  c.transitionShift,
 		// commandLeave:       c.leaveShift,
 	}
 
@@ -27,10 +28,9 @@ func (c *Command) doShift(parameters []string,
 	initF func(fs *pflag.FlagSet),
 	doF func(*pflag.FlagSet, *api.Rotation, int) (string, error)) (string, error) {
 	var rotationID, rotationName string
-	var start int
+	var shiftNumber int
 	fs := flag.NewFlagSet("", flag.ContinueOnError)
-	fs.IntVarP(&start, flagStart, flagPStart, 0, "starting shift number")
-	// fs.IntVarP(&numShifts, flagNumber, flagPNumber, -1, "number of shifts")
+	fs.IntVarP(&shiftNumber, flagShift, flagPShift, 0, "(starting) shift number")
 	if initF != nil {
 		initF(fs)
 	}
@@ -49,5 +49,5 @@ func (c *Command) doShift(parameters []string,
 		return "", err
 	}
 
-	return doF(fs, rotation, start)
+	return doF(fs, rotation, shiftNumber)
 }
