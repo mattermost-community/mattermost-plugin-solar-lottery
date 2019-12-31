@@ -13,13 +13,23 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
 )
 
+func (c *Command) skill(parameters []string) (string, error) {
+	subcommands := map[string]func([]string) (string, error){
+		commandAdd:    c.addSkill,
+		commandDelete: c.deleteSkill,
+		commandList:   c.listSkills,
+	}
+
+	return c.handleCommand(subcommands, parameters)
+}
+
 func (c *Command) addSkill(parameters []string) (string, error) {
 	var skillName string
 	fs := flag.NewFlagSet("", flag.ContinueOnError)
 	withSkillFlags(fs, &skillName, nil)
 	err := fs.Parse(parameters)
 	if err != nil {
-		return c.subUsage(fs), err
+		return c.flagUsage(fs), err
 	}
 	err = c.API.AddSkill(skillName)
 	if err != nil {
@@ -34,7 +44,7 @@ func (c *Command) deleteSkill(parameters []string) (string, error) {
 	withSkillFlags(fs, &skillName, nil)
 	err := fs.Parse(parameters)
 	if err != nil {
-		return c.subUsage(fs), err
+		return c.flagUsage(fs), err
 	}
 	err = c.API.DeleteSkill(skillName)
 	if err != nil {
@@ -49,41 +59,6 @@ func (c *Command) listSkills(parameters []string) (string, error) {
 		return "", err
 	}
 	return "Known skills: " + utils.JSONBlock(skills), nil
-}
-
-func (c *Command) qualifyUsers(parameters []string) (string, error) {
-	var usernames, skillName string
-	var level api.Level
-	fs := flag.NewFlagSet("", flag.ContinueOnError)
-	withSkillFlags(fs, &skillName, &level)
-	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to show")
-	err := fs.Parse(parameters)
-	if err != nil {
-		return c.subUsage(fs), err
-	}
-
-	err = c.API.AddSkillToUsers(usernames, skillName, level)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("Qualified %s as %s", usernames, api.MarkdownSkillLevel(skillName, level)), nil
-}
-
-func (c *Command) disqualifyUsers(parameters []string) (string, error) {
-	var usernames, skillName string
-	fs := flag.NewFlagSet("", flag.ContinueOnError)
-	withSkillFlags(fs, &skillName, nil)
-	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to disqualify from skill")
-	err := fs.Parse(parameters)
-	if err != nil {
-		return c.subUsage(fs), err
-	}
-
-	err = c.API.DeleteSkillFromUsers(usernames, skillName)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("Disqualified %s from %s", usernames, skillName), nil
 }
 
 func withSkillFlags(fs *pflag.FlagSet, skillName *string, level *api.Level) {

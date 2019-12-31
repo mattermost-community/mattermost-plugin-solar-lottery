@@ -5,6 +5,7 @@ package command
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -101,42 +102,19 @@ func Register(registerFunc RegisterFunc) {
 		Description:      "team rotation scheduler",
 		AutoComplete:     true,
 		AutoCompleteDesc: "Schedule team rotations",
-		AutoCompleteHint: fmt.Sprintf("some commands: `%s,%s,%s,%s,%s`. Type `/%s help` for more information.",
-			commandShift, commandForecast, commandJoin, commandLeave, commandUser, config.CommandTrigger),
+		AutoCompleteHint: fmt.Sprintf("Usage: `/%s info|rotation|shift|skill|user`.",
+			config.CommandTrigger),
 	})
-}
-
-func (c *Command) handleCommand(subcommands map[string]func([]string) (string, error),
-	parameters []string, usage string) (string, error) {
-	if len(parameters) == 0 {
-		return usage, errors.New("expected a (sub-)command")
-	}
-
-	f := subcommands[parameters[0]]
-	if f == nil {
-		return usage, errors.Errorf("unknown command: %s", parameters[0])
-	}
-	c.subcommand += " " + parameters[0]
-
-	return f(parameters[1:])
 }
 
 // Handle should be called by the plugin when a command invocation is received from the Mattermost server.
 func (c *Command) Handle() (out string, err error) {
 	subcommands := map[string]func([]string) (string, error){
-		commandAdd:      c.add,
-		commandNeed:     c.need,
-		commandDelete:   c.delete,
-		commandHelp:     c.help,
 		commandInfo:     c.info,
 		commandRotation: c.rotation,
 		commandShift:    c.shift,
-		commandShow:     c.show,
+		commandShow:     c.skill,
 		commandUser:     c.user,
-		commandList:     c.list,
-		commandJoin:     c.join,
-		commandLeave:    c.leave,
-		commandForecast: c.forecast,
 	}
 
 	defer func() {
@@ -152,7 +130,7 @@ func (c *Command) Handle() (out string, err error) {
 		return "", err
 	}
 	c.subcommand = command
-	return c.handleCommand(subcommands, parameters, "TODO Usage: /slottery do stuff")
+	return c.handleCommand(subcommands, parameters)
 }
 
 func (c *Command) validate() (string, []string, error) {
@@ -171,10 +149,36 @@ func (c *Command) validate() (string, []string, error) {
 	return command, split[1:], nil
 }
 
-func (c *Command) subUsage(fs *pflag.FlagSet) string {
-	if fs == nil {
-		return fmt.Sprintf("Usage:\n```\n/%s %s```\n", config.CommandTrigger, c.subcommand)
+func (c *Command) handleCommand(subcommands map[string]func([]string) (string, error),
+	parameters []string) (string, error) {
+	if len(parameters) == 0 {
+		return c.subUsage(subcommands), errors.New("expected a (sub-)command")
 	}
-	return fmt.Sprintf("Usage:\n```\n/%s %s [flags...]\n\n%s```\n",
-		config.CommandTrigger, c.subcommand, fs.FlagUsages())
+
+	f := subcommands[parameters[0]]
+	if f == nil {
+		return c.subUsage(subcommands), errors.Errorf("unknown command: %s", parameters[0])
+	}
+	c.subcommand += " " + parameters[0]
+
+	return f(parameters[1:])
+}
+
+func (c *Command) flagUsage(fs *pflag.FlagSet) string {
+	usage := c.subcommand
+	if fs != nil {
+		usage += " [flags...]\n\nFlags:\n" + fs.FlagUsages()
+	}
+	return fmt.Sprintf("Usage:\n" + utils.CodeBlock(usage))
+}
+
+func (c *Command) subUsage(subcommands map[string]func([]string) (string, error)) string {
+	subs := []string{}
+	for sub := range subcommands {
+		subs = append(subs, sub)
+	}
+	sort.Strings(subs)
+	usage := fmt.Sprintf("`%s %s`", c.subcommand, strings.Join(subs, "|"))
+	return fmt.Sprintf("Usage: %s\nUse `%s <subcommand> help` for more info.",
+		usage, c.subcommand)
 }

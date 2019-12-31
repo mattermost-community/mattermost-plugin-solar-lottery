@@ -12,7 +12,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
-func (c *Command) need(parameters []string) (string, error) {
+func (c *Command) rotationNeed(parameters []string) (string, error) {
 	var rotationID, rotationName, skill string
 	var level api.Level
 	var deleteNeed bool
@@ -22,10 +22,10 @@ func (c *Command) need(parameters []string) (string, error) {
 	withRotationNeedFlags(fs, &skill, &level, &min, &max, &deleteNeed)
 	err := fs.Parse(parameters)
 	if err != nil {
-		return c.subUsage(fs), err
+		return c.flagUsage(fs), err
 	}
 	if level == 0 || skill == "" {
-		return c.subUsage(fs),
+		return c.flagUsage(fs),
 			errors.Errorf("requires `%s` and `%s` to be specified.", flagSkill, flagLevel)
 	}
 
@@ -44,7 +44,7 @@ func (c *Command) need(parameters []string) (string, error) {
 	}
 	if !deleteNeed {
 		if min == 0 {
-			return c.subUsage(fs),
+			return c.flagUsage(fs),
 				errors.Errorf("requires `%s` to be specified.", flagMin)
 		}
 		updatef = func(rotation *api.Rotation) error {
