@@ -35,7 +35,7 @@ func (c *Command) userUnavailable(parameters []string) (string, error) {
 	end = endTime.Format(api.DateFormat)
 
 	if clear {
-		err = c.API.DeleteEventsFromUsers(usernames, start, end)
+		err = c.API.DeleteEvents(usernames, start, end)
 		if err != nil {
 			return "", err
 		}
@@ -46,7 +46,7 @@ func (c *Command) userUnavailable(parameters []string) (string, error) {
 			End:   endTime.Format(api.DateFormat),
 			Type:  typ,
 		}
-		err = c.API.AddEventToUsers(usernames, event)
+		err = c.API.AddEvent(usernames, event)
 		if err != nil {
 			return "", err
 		}

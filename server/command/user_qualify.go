@@ -22,7 +22,7 @@ func (c *Command) qualifyUsers(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	err = c.API.AddSkillToUsers(usernames, skillName, level)
+	err = c.API.Qualify(usernames, skillName, level)
 	if err != nil {
 		return "", err
 	}

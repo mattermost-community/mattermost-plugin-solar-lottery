@@ -10,12 +10,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
-type Skills interface {
-	ListSkills() (store.IDMap, error)
-	AddSkill(string) error
-	DeleteSkill(string) error
-}
-
 var ErrSkillAlreadyExists = errors.New("skill already exists")
 
 func (api *api) ListSkills() (store.IDMap, error) {
@@ -105,4 +99,19 @@ func withKnownSkills(api *api) error {
 	}
 	api.knownSkills = skills
 	return nil
+}
+
+func withValidSkillName(skillName string) func(api *api) error {
+	return func(api *api) error {
+		err := api.Filter(withKnownSkills)
+		if err != nil {
+			return err
+		}
+		for s := range api.knownSkills {
+			if s == skillName {
+				return nil
+			}
+		}
+		return errors.Errorf("skill %s is not found", skillName)
+	}
 }

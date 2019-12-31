@@ -33,7 +33,7 @@ func (c *Command) joinRotation(parameters []string) (string, error) {
 		return "", err
 	}
 
-	added, err := c.API.AddRotationUsers(rotation, users, graceShifts)
+	added, err := c.API.JoinRotation(users, rotation, graceShifts)
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed, %s might have been updated", api.MarkdownUserMap(added))
 	}

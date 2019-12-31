@@ -13,13 +13,11 @@ import (
 func (c *Command) shift(parameters []string) (string, error) {
 	subcommands := map[string]func([]string) (string, error){
 		commandAdd:         c.addShift,
-		commandCommit:      c.commitShift,
+		commandTransition:  c.transitionShift,
 		commandDebugDelete: c.debugDeleteShift,
 		commandFill:        c.fillShift,
-		commandFinish:      c.finishShift,
 		commandJoin:        c.joinShift,
 		// commandLeave:       c.leaveShift,
-		commandStart: c.startShift,
 	}
 
 	return c.handleCommand(subcommands, parameters)
@@ -27,7 +25,7 @@ func (c *Command) shift(parameters []string) (string, error) {
 
 func (c *Command) doShift(parameters []string,
 	initF func(fs *pflag.FlagSet),
-	doF func(*api.Rotation, int) (string, error)) (string, error) {
+	doF func(*pflag.FlagSet, *api.Rotation, int) (string, error)) (string, error) {
 	var rotationID, rotationName string
 	var start int
 	fs := flag.NewFlagSet("", flag.ContinueOnError)
@@ -51,5 +49,5 @@ func (c *Command) doShift(parameters []string,
 		return "", err
 	}
 
-	return doF(rotation, start)
+	return doF(fs, rotation, start)
 }

@@ -6,8 +6,9 @@ package api
 import (
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
 const WeekDuration = time.Hour * 24 * 7
@@ -18,6 +19,29 @@ type Shift struct {
 	StartTime time.Time
 	EndTime   time.Time
 	Users     UserMap
+}
+
+func (api *api) ExpandShift(shift *Shift) error {
+	if !shift.StartTime.IsZero() && len(shift.Users) == len(shift.MattermostUserIDs) {
+		return nil
+	}
+
+	err := shift.init()
+	if err != nil {
+		return err
+	}
+
+	users, err := api.LoadStoredUsers(shift.MattermostUserIDs)
+	if err != nil {
+		return err
+	}
+	err = api.ExpandUserMap(users)
+	if err != nil {
+		return err
+	}
+	shift.Users = users
+
+	return nil
 }
 
 func (api *api) loadOrMakeOneShift(rotation *Rotation, shiftNumber int, autofill bool) (*Shift, bool, error) {
@@ -79,6 +103,23 @@ func (rotation *Rotation) makeShift(shiftNumber int, users UserMap) (*Shift, err
 	}, nil
 }
 
+func (api *api) loadShift(rotation *Rotation, shiftNumber int) (*Shift, error) {
+	shift, err := rotation.makeShift(shiftNumber, nil)
+	if err != nil {
+		return nil, err
+	}
+	s, err := api.ShiftStore.LoadShift(rotation.RotationID, shiftNumber)
+	if err != nil {
+		return nil, err
+	}
+	shift.Shift = s
+	err = api.ExpandShift(shift)
+	if err != nil {
+		return nil, err
+	}
+	return shift, nil
+}
+
 func (shift *Shift) init() error {
 	start, err := time.Parse(DateFormat, shift.Start)
 	if err != nil {
@@ -91,28 +132,5 @@ func (shift *Shift) init() error {
 	shift.StartTime = start
 	shift.EndTime = end
 	shift.Users = UserMap{}
-	return nil
-}
-
-func (api *api) ExpandShift(shift *Shift) error {
-	if !shift.StartTime.IsZero() && len(shift.Users) == len(shift.MattermostUserIDs) {
-		return nil
-	}
-
-	err := shift.init()
-	if err != nil {
-		return err
-	}
-
-	users, err := api.LoadStoredUsers(shift.MattermostUserIDs)
-	if err != nil {
-		return err
-	}
-	err = api.ExpandUserMap(users)
-	if err != nil {
-		return err
-	}
-	shift.Users = users
-
 	return nil
 }

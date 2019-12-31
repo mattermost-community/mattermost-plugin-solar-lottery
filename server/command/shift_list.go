@@ -16,7 +16,7 @@ func (c *Command) listShifts(parameters []string) (string, error) {
 		func(fs *pflag.FlagSet) {
 			fs.IntVarP(&numShifts, flagNumber, flagPNumber, 3, "Number of shifts to list")
 		},
-		func(rotation *api.Rotation, shiftNumber int) (string, error) {
+		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
 			shifts, err := c.API.ListShifts(rotation, shiftNumber, numShifts)
 			if err != nil {
 				return "", err

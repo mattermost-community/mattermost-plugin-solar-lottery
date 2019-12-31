@@ -6,11 +6,12 @@ package command
 import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
+	"github.com/spf13/pflag"
 )
 
 func (c *Command) addShift(parameters []string) (string, error) {
 	return c.doShift(parameters, nil,
-		func(rotation *api.Rotation, shiftNumber int) (string, error) {
+		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
 			shift, err := c.API.OpenShift(rotation, shiftNumber)
 			if err != nil {
 				return "", err

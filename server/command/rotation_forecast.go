@@ -31,7 +31,7 @@ func (c *Command) forecastRotation(parameters []string) (string, error) {
 		return "", err
 	}
 
-	forecast, err := c.API.Forecast(rotation, start, numShifts, sampleSize)
+	forecast, err := c.API.ForecastRotation(rotation, start, numShifts, sampleSize)
 	if err != nil {
 		return "", err
 	}

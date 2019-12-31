@@ -14,10 +14,10 @@ func (c *Command) joinShift(parameters []string) (string, error) {
 	var usernames string
 	return c.doShift(parameters,
 		func(fs *pflag.FlagSet) {
-			fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "add nother users to rotation.")
+			fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to join the shift.")
 		},
-		func(rotation *api.Rotation, shiftNumber int) (string, error) {
-			err := c.API.VolunteerUsers(usernames, rotation, shiftNumber)
+		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
+			err := c.API.JoinShift(usernames, rotation, shiftNumber)
 			if err != nil {
 				return "", err
 			}

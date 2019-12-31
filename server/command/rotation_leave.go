@@ -31,7 +31,7 @@ func (c *Command) leaveRotation(parameters []string) (string, error) {
 		return "", err
 	}
 
-	deleted, err := c.API.DeleteRotationUsers(rotation, users)
+	deleted, err := c.API.LeaveRotation(users, rotation)
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed, %s might have been updated", api.MarkdownUserMap(deleted))
 	}

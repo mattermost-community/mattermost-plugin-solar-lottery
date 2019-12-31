@@ -4,6 +4,8 @@
 package api
 
 import (
+	"time"
+
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
@@ -39,6 +41,47 @@ func (user User) MattermostUsername() string {
 		return user.MattermostUserID
 	}
 	return user.MattermostUser.Username
+}
+
+func (user *User) AddEvent(event store.Event) error {
+	for _, existing := range user.Events {
+		if existing == event {
+			return nil
+		}
+	}
+	user.Events = append(user.Events, event)
+	eventsBy(byStartDate).Sort(user.Events)
+	return nil
+}
+
+func (user *User) overlapEvents(intervalStart, intervalEnd time.Time, remove bool) ([]store.Event, error) {
+	var found, updated []store.Event
+	for _, event := range user.Events {
+		s, e, err := parseEventDates(event.Start, event.End)
+		if err != nil {
+			return nil, err
+		}
+
+		// Find the overlap
+		if s.Before(intervalStart) {
+			s = intervalStart
+		}
+		if e.After(intervalEnd) {
+			e = intervalEnd
+		}
+
+		if s.Before(e) {
+			// Overlap
+			found = append(found, event)
+			if remove {
+				continue
+			}
+		}
+
+		updated = append(updated, event)
+	}
+	user.Events = updated
+	return found, nil
 }
 
 func withActingUser(api *api) error {

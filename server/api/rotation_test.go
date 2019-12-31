@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
 func TestShiftNumberForTime(t *testing.T) {

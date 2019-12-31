@@ -7,8 +7,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
 type Event struct {
@@ -30,47 +31,6 @@ func parseEventDates(start, end string) (time.Time, time.Time, error) {
 		return time.Time{}, time.Time{}, errors.Errorf("event start %v after end %v", s, e)
 	}
 	return s, e, nil
-}
-
-func (user *User) AddEvent(event store.Event) error {
-	for _, existing := range user.Events {
-		if existing == event {
-			return nil
-		}
-	}
-	user.Events = append(user.Events, event)
-	eventsBy(byStartDate).Sort(user.Events)
-	return nil
-}
-
-func (user *User) overlapEvents(intervalStart, intervalEnd time.Time, remove bool) ([]store.Event, error) {
-	var found, updated []store.Event
-	for _, event := range user.Events {
-		s, e, err := parseEventDates(event.Start, event.End)
-		if err != nil {
-			return nil, err
-		}
-
-		// Find the overlap
-		if s.Before(intervalStart) {
-			s = intervalStart
-		}
-		if e.After(intervalEnd) {
-			e = intervalEnd
-		}
-
-		if s.Before(e) {
-			// Overlap
-			found = append(found, event)
-			if remove {
-				continue
-			}
-		}
-
-		updated = append(updated, event)
-	}
-	user.Events = updated
-	return found, nil
 }
 
 type eventSorter struct {

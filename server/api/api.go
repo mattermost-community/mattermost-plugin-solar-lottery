@@ -19,7 +19,62 @@ type API interface {
 	Shifts
 	Skills
 	Users
+	UserActions
 	Expander
+}
+
+type Rotations interface {
+	AddRotation(*Rotation) error
+	ArchiveRotation(*Rotation) error
+	DebugDeleteRotation(string) error
+	LoadKnownRotations() (store.IDMap, error)
+	LoadRotation(string) (*Rotation, error)
+	MakeRotation(rotationName string) (*Rotation, error)
+	ResolveRotationName(namePattern string) ([]string, error)
+	UpdateRotation(*Rotation, func(*Rotation) error) error
+}
+
+type Shifts interface {
+	CommitShift(rotation *Rotation, shiftNumber int) error
+	ListShifts(rotation *Rotation, shiftNumber, numShifts int) ([]*Shift, error)
+	OpenShift(*Rotation, int) (*Shift, error)
+	StartShift(rotation *Rotation, shiftNumber int) error
+	FinishShift(rotation *Rotation, shiftNumber int) error
+	DebugDeleteShift(rotation *Rotation, shiftNumber int) error
+}
+
+type Users interface {
+	GetActingUser() (*User, error)
+	LoadMattermostUsers(mattermostUsernames string) (UserMap, error)
+	LoadStoredUsers(mattermostUserIDs store.IDMap) (UserMap, error)
+}
+
+type UserActions interface {
+	Qualify(mattermostUsernames, skillName string, level Level) error
+	JoinRotation(mattermostUsernames string, rotation *Rotation, graceShifts int) (added UserMap, err error)
+	LeaveRotation(mattermostUsernames string, rotation *Rotation) (deleted UserMap, err error)
+	Disqualify(mattermostUsernames, skillName string) error
+	JoinShift(mattermostUsernames string, rotation *Rotation, shiftNumber int) error
+	AddEvent(mattermostUsernames string, event store.Event) error
+	DeleteEvents(mattermostUsernames string, startDate, endDate string) error
+}
+
+type Forecaster interface {
+	Guess(rotation *Rotation, startingShiftNumber, numShifts int, autofill bool) ([]*Shift, error)
+	ForecastRotation(rotation *Rotation, startingShiftNumber, numShifts, sampleSize int) (*Forecast, error)
+}
+
+type Skills interface {
+	ListSkills() (store.IDMap, error)
+	AddSkill(string) error
+	DeleteSkill(string) error
+}
+
+type Expander interface {
+	ExpandUserMap(UserMap) error
+	ExpandUser(*User) error
+	ExpandShift(*Shift) error
+	ExpandRotation(*Rotation) error
 }
 
 type PluginAPI interface {
