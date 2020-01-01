@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (api *api) ForecastUser(mattermostUsername string, rotation *Rotation, numShifts, sampleSize int) ([]float64, error) {
+func (api *api) ForecastUser(mattermostUsername string, rotation *Rotation, numShifts, sampleSize int, now time.Time) ([]float64, error) {
 	err := api.Filter(
 		withActingUserExpanded,
 		withMattermostUsersExpanded(mattermostUsername),
@@ -37,11 +37,11 @@ func (api *api) ForecastUser(mattermostUsername string, rotation *Rotation, numS
 		"RotationID":     rotation.RotationID,
 	})
 
-	shiftNumber, err := rotation.ShiftNumberForTime(time.Now())
+	shiftNumber, err := rotation.ShiftNumberForTime(now)
 	if err != nil {
 		return nil, err
 	}
-	shiftNumber++ // start with the next shift
+	shiftNumber++ // start with the next shift, or 0 if -1 was returned
 
 	shiftCounts := make([]float64, numShifts)
 

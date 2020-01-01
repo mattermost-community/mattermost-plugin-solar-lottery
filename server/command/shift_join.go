@@ -17,10 +17,10 @@ func (c *Command) joinShift(parameters []string) (string, error) {
 			fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to join the shift.")
 		},
 		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
-			err := c.API.JoinShift(usernames, rotation, shiftNumber)
+			shift, err := c.API.JoinShift(usernames, rotation, shiftNumber)
 			if err != nil {
 				return "", err
 			}
-			return fmt.Sprintf("Volunteered %s for shift #%v in %s", usernames, shiftNumber, api.MarkdownRotation(rotation)), nil
+			return fmt.Sprintf("Volunteered %s for %s", usernames, api.MarkdownShift(rotation, shiftNumber, shift)), nil
 		})
 }

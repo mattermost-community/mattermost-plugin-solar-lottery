@@ -4,6 +4,8 @@
 package command
 
 import (
+	"time"
+
 	flag "github.com/spf13/pflag"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
@@ -31,7 +33,7 @@ func (c *Command) userForecast(parameters []string) (string, error) {
 		return "", err
 	}
 
-	forecast, err := c.API.ForecastUser(username, rotation, numShifts, sampleSize)
+	forecast, err := c.API.ForecastUser(username, rotation, numShifts, sampleSize, time.Now())
 	if err != nil {
 		return "", err
 	}

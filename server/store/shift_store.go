@@ -5,6 +5,7 @@ package store
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
@@ -31,7 +32,16 @@ type Shift struct {
 	End    string
 
 	// Optional
-	MattermostUserIDs IDMap `json:",omitempty"`
+	MattermostUserIDs IDMap          `json:",omitempty"`
+	Autopilot         ShiftAutopilot `json:",omitempty"`
+}
+
+type ShiftAutopilot struct {
+	Filled         time.Time `json:",omitempty"`
+	Finished       time.Time `json:",omitempty"`
+	NotifiedStart  time.Time `json:",omitempty"`
+	NotifiedFinish time.Time `json:",omitempty"`
+	Started        time.Time `json:",omitempty"`
 }
 
 func NewShift(start, end string, mattermostUserIDs IDMap) *Shift {

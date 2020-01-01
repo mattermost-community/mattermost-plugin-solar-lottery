@@ -12,7 +12,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
-func (api *api) JoinRotation(mattermostUsernames string, rotation *Rotation, graceShifts int) (UserMap, error) {
+func (api *api) JoinRotation(mattermostUsernames string, rotation *Rotation, graceShifts int, now time.Time) (UserMap, error) {
 	err := api.Filter(
 		withActingUserExpanded,
 		withMattermostUsersExpanded(mattermostUsernames),
@@ -28,7 +28,8 @@ func (api *api) JoinRotation(mattermostUsernames string, rotation *Rotation, gra
 		"GraceShifts":         graceShifts,
 	})
 
-	shiftNumber, _ := rotation.ShiftNumberForTime(time.Now())
+	// -1 is acceptable
+	shiftNumber, _ := rotation.ShiftNumberForTime(now)
 	added := UserMap{}
 	for _, user := range api.users {
 		if len(rotation.MattermostUserIDs[user.MattermostUserID]) != 0 {

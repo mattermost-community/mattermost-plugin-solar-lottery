@@ -4,6 +4,8 @@
 package api
 
 import (
+	"time"
+
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
@@ -35,11 +37,10 @@ type Rotations interface {
 }
 
 type Shifts interface {
-	CommitShift(*Rotation, int) error
 	ListShifts(*Rotation, int, int) ([]*Shift, error)
 	OpenShift(*Rotation, int) (*Shift, error)
-	StartShift(*Rotation, int) error
-	FinishShift(*Rotation, int) error
+	StartShift(*Rotation, int) (*Shift, error)
+	FinishShift(*Rotation, int) (*Shift, error)
 	DebugDeleteShift(*Rotation, int) error
 	FillShift(*Rotation, int, bool) (shift *Shift, ready bool, whyNot string, before, added UserMap, err error)
 }
@@ -52,10 +53,10 @@ type Users interface {
 
 type UserActions interface {
 	Qualify(mattermostUsernames, skillName string, level Level) error
-	JoinRotation(mattermostUsernames string, rotation *Rotation, graceShifts int) (added UserMap, err error)
+	JoinRotation(mattermostUsernames string, rotation *Rotation, graceShifts int, now time.Time) (added UserMap, err error)
 	LeaveRotation(mattermostUsernames string, rotation *Rotation) (deleted UserMap, err error)
 	Disqualify(mattermostUsernames, skillName string) error
-	JoinShift(mattermostUsernames string, rotation *Rotation, shiftNumber int) error
+	JoinShift(mattermostUsernames string, rotation *Rotation, shiftNumber int) (*Shift, error)
 	AddEvent(mattermostUsernames string, event store.Event) error
 	DeleteEvents(mattermostUsernames string, startDate, endDate string) error
 }
@@ -63,7 +64,7 @@ type UserActions interface {
 type Forecaster interface {
 	Guess(rotation *Rotation, startingShiftNumber, numShifts int, autofill bool) ([]*Shift, error)
 	ForecastRotation(rotation *Rotation, startingShiftNumber, numShifts, sampleSize int) (*Forecast, error)
-	ForecastUser(mattermostUsername string, rotation *Rotation, numShifts, sampleSize int) ([]float64, error)
+	ForecastUser(mattermostUsername string, rotation *Rotation, numShifts, sampleSize int, now time.Time) ([]float64, error)
 }
 
 type Skills interface {

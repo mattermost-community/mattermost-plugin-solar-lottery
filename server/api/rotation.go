@@ -57,7 +57,7 @@ func (rotation *Rotation) DeleteNeed(skill string, level Level) error {
 
 func (rotation *Rotation) ShiftNumberForTime(t time.Time) (int, error) {
 	if t.Before(rotation.StartTime) {
-		return 0, errors.Errorf("Time %v is before rotation start %v", t, rotation.StartTime)
+		return -1, nil
 	}
 
 	switch rotation.Period {
@@ -70,14 +70,14 @@ func (rotation *Rotation) ShiftNumberForTime(t time.Time) (int, error) {
 		ty, tm, td := t.Date()
 		n := (ty*12 + int(tm)) - (y*12 + int(m))
 		if n <= 0 {
-			return 0, nil
+			return -1, nil
 		}
 		if td < d {
 			n--
 		}
 		return n, nil
 	default:
-		return 0, errors.Errorf("Invalid rotation period value %q", rotation.Period)
+		return -1, errors.Errorf("Invalid rotation period value %q", rotation.Period)
 	}
 }
 
@@ -98,7 +98,7 @@ func (rotation *Rotation) ShiftsForDates(startDate, endDate string) (first, numS
 	if err != nil {
 		return 0, 0, err
 	}
-	if endShiftNumber > startShiftNumber {
+	if endShiftNumber == -1 || startShiftNumber == -1 || endShiftNumber > startShiftNumber {
 		return 0, 0, errors.Errorf("invalid date range: from %s to %s", startDate, endDate)
 	}
 

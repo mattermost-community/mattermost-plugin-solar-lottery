@@ -5,6 +5,7 @@ package store
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
@@ -33,6 +34,17 @@ type Rotation struct {
 	Grace             int    `json:",omitempty"`
 	MattermostUserIDs IDMap  `json:",omitempty"`
 	Needs             []Need `json:",omitempty"`
+
+	Autopilot RotationAutopilot `json:",omitempty"`
+}
+
+type RotationAutopilot struct {
+	On          bool          `json:",omitempty"`
+	StartFinish bool          `json:",omitempty"`
+	Fill        bool          `json:",omitempty"`
+	FillPrior   time.Duration `json:",omitempty"`
+	Notify      bool          `json:",omitempty"`
+	NotifyPrior time.Duration `json:",omitempty"`
 }
 
 type Need struct {

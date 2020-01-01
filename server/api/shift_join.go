@@ -12,13 +12,13 @@ import (
 
 var ErrUserAlreadyInShift = errors.New("user is already in shift")
 
-func (api *api) JoinShift(mattermostUsernames string, rotation *Rotation, shiftNumber int) error {
+func (api *api) JoinShift(mattermostUsernames string, rotation *Rotation, shiftNumber int) (*Shift, error) {
 	err := api.Filter(
 		withActingUserExpanded,
 		withMattermostUsersExpanded(mattermostUsernames),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	logger := api.Logger.Timed().With(bot.LogContext{
 		"Location":            "api.VolunteerUsers",
@@ -30,17 +30,17 @@ func (api *api) JoinShift(mattermostUsernames string, rotation *Rotation, shiftN
 
 	shift, err := api.loadShift(rotation, shiftNumber)
 	if err != nil {
-		return errors.Errorf("failed to load shift %v for rotation %s", shiftNumber, rotation.RotationID)
+		return nil, errors.Errorf("failed to load shift %v for rotation %s", shiftNumber, rotation.RotationID)
 	}
 	if shift.Status != store.ShiftStatusOpen {
-		return errors.Errorf("can't volunteer for a status which is %s, must be Open", shift.Status)
+		return nil, errors.Errorf("can't volunteer for a status which is %s, must be Open", shift.Status)
 	}
 
 	volunteered := UserMap{}
 	for _, user := range api.users {
 		// TODO error if the shift has no vacancies? Or allow volunteering above the limit, and let the committer choose?
 		if shift.Shift.MattermostUserIDs[user.MattermostUserID] != "" {
-			return ErrUserAlreadyInShift
+			return nil, ErrUserAlreadyInShift
 		}
 		shift.Shift.MattermostUserIDs[user.MattermostUserID] = store.NotEmpty
 		shift.Users[user.MattermostUserID] = user
@@ -49,11 +49,11 @@ func (api *api) JoinShift(mattermostUsernames string, rotation *Rotation, shiftN
 
 	err = api.ShiftStore.StoreShift(rotation.RotationID, shiftNumber, shift.Shift)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	api.messageShiftVolunteers(volunteered, rotation, shiftNumber, shift)
 	logger.Infof("%s volunteered %s to %s.",
 		MarkdownUser(api.actingUser), MarkdownUserMapWithSkills(volunteered), MarkdownShift(rotation, shiftNumber, shift))
-	return nil
+	return shift, nil
 }

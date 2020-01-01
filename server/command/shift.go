@@ -71,11 +71,11 @@ func (c *Command) startShift(parameters []string) (string, error) {
 	return c.doShift(parameters,
 		nil,
 		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
-			err := c.API.StartShift(rotation, shiftNumber)
+			shift, err := c.API.StartShift(rotation, shiftNumber)
 			if err != nil {
 				return "", err
 			}
-			return fmt.Sprintf("started shift #%v", shiftNumber), nil
+			return fmt.Sprintf("Started %s", api.MarkdownShift(rotation, shiftNumber, shift)), nil
 		})
 }
 
@@ -83,11 +83,11 @@ func (c *Command) finishShift(parameters []string) (string, error) {
 	return c.doShift(parameters,
 		nil,
 		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
-			err := c.API.FinishShift(rotation, shiftNumber)
+			shift, err := c.API.FinishShift(rotation, shiftNumber)
 			if err != nil {
 				return "", err
 			}
-			return fmt.Sprintf("Finished shift #%v", shiftNumber), nil
+			return fmt.Sprintf("Finished %s", api.MarkdownShift(rotation, shiftNumber, shift)), nil
 		})
 }
 

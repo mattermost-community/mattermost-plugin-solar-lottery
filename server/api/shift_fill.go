@@ -10,6 +10,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
+var ErrShiftMustBeOpen = errors.New("must be `open`")
+
 func (api *api) FillShift(rotation *Rotation, shiftNumber int, autofill bool) (shift *Shift, ready bool, whyNot string, before, added UserMap, err error) {
 	err = api.Filter(
 		withActingUserExpanded,
@@ -22,7 +24,7 @@ func (api *api) FillShift(rotation *Rotation, shiftNumber int, autofill bool) (s
 		return nil, false, "", nil, nil, err
 	}
 	if shift.Status != store.ShiftStatusOpen {
-		return nil, false, "", nil, nil, errors.Errorf("%s status is not `open`", MarkdownShift(rotation, shiftNumber, shift))
+		return nil, false, "", nil, nil, ErrShiftMustBeOpen
 	}
 	logger := api.Logger.Timed().With(bot.LogContext{
 		"Location":       "api.FillShift",

@@ -63,7 +63,7 @@ func (api *api) messageShiftStarted(rotation *Rotation, shiftNumber int, shift *
 	api.ExpandShift(shift)
 
 	for _, user := range shift.Users {
-		start, _, _ := rotation.ShiftDatesForNumber(user.NextRotationShift[rotation.RotationID])
+		next, _, _ := rotation.ShiftDatesForNumber(user.NextRotationShift[rotation.RotationID])
 
 		api.Poster.DM(user.MattermostUserID,
 			"###### Welcome to %s!\n"+
@@ -71,8 +71,21 @@ func (api *api) messageShiftStarted(rotation *Rotation, shiftNumber int, shift *
 				"After that you will not then need to serve until %s.\n"+
 				"Use `/%s user forecast -r %s` to see your expected service.\n\nTODO runbook URL/channel",
 			MarkdownShift(rotation, shiftNumber, shift), api.by(user),
-			start.Format(DateFormat),
+			next.Format(DateFormat),
 			config.CommandTrigger, rotation.Name)
+	}
+}
+
+func (api *api) messageShiftWillStart(rotation *Rotation, shiftNumber int, shift *Shift) {
+	api.ExpandRotation(rotation)
+	api.ExpandShift(shift)
+
+	for _, user := range shift.Users {
+
+		api.Poster.DM(user.MattermostUserID,
+			"Your %s will start on %s\n\nTODO runbook URL/channel",
+			MarkdownShift(rotation, shiftNumber, shift),
+			shift.Start)
 	}
 }
 
@@ -86,6 +99,22 @@ func (api *api) messageShiftFinished(rotation *Rotation, shiftNumber int, shift 
 				"Your shift in %s is now finished%s. Details:\n%s",
 			MarkdownRotation(rotation),
 			MarkdownRotation(rotation), api.by(user), MarkdownShift(rotation, shiftNumber, shift))
+	}
+}
+
+func (api *api) messageShiftWillFinish(rotation *Rotation, shiftNumber int, shift *Shift) {
+	api.ExpandRotation(rotation)
+	api.ExpandShift(shift)
+
+	for _, user := range shift.Users {
+		next, _, _ := rotation.ShiftDatesForNumber(user.NextRotationShift[rotation.RotationID])
+
+		api.Poster.DM(user.MattermostUserID,
+			"Your %s will finish on %s\n"+
+				"After that you will not then need to serve until %s.\n\nTODO runbook URL/channel",
+			MarkdownShift(rotation, shiftNumber, shift),
+			shift.End,
+			next.Format(DateFormat))
 	}
 }
 

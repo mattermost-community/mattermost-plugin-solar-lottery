@@ -5,6 +5,7 @@ package command
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 	"github.com/pkg/errors"
@@ -33,7 +34,7 @@ func (c *Command) joinRotation(parameters []string) (string, error) {
 		return "", err
 	}
 
-	added, err := c.API.JoinRotation(users, rotation, graceShifts)
+	added, err := c.API.JoinRotation(users, rotation, graceShifts, time.Now())
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed, %s might have been updated", api.MarkdownUserMap(added))
 	}
