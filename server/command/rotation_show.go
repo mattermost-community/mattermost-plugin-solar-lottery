@@ -4,15 +4,12 @@
 package command
 
 import (
-	flag "github.com/spf13/pflag"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 )
 
 func (c *Command) showRotation(parameters []string) (string, error) {
 	var rotationID, rotationName string
-	fs := flag.NewFlagSet("showRotation", flag.ContinueOnError)
-	withRotationFlags(fs, &rotationID, &rotationName)
+	fs := newRotationFlagSet(&rotationID, &rotationName)
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err

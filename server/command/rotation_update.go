@@ -17,8 +17,7 @@ func withRotationUpdateFlags(fs *pflag.FlagSet, size *int, grace *int) {
 func (c *Command) updateRotation(parameters []string) (string, error) {
 	var rotationID, rotationName string
 	var size, grace int
-	fs := pflag.NewFlagSet("updateRotation", pflag.ContinueOnError)
-	withRotationFlags(fs, &rotationID, &rotationName)
+	fs := newRotationFlagSet(&rotationID, &rotationName)
 	withRotationUpdateFlags(fs, &size, &grace)
 	err := fs.Parse(parameters)
 	if err != nil {
@@ -47,5 +46,5 @@ func (c *Command) updateRotation(parameters []string) (string, error) {
 		return "", err
 	}
 
-	return "Updated rotation " + api.MarkdownRotationWithDetails(rotation), nil
+	return "Updated rotation:\n" + api.MarkdownRotationWithDetails(rotation), nil
 }

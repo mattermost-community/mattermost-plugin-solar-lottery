@@ -5,13 +5,11 @@ package command
 
 import (
 	"github.com/pkg/errors"
-	flag "github.com/spf13/pflag"
 )
 
 func (c *Command) archiveRotation(parameters []string) (string, error) {
 	var rotationID, rotationName string
-	fs := flag.NewFlagSet("archiveRotation", flag.ContinueOnError)
-	withRotationFlags(fs, &rotationID, &rotationName)
+	fs := newRotationFlagSet(&rotationID, &rotationName)
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err
@@ -36,8 +34,7 @@ func (c *Command) archiveRotation(parameters []string) (string, error) {
 
 func (c *Command) debugDeleteRotation(parameters []string) (string, error) {
 	var rotationID, rotationName string
-	fs := flag.NewFlagSet("debugDeleteRotation", flag.ContinueOnError)
-	withRotationFlags(fs, &rotationID, &rotationName)
+	fs := newRotationFlagSet(&rotationID, &rotationName)
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err

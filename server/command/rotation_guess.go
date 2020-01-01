@@ -6,8 +6,6 @@ package command
 import (
 	"fmt"
 
-	flag "github.com/spf13/pflag"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 )
 
@@ -15,11 +13,10 @@ func (c *Command) guessRotation(parameters []string) (string, error) {
 	var rotationID, rotationName string
 	autofill := false
 	start, numShifts := 0, 3
-	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs := newRotationFlagSet(&rotationID, &rotationName)
 	fs.BoolVar(&autofill, flagAutofill, false, "automatically fill shifts that are not scheduled yet")
 	fs.IntVarP(&numShifts, flagNumber, flagPNumber, numShifts, "number of shifts to forecast")
 	fs.IntVarP(&start, flagStart, flagPStart, start, "number of shifts to forecast")
-	withRotationFlags(fs, &rotationID, &rotationName)
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err

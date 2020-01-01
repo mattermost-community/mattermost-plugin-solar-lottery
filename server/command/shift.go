@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
-	flag "github.com/spf13/pflag"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
@@ -33,12 +32,11 @@ func (c *Command) doShift(parameters []string,
 	doF func(*pflag.FlagSet, *api.Rotation, int) (string, error)) (string, error) {
 	var rotationID, rotationName string
 	var shiftNumber int
-	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs := newRotationFlagSet(&rotationID, &rotationName)
 	fs.IntVarP(&shiftNumber, flagShift, flagPShift, 0, "(starting) shift number")
 	if initF != nil {
 		initF(fs)
 	}
-	withRotationFlags(fs, &rotationID, &rotationName)
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err

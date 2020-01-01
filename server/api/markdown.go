@@ -23,6 +23,15 @@ func MarkdownRotationWithDetails(rotation *Rotation) string {
 	out += fmt.Sprintf("- Grace: `%v`\n", rotation.Grace)
 	out += fmt.Sprintf("- Users (%v): %s\n", len(rotation.MattermostUserIDs), MarkdownUserMapWithSkills(rotation.Users))
 
+	if rotation.Autopilot.On {
+		out += fmt.Sprintf("- Autopilot: `on`\n")
+		out += fmt.Sprintf("  - Auto-start: `%v`\n", rotation.Autopilot.StartFinish)
+		out += fmt.Sprintf("  - Auto-fill: `%v`, %v prior to start\n", rotation.Autopilot.Fill, rotation.Autopilot.FillPrior)
+		out += fmt.Sprintf("  - Notify users: `%v`, %v prior to transition\n", rotation.Autopilot.Notify, rotation.Autopilot.NotifyPrior)
+	} else {
+		out += fmt.Sprintf("- Autopilot: `off`\n")
+	}
+
 	return out
 }
 

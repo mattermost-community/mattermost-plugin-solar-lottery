@@ -44,7 +44,7 @@ func (api *api) AddRotation(rotation *Rotation) error {
 	if err != nil {
 		return err
 	}
-	logger.Infof("New rotation %s added.", MarkdownRotationWithDetails(rotation))
+	logger.Infof("New rotation %s added", MarkdownRotation(rotation))
 	return nil
 }
 

@@ -21,7 +21,7 @@ func (c *Command) addRotation(parameters []string) (string, error) {
 	var rotationName, start string
 	var period api.Period
 	var size, grace int
-	fs := pflag.NewFlagSet("addRotation", pflag.ContinueOnError)
+	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
 	withRotationAddFlags(fs, &start, &period)
 	withRotationUpdateFlags(fs, &size, &grace)
 	fs.StringVarP(&rotationName, flagRotation, flagPRotation, "", "specify rotation name")
@@ -47,5 +47,5 @@ func (c *Command) addRotation(parameters []string) (string, error) {
 		return "", err
 	}
 
-	return "Created rotation " + api.MarkdownRotationWithDetails(rotation), nil
+	return "Created rotation:\n" + api.MarkdownRotationWithDetails(rotation), nil
 }

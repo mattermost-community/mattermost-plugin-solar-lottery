@@ -6,7 +6,6 @@ package command
 import (
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
-	flag "github.com/spf13/pflag"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
@@ -17,8 +16,7 @@ func (c *Command) rotationNeed(parameters []string) (string, error) {
 	var level api.Level
 	var deleteNeed bool
 	var min, max int
-	fs := flag.NewFlagSet("updateRotationNeed", flag.ContinueOnError)
-	withRotationFlags(fs, &rotationID, &rotationName)
+	fs := newRotationFlagSet(&rotationID, &rotationName)
 	withRotationNeedFlags(fs, &skill, &level, &min, &max, &deleteNeed)
 	err := fs.Parse(parameters)
 	if err != nil {
@@ -63,7 +61,7 @@ func (c *Command) rotationNeed(parameters []string) (string, error) {
 		return "", err
 	}
 
-	return "Updated rotation " + api.MarkdownRotationWithDetails(rotation), nil
+	return "Updated rotation needs:\n" + api.MarkdownRotationWithDetails(rotation), nil
 }
 
 func withRotationNeedFlags(fs *pflag.FlagSet, skill *string, level *api.Level, min, max *int, deleteNeed *bool) {

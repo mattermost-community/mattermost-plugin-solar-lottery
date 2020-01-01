@@ -4,19 +4,16 @@
 package command
 
 import (
-	flag "github.com/spf13/pflag"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
 )
 
 func (c *Command) forecastRotation(parameters []string) (string, error) {
 	var rotationID, rotationName string
 	start, numShifts, sampleSize := 0, 3, 10
-	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs := newRotationFlagSet(&rotationID, &rotationName)
 	fs.IntVarP(&numShifts, flagNumber, flagPNumber, numShifts, "number of shifts to forecast")
 	fs.IntVarP(&start, flagStart, flagPStart, start, "number of shifts to forecast")
 	fs.IntVar(&sampleSize, flagSampleSize, sampleSize, "number of guesses to run")
-	withRotationFlags(fs, &rotationID, &rotationName)
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err

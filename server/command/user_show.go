@@ -4,14 +4,13 @@
 package command
 
 import (
-	flag "github.com/spf13/pflag"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
+	"github.com/spf13/pflag"
 )
 
 func (c *Command) showUser(parameters []string) (string, error) {
 	usernames := ""
-	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
 	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to show")
 	err := fs.Parse(parameters)
 	if err != nil {

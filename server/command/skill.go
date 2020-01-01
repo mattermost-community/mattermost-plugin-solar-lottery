@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
-	flag "github.com/spf13/pflag"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
@@ -25,7 +24,7 @@ func (c *Command) skill(parameters []string) (string, error) {
 
 func (c *Command) addSkill(parameters []string) (string, error) {
 	var skillName string
-	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
 	withSkillFlags(fs, &skillName, nil)
 	err := fs.Parse(parameters)
 	if err != nil {
@@ -40,7 +39,7 @@ func (c *Command) addSkill(parameters []string) (string, error) {
 
 func (c *Command) deleteSkill(parameters []string) (string, error) {
 	var skillName string
-	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
 	withSkillFlags(fs, &skillName, nil)
 	err := fs.Parse(parameters)
 	if err != nil {

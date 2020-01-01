@@ -9,6 +9,6 @@ import (
 )
 
 type cron struct {
-	api.Dependencies
-	config.Config
+	api    api.API
+	config *config.Config
 }

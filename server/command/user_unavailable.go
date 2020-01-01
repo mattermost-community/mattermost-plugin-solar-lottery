@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	flag "github.com/spf13/pflag"
+	"github.com/spf13/pflag"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
@@ -16,7 +16,7 @@ import (
 func (c *Command) userUnavailable(parameters []string) (string, error) {
 	var typ, usernames, start, end string
 	var clear bool
-	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
 	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to show")
 	fs.StringVarP(&start, flagStart, flagPStart, "", "start of the unavailability")
 	fs.StringVarP(&end, flagEnd, flagPEnd, "", "end of unavailability (last day)")

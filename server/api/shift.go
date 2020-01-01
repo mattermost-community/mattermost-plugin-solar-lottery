@@ -11,7 +11,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
-const WeekDuration = time.Hour * 24 * 7
+const DayDuration = time.Hour * 24
+const WeekDuration = DayDuration * 7
 const DateFormat = "2006-01-02"
 
 type Shift struct {

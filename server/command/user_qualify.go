@@ -6,15 +6,14 @@ package command
 import (
 	"fmt"
 
-	flag "github.com/spf13/pflag"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	"github.com/spf13/pflag"
 )
 
 func (c *Command) qualifyUsers(parameters []string) (string, error) {
 	var usernames, skillName string
 	var level api.Level
-	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
 	withSkillFlags(fs, &skillName, &level)
 	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to show")
 	err := fs.Parse(parameters)

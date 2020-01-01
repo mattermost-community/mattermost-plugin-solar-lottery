@@ -8,15 +8,13 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 	"github.com/pkg/errors"
-	flag "github.com/spf13/pflag"
 )
 
 func (c *Command) leaveRotation(parameters []string) (string, error) {
 	var rotationID, rotationName string
 	users := ""
-	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs := newRotationFlagSet(&rotationID, &rotationName)
 	fs.StringVar(&users, flagUsers, "", "remove other users from rotation.")
-	withRotationFlags(fs, &rotationID, &rotationName)
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err

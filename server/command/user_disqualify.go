@@ -6,12 +6,12 @@ package command
 import (
 	"fmt"
 
-	flag "github.com/spf13/pflag"
+	"github.com/spf13/pflag"
 )
 
 func (c *Command) disqualifyUsers(parameters []string) (string, error) {
 	var usernames, skillName string
-	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
 	withSkillFlags(fs, &skillName, nil)
 	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to disqualify from skill")
 	err := fs.Parse(parameters)

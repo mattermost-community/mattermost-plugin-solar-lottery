@@ -10,6 +10,7 @@ import (
 
 func (c *Command) rotation(parameters []string) (string, error) {
 	subcommands := map[string]func([]string) (string, error){
+		commandAutopilot:   c.autopilotRotation,
 		commandAdd:         c.addRotation,
 		commandArchive:     c.archiveRotation,
 		commandDebugDelete: c.debugDeleteRotation,
@@ -52,4 +53,10 @@ func (c *Command) parseRotationFlags(id, name string) (rotationID string, err er
 		return "", errors.Errorf("name %s is ambigous, please use --%s with one of %s", name, flagRotation, rotationIDs)
 	}
 	return rotationIDs[0], nil
+}
+
+func newRotationFlagSet(rotationID, rotationName *string) *pflag.FlagSet {
+	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
+	withRotationFlags(fs, rotationID, rotationName)
+	return fs
 }
