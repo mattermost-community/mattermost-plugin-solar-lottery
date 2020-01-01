@@ -36,7 +36,6 @@ func (c *Command) info(parameters []string) (string, error) {
 
 - [ ] shift
 	- [x] open
-	- [x] commit: closes the shift for volunteers, notifies selected users.
 	- [x] debug-delete
 	- [x] fill: evaluates shift readiness, autofills.
 	- [x] finish: finishes a shift.

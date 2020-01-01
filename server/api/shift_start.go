@@ -29,6 +29,14 @@ func (api *api) StartShift(rotation *Rotation, shiftNumber int) error {
 
 	shift.Status = store.ShiftStatusStarted
 
+	for _, user := range shift.Users {
+		user.NextRotationShift[rotation.RotationID] = shiftNumber + rotation.Grace
+		_, err = api.storeUserWelcomeNew(user)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = api.ShiftStore.StoreShift(rotation.RotationID, shiftNumber, shift.Shift)
 	if err != nil {
 		return err

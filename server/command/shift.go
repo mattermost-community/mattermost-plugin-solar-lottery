@@ -4,10 +4,13 @@
 package command
 
 import (
+	"fmt"
+
 	"github.com/spf13/pflag"
 	flag "github.com/spf13/pflag"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
 )
 
 func (c *Command) shift(parameters []string) (string, error) {
@@ -17,7 +20,8 @@ func (c *Command) shift(parameters []string) (string, error) {
 		commandFill:        c.fillShift,
 		commandJoin:        c.joinShift,
 		commandList:        c.listShifts,
-		commandTransition:  c.transitionShift,
+		commandStart:       c.startShift,
+		commandFinish:      c.finishShift,
 		// commandLeave:       c.leaveShift,
 	}
 
@@ -50,4 +54,50 @@ func (c *Command) doShift(parameters []string,
 	}
 
 	return doF(fs, rotation, shiftNumber)
+}
+
+func (c *Command) openShift(parameters []string) (string, error) {
+	return c.doShift(parameters, nil,
+		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
+			shift, err := c.API.OpenShift(rotation, shiftNumber)
+			if err != nil {
+				return "", err
+			}
+			return utils.JSONBlock(shift), nil
+		})
+}
+
+func (c *Command) startShift(parameters []string) (string, error) {
+	return c.doShift(parameters,
+		nil,
+		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
+			err := c.API.StartShift(rotation, shiftNumber)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("started shift #%v", shiftNumber), nil
+		})
+}
+
+func (c *Command) finishShift(parameters []string) (string, error) {
+	return c.doShift(parameters,
+		nil,
+		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
+			err := c.API.FinishShift(rotation, shiftNumber)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("Finished shift #%v", shiftNumber), nil
+		})
+}
+
+func (c *Command) debugDeleteShift(parameters []string) (string, error) {
+	return c.doShift(parameters, nil,
+		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
+			err := c.API.DebugDeleteShift(rotation, shiftNumber)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("Deleted shift #%v", shiftNumber), nil
+		})
 }

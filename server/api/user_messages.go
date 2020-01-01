@@ -58,27 +58,21 @@ func (api *api) messageShiftOpened(rotation *Rotation, shiftNumber int, shift *S
 	}
 }
 
-func (api *api) messageShiftCommitted(rotation *Rotation, shiftNumber int, shift *Shift) {
-	api.ExpandRotation(rotation)
-	api.ExpandShift(shift)
-
-	for _, user := range shift.Users {
-		api.Poster.DM(user.MattermostUserID,
-			"You are now committed to %s%s.",
-			MarkdownShift(rotation, shiftNumber, shift), api.by(user))
-	}
-}
-
 func (api *api) messageShiftStarted(rotation *Rotation, shiftNumber int, shift *Shift) {
 	api.ExpandRotation(rotation)
 	api.ExpandShift(shift)
 
 	for _, user := range shift.Users {
+		start, _, _ := rotation.ShiftDatesForNumber(user.NextRotationShift[rotation.RotationID])
+
 		api.Poster.DM(user.MattermostUserID,
-			"###### Welcome to your shift in %s!\n"+
-				"Your shift in %s is now started%s. Details:\n%s",
-			MarkdownRotation(rotation),
-			MarkdownRotation(rotation), api.by(user), MarkdownShift(rotation, shiftNumber, shift))
+			"###### Welcome to %s!\n"+
+				"%s started%s.\n"+
+				"After that you will not then need to serve until %s.\n"+
+				"Use `/%s user forecast -r %s` to see your expected service.\n\nTODO runbook URL/channel",
+			MarkdownShift(rotation, shiftNumber, shift), api.by(user),
+			start.Format(DateFormat),
+			config.CommandTrigger, rotation.Name)
 	}
 }
 

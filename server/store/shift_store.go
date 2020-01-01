@@ -17,10 +17,9 @@ type ShiftStore interface {
 }
 
 const (
-	ShiftStatusOpen      = "open"
-	ShiftStatusCommitted = "committed"
-	ShiftStatusFinished  = "finished"
-	ShiftStatusStarted   = "started"
+	ShiftStatusOpen     = "open"
+	ShiftStatusFinished = "finished"
+	ShiftStatusStarted  = "started"
 )
 
 type Shift struct {
