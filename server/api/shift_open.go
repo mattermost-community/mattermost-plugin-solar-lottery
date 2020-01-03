@@ -26,15 +26,15 @@ func (api *api) OpenShift(rotation *Rotation, shiftNumber int) (*Shift, error) {
 		"ShiftNumber":    shiftNumber,
 	})
 
-	_, err = api.ShiftStore.LoadShift(rotation.RotationID, shiftNumber)
+	shift, err := api.loadShift(rotation, shiftNumber)
 	if err != store.ErrNotFound {
 		if err != nil {
 			return nil, err
 		}
-		return nil, ErrShiftAlreadyExists
+		return shift, ErrShiftAlreadyExists
 	}
 
-	shift, err := rotation.makeShift(shiftNumber, nil)
+	shift, err = rotation.makeShift(shiftNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +46,6 @@ func (api *api) OpenShift(rotation *Rotation, shiftNumber int) (*Shift, error) {
 	}
 
 	api.messageShiftOpened(rotation, shiftNumber, shift)
-	logger.Infof("%s opened %s.", MarkdownUser(api.actingUser), MarkdownShift(rotation, shiftNumber, shift))
+	logger.Infof("%s opened %s.", api.MarkdownUser(api.actingUser), MarkdownShift(rotation, shiftNumber))
 	return shift, nil
 }

@@ -4,8 +4,6 @@
 package api
 
 import (
-	"github.com/pkg/errors"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
@@ -28,11 +26,11 @@ func (api *api) LeaveRotation(mattermostUsernames string, rotation *Rotation) (U
 	for _, user := range api.users {
 		_, ok := rotation.MattermostUserIDs[user.MattermostUserID]
 		if !ok {
-			logger.Debugf("%s is not found in rotation %s", MarkdownUser(user), MarkdownRotation(rotation))
+			logger.Debugf("%s is not found in rotation %s", api.MarkdownUser(user), MarkdownRotation(rotation))
 			continue
 		}
 
-		delete(user.NextRotationShift, rotation.RotationID)
+		delete(user.LastServed, rotation.RotationID)
 		_, err = api.storeUserWelcomeNew(user)
 		if err != nil {
 			return deleted, err
@@ -50,27 +48,6 @@ func (api *api) LeaveRotation(mattermostUsernames string, rotation *Rotation) (U
 		return deleted, err
 	}
 
-	logger.Infof("%s removed from %s.", MarkdownUserMap(deleted), MarkdownRotation(rotation))
+	logger.Infof("%s removed from %s.", api.MarkdownUsers(deleted), MarkdownRotation(rotation))
 	return deleted, nil
-}
-
-func (api *api) deleteUsersFromRotation(rotation *Rotation, users UserMap) error {
-	for _, user := range users {
-		_, ok := rotation.MattermostUserIDs[user.MattermostUserID]
-		if !ok {
-			return errors.Errorf("%s is not found in rotation %s", MarkdownUser(user), MarkdownRotation(rotation))
-		}
-
-		delete(user.NextRotationShift, rotation.RotationID)
-		_, err := api.storeUserWelcomeNew(user)
-		if err != nil {
-			return err
-		}
-		delete(rotation.MattermostUserIDs, user.MattermostUserID)
-		api.messageLeftRotation(user, rotation)
-		api.Logger.Debugf("removed %s from %s.", MarkdownUser(user), MarkdownRotation(rotation))
-		return nil
-	}
-
-	return api.RotationStore.StoreRotation(rotation.Rotation)
 }

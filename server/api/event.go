@@ -18,7 +18,36 @@ type Event struct {
 	EndTime   time.Time
 }
 
-func parseEventDates(start, end string) (time.Time, time.Time, error) {
+func NewShiftEvent(rotation *Rotation, shiftNumber int, shift *Shift) Event {
+	s, _, _ := rotation.ShiftDatesForNumber(shiftNumber)
+	_, e, _ := rotation.ShiftDatesForNumber(shiftNumber + rotation.Grace)
+
+	return Event{
+		Event: store.Event{
+			Type:        store.EventTypeShift,
+			Start:       s.Format(DateFormat),
+			End:         e.Format(DateFormat),
+			RotationID:  rotation.RotationID,
+			ShiftNumber: shiftNumber,
+		},
+		StartTime: s,
+		EndTime:   e,
+	}
+}
+
+func NewOtherEvent(startTime, endTime time.Time) Event {
+	return Event{
+		Event: store.Event{
+			Type:  store.EventTypeOther,
+			Start: startTime.Format(DateFormat),
+			End:   endTime.Format(DateFormat),
+		},
+		StartTime: startTime,
+		EndTime:   endTime,
+	}
+}
+
+func ParseDatePair(start, end string) (time.Time, time.Time, error) {
 	s, err := time.Parse(DateFormat, start)
 	if err != nil {
 		return time.Time{}, time.Time{}, err

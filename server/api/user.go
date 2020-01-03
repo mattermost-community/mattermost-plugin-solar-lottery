@@ -43,21 +43,20 @@ func (user User) MattermostUsername() string {
 	return user.MattermostUser.Username
 }
 
-func (user *User) AddEvent(event store.Event) error {
+func (user *User) AddEvent(event Event) {
 	for _, existing := range user.Events {
-		if existing == event {
-			return nil
+		if existing == event.Event {
+			return
 		}
 	}
-	user.Events = append(user.Events, event)
+	user.Events = append(user.Events, event.Event)
 	eventsBy(byStartDate).Sort(user.Events)
-	return nil
 }
 
 func (user *User) overlapEvents(intervalStart, intervalEnd time.Time, remove bool) ([]store.Event, error) {
 	var found, updated []store.Event
 	for _, event := range user.Events {
-		s, e, err := parseEventDates(event.Start, event.End)
+		s, e, err := ParseDatePair(event.Start, event.End)
 		if err != nil {
 			return nil, err
 		}

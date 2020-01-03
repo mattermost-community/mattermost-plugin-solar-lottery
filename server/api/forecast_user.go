@@ -70,6 +70,6 @@ GUESS:
 		expectedServed = append(expectedServed, cumulative/float64(sampleSize))
 	}
 
-	logger.Infof("Ran forecast for %s, user %s", MarkdownRotation(rotation), MarkdownUser(user))
+	logger.Infof("Ran forecast for %s, user %s", MarkdownRotation(rotation), api.MarkdownUser(user))
 	return expectedServed, nil
 }

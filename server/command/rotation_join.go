@@ -12,12 +12,11 @@ import (
 )
 
 func (c *Command) joinRotation(parameters []string) (string, error) {
-	var rotationID, rotationName string
+	var rotationID, rotationName, start string
 	users := ""
-	graceShifts := 0
 	fs := newRotationFlagSet(&rotationID, &rotationName)
 	fs.StringVarP(&users, flagUsers, flagPUsers, "", "add nother users to rotation.")
-	fs.IntVar(&graceShifts, flagGrace, 0, "start with N grace shifts.")
+	fs.StringVarP(&start, flagStart, flagPStart, "", fmt.Sprintf("date for user to start, e.g. %s.", api.DateFormat))
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err
@@ -32,10 +31,17 @@ func (c *Command) joinRotation(parameters []string) (string, error) {
 		return "", err
 	}
 
-	added, err := c.API.JoinRotation(users, rotation, graceShifts, time.Now())
+	starting := time.Now()
+	if start != "" {
+		starting, err = time.Parse(api.DateFormat, start)
+		if err != nil {
+			return c.flagUsage(fs), err
+		}
+	}
+	added, err := c.API.JoinRotation(users, rotation, starting)
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed, %s might have been updated", api.MarkdownUserMap(added))
+		return "", errors.WithMessagef(err, "failed, %s might have been updated", c.API.MarkdownUsers(added))
 	}
 
-	return fmt.Sprintf("%s joined rotation %s", api.MarkdownUserMap(added), rotation.Name), nil
+	return fmt.Sprintf("%s joined rotation %s", c.API.MarkdownUsers(added), rotation.Name), nil
 }

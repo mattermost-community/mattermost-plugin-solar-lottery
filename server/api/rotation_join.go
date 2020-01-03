@@ -12,7 +12,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
-func (api *api) JoinRotation(mattermostUsernames string, rotation *Rotation, graceShifts int, now time.Time) (UserMap, error) {
+func (api *api) JoinRotation(mattermostUsernames string, rotation *Rotation, starting time.Time) (UserMap, error) {
 	err := api.Filter(
 		withActingUserExpanded,
 		withMattermostUsersExpanded(mattermostUsernames),
@@ -25,22 +25,22 @@ func (api *api) JoinRotation(mattermostUsernames string, rotation *Rotation, gra
 		"ActingUsername":      api.actingUser.MattermostUsername(),
 		"RotationID":          rotation.RotationID,
 		"MattermostUsernames": mattermostUsernames,
-		"GraceShifts":         graceShifts,
+		"Starting":            starting.Format(DateFormat),
 	})
 
 	// -1 is acceptable
-	shiftNumber, _ := rotation.ShiftNumberForTime(now)
+	shiftNumber, _ := rotation.ShiftNumberForTime(starting)
 	added := UserMap{}
 	for _, user := range api.users {
 		if len(rotation.MattermostUserIDs[user.MattermostUserID]) != 0 {
 			logger.Debugf("%s is already in rotation %s.",
-				MarkdownUserMapWithSkills(added), MarkdownRotation(rotation))
+				api.MarkdownUsersWithSkills(added), MarkdownRotation(rotation))
 			continue
 		}
 
 		// A new person may be given some slack - setting LastShiftNumber in the
 		// future guarantees they won't be selected until then.
-		user.NextRotationShift[rotation.RotationID] = shiftNumber + graceShifts
+		user.LastServed[rotation.RotationID] = shiftNumber
 
 		user, err = api.storeUserWelcomeNew(user)
 		if err != nil {
@@ -61,6 +61,6 @@ func (api *api) JoinRotation(mattermostUsernames string, rotation *Rotation, gra
 		return added, errors.WithMessagef(err, "failed to store rotation %s", rotation.RotationID)
 	}
 	logger.Infof("%s added %s to %s.",
-		MarkdownUser(api.actingUser), MarkdownUserMapWithSkills(added), MarkdownRotation(rotation))
+		api.MarkdownUser(api.actingUser), api.MarkdownUsersWithSkills(added), MarkdownRotation(rotation))
 	return added, nil
 }

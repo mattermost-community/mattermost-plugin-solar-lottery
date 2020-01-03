@@ -31,6 +31,6 @@ func (api *api) Disqualify(mattermostUsernames, skillName string) error {
 	}
 
 	logger.Infof("%s removed skill %s from %s.",
-		MarkdownUser(api.actingUser), skillName, MarkdownUserMapWithSkills(api.users))
+		api.MarkdownUser(api.actingUser), skillName, api.MarkdownUsersWithSkills(api.users))
 	return nil
 }

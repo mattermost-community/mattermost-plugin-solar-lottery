@@ -38,21 +38,21 @@ func (api *api) Qualify(mattermostUsernames, skillName string, level Level) erro
 	}
 
 	logger.Infof("%s added skill %s to %s.",
-		MarkdownUser(api.actingUser), MarkdownSkillLevel(skillName, level), MarkdownUserMapWithSkills(api.users))
+		api.MarkdownUser(api.actingUser), MarkdownSkillLevel(skillName, level), api.MarkdownUsersWithSkills(api.users))
 	return nil
 }
 
 func (api *api) updateUserSkill(user *User, skillName string, level Level) (*User, error) {
 	if user.SkillLevels[skillName] == int(level) {
 		// nothing to do
-		api.Logger.Debugf("nothing to do for user %s, already has skill %s (%v)", MarkdownUser(user), skillName, level)
+		api.Logger.Debugf("nothing to do for user %s, already has skill %s (%v)", api.MarkdownUser(user), skillName, level)
 		return user, nil
 	}
 
 	if level == 0 {
 		_, ok := user.SkillLevels[skillName]
 		if !ok {
-			return nil, errors.Errorf("%s does not have skill %s", MarkdownUser(user), skillName)
+			return nil, errors.Errorf("%s does not have skill %s", api.MarkdownUser(user), skillName)
 		}
 		delete(user.SkillLevels, skillName)
 	} else {
@@ -63,6 +63,6 @@ func (api *api) updateUserSkill(user *User, skillName string, level Level) (*Use
 	if err != nil {
 		return nil, err
 	}
-	api.Logger.Debugf("%s (%v) skill updated user %s", skillName, level, MarkdownUser(user))
+	api.Logger.Debugf("%s (%v) skill updated user %s", skillName, level, api.MarkdownUser(user))
 	return user, nil
 }

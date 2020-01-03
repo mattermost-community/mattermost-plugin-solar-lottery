@@ -68,13 +68,13 @@ GUESS:
 			switch aerr.orig {
 			case ErrFailedInsufficientForNeeds:
 				f.CountErrFailedInsufficientForNeeds++
-				for _, need := range aerr.unfulfilledNeeds {
+				for _, need := range aerr.unsatisfiedNeeds {
 					f.NeedErrCounts[need.String()]++
 				}
 
 			case ErrFailedInsufficientForSize:
 				f.CountErrFailedInsufficientForSize++
-				for _, need := range aerr.unfulfilledNeeds {
+				for _, need := range aerr.unsatisfiedNeeds {
 					f.NeedErrCounts[need.String()]++
 				}
 
@@ -87,16 +87,14 @@ GUESS:
 		}
 
 		for n, shift := range shifts {
-			for _, user := range shift.Users {
-				if shift.MattermostUserIDs[user.MattermostUserID] != "" {
-					sc := f.UserShiftCounts[user.MattermostUsername()]
-					if sc == nil {
-						sc = make([]int, numShifts)
-					}
-					sc[n]++
-					f.UserShiftCounts[user.MattermostUsername()] = sc
-					f.UserCounts[user.MattermostUsername()]++
+			for _, user := range rotation.ShiftUsers(shift) {
+				sc := f.UserShiftCounts[user.MattermostUsername()]
+				if sc == nil {
+					sc = make([]int, numShifts)
 				}
+				sc[n]++
+				f.UserShiftCounts[user.MattermostUsername()] = sc
+				f.UserCounts[user.MattermostUsername()]++
 			}
 		}
 	}

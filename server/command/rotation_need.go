@@ -61,7 +61,7 @@ func (c *Command) rotationNeed(parameters []string) (string, error) {
 		return "", err
 	}
 
-	return "Updated rotation needs:\n" + api.MarkdownRotationWithDetails(rotation), nil
+	return "Updated rotation needs:\n" + c.API.MarkdownRotationWithDetails(rotation), nil
 }
 
 func withRotationNeedFlags(fs *pflag.FlagSet, skill *string, level *api.Level, min, max *int, deleteNeed *bool) {

@@ -47,5 +47,5 @@ func (c *Command) addRotation(parameters []string) (string, error) {
 		return "", err
 	}
 
-	return "Created rotation:\n" + api.MarkdownRotationWithDetails(rotation), nil
+	return "Created rotation:\n" + c.API.MarkdownRotationWithDetails(rotation), nil
 }

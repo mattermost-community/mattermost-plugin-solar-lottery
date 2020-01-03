@@ -10,18 +10,46 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
+type Markdowner interface {
+	MarkdownUser(*User) string
+	MarkdownUsers(UserMap) string
+	MarkdownUsersWithSkills(UserMap) string
+	MarkdownRotationWithDetails(*Rotation) string
+	MarkdownShiftDetails(*Rotation, int, *Shift) string
+}
+
 func MarkdownRotation(rotation *Rotation) string {
 	return fmt.Sprintf("%s", rotation.RotationID)
 }
 
-func MarkdownRotationWithDetails(rotation *Rotation) string {
+func MarkdownEvent(event Event) string {
+	return fmt.Sprintf("%s: %s to %s",
+		event.Type, event.Start, event.End)
+}
+
+func MarkdownShift(rotation *Rotation, shiftNumber int) string {
+	return fmt.Sprintf("shift %s#%v", rotation.Name, shiftNumber)
+}
+
+func (api *api) MarkdownUser(user *User) string {
+	api.ExpandUser(user)
+	if user.MattermostUser != nil {
+		return fmt.Sprintf("@%s", user.MattermostUser.Username)
+	} else {
+		return fmt.Sprintf("userID:`%s`", user.MattermostUserID)
+	}
+}
+
+func (api *api) MarkdownRotationWithDetails(rotation *Rotation) string {
+	api.ExpandRotation(rotation)
+
 	out := fmt.Sprintf("###### %s\n", rotation.Name)
 	out += fmt.Sprintf("- ID: `%s`\n", rotation.RotationID)
 	out += fmt.Sprintf("- Starting: `%s`\n", rotation.Start)
 	out += fmt.Sprintf("- Period: `%s`\n", rotation.Period)
 	out += fmt.Sprintf("- Needs: %s\n", MarkdownNeeds(rotation.Needs))
 	out += fmt.Sprintf("- Grace: `%v`\n", rotation.Grace)
-	out += fmt.Sprintf("- Users (%v): %s\n", len(rotation.MattermostUserIDs), MarkdownUserMapWithSkills(rotation.Users))
+	out += fmt.Sprintf("- Users (%v): %s\n", len(rotation.MattermostUserIDs), api.MarkdownUsersWithSkills(rotation.Users))
 
 	if rotation.Autopilot.On {
 		out += fmt.Sprintf("- Autopilot: `on`\n")
@@ -35,42 +63,31 @@ func MarkdownRotationWithDetails(rotation *Rotation) string {
 	return out
 }
 
-func MarkdownUserMapWithSkills(m UserMap) string {
+func (api *api) MarkdownUsersWithSkills(m UserMap) string {
 	out := []string{}
 	for _, user := range m {
-		out = append(out, fmt.Sprintf("%s: %s", MarkdownUser(user), MarkdownUserSkills(user)))
+		out = append(out, fmt.Sprintf("%s %s", api.MarkdownUser(user), MarkdownUserSkills(user)))
 	}
 	return strings.Join(out, ", ")
 }
 
-func MarkdownShift(rotation *Rotation, shiftNumber int, shift *Shift) string {
-	return fmt.Sprintf("rotation %s shift #%v (%s to %s), status:%s, users: %s",
-		rotation.Name, shiftNumber, shift.Start, shift.End, shift.Status, MarkdownUserMapWithSkills(shift.Users))
+func (api *api) MarkdownShiftDetails(rotation *Rotation, shiftNumber int, shift *Shift) string {
+	api.ExpandRotation(rotation)
+	return fmt.Sprintf("%s (%s to %s), status:%s, users: %s",
+		MarkdownShift(rotation, shiftNumber), shift.Start, shift.End, shift.Status,
+		api.MarkdownUsersWithSkills(rotation.ShiftUsers(shift)))
 }
 
-func MarkdownEvent(event store.Event) string {
-	return fmt.Sprintf("%s: %s to %s",
-		event.Type, event.Start, event.End)
-}
-
-func MarkdownUserMap(m UserMap) string {
+func (api *api) MarkdownUsers(m UserMap) string {
 	out := []string{}
 	for _, user := range m {
-		out = append(out, MarkdownUser(user))
+		out = append(out, api.MarkdownUser(user))
 	}
 	return strings.Join(out, ", ")
 }
 
-func MarkdownUserWithSkills(user *User) string {
-	return fmt.Sprintf("%s: %s", MarkdownUser(user), MarkdownUserSkills(user))
-}
-
-func MarkdownUser(user *User) string {
-	if user.MattermostUser != nil {
-		return fmt.Sprintf("@%s", user.MattermostUser.Username)
-	} else {
-		return fmt.Sprintf("userID:`%s`", user.MattermostUserID)
-	}
+func (api *api) MarkdownUserWithSkills(user *User) string {
+	return fmt.Sprintf("%s %s", api.MarkdownUser(user), MarkdownUserSkills(user))
 }
 
 func MarkdownUserSkills(user *User) string {
@@ -80,7 +97,7 @@ func MarkdownUserSkills(user *User) string {
 	}
 
 	if len(skills) == 0 {
-		return "kook"
+		return "(kook)"
 	}
 	ss := strings.Join(skills, ", ")
 	return fmt.Sprintf("(%s)", ss)

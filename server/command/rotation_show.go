@@ -3,10 +3,6 @@
 
 package command
 
-import (
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
-)
-
 func (c *Command) showRotation(parameters []string) (string, error) {
 	var rotationID, rotationName string
 	fs := newRotationFlagSet(&rotationID, &rotationName)
@@ -27,5 +23,5 @@ func (c *Command) showRotation(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return api.MarkdownRotationWithDetails(rotation), nil
+	return c.API.MarkdownRotationWithDetails(rotation), nil
 }

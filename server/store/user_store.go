@@ -32,7 +32,8 @@ type User struct {
 
 	SkillLevels IntMap
 
-	NextRotationShift IntMap
+	// Map of last shift served per rotation, used to calculate weight
+	LastServed IntMap
 
 	// Events is sorted by start date of the events.
 	Events []Event
@@ -61,17 +62,17 @@ type Settings struct {
 
 func NewUser(mattermostUserID string) *User {
 	return &User{
-		MattermostUserID:  mattermostUserID,
-		SkillLevels:       IntMap{},
-		NextRotationShift: IntMap{},
-		Events:            []Event{},
+		MattermostUserID: mattermostUserID,
+		SkillLevels:      IntMap{},
+		LastServed:       IntMap{},
+		Events:           []Event{},
 	}
 }
 
 func (user *User) Clone() *User {
 	clone := NewUser(user.MattermostUserID)
 	clone.SkillLevels = user.SkillLevels.Clone()
-	clone.NextRotationShift = user.NextRotationShift.Clone()
+	clone.LastServed = user.LastServed.Clone()
 	clone.Events = append([]Event{}, user.Events...)
 	return clone
 }

@@ -38,10 +38,8 @@ type Shift struct {
 
 type ShiftAutopilot struct {
 	Filled         time.Time `json:",omitempty"`
-	Finished       time.Time `json:",omitempty"`
 	NotifiedStart  time.Time `json:",omitempty"`
 	NotifiedFinish time.Time `json:",omitempty"`
-	Started        time.Time `json:",omitempty"`
 }
 
 func NewShift(start, end string, mattermostUserIDs IDMap) *Shift {

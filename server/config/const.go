@@ -10,7 +10,7 @@ const (
 
 	ApplicationName = "Solar Lottery Team Scheduler"
 	Repository      = "mattermost-plugin-solar-lottery"
-	CommandTrigger  = "slottery"
+	CommandTrigger  = "lotto"
 
 	PathAPI        = "/api/v1"
 	PathPostAction = "/action"

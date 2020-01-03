@@ -6,10 +6,17 @@ package api
 import (
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
 func (api *api) AutopilotRotation(rotation *Rotation, now time.Time) error {
+	logger := api.Logger.Timed().With(bot.LogContext{
+		"Location":       "api.AutopilotRotation",
+		"ActingUsername": api.actingUser.MattermostUsername(),
+		"RotationID":     rotation.RotationID,
+		"Time":           now,
+	})
+
 	if !rotation.Autopilot.On {
 		return nil
 	}
@@ -18,6 +25,7 @@ func (api *api) AutopilotRotation(rotation *Rotation, now time.Time) error {
 		return err
 	}
 
+	api.Debugf("<><> currentShiftNumber: %v", currentShiftNumber)
 	err = api.autopilotFinish(rotation, now, currentShiftNumber)
 	if err != nil {
 		api.Logger.Infof("Failed to finish previous shift: %s", err.Error())
@@ -28,7 +36,7 @@ func (api *api) AutopilotRotation(rotation *Rotation, now time.Time) error {
 		api.Logger.Infof("Failed to start next shift: %s", err.Error())
 	}
 
-	err = api.autopilotFill(rotation, now, currentShiftNumber)
+	err = api.autopilotFill(rotation, now, currentShiftNumber, logger)
 	if err != nil {
 		api.Logger.Infof("Failed to fill shift(s): %s", err.Error())
 	}
@@ -43,6 +51,7 @@ func (api *api) AutopilotRotation(rotation *Rotation, now time.Time) error {
 		api.Logger.Infof("Failed to notify next shift's users: %s", err.Error())
 	}
 
+	logger.Infof("%s ran autopilot on %s.", api.MarkdownUser(api.actingUser), MarkdownRotation(rotation))
 	return nil
 }
 
@@ -50,34 +59,26 @@ func (api *api) autopilotFinish(rotation *Rotation, now time.Time, currentShiftN
 	if !rotation.Autopilot.StartFinish {
 		return nil
 	}
-
 	prevShiftNumber, err := rotation.ShiftNumberForTime(now.Add(-1 * 24 * time.Hour))
 	if err != nil {
 		return err
 	}
 	if prevShiftNumber == -1 || prevShiftNumber == currentShiftNumber {
+		api.Debugf("<><> Finish: nothing to do")
 		return nil
 	}
 
-	prevShift, err := api.loadShift(rotation, prevShiftNumber)
-	if err != nil {
-		return err
-	}
-	if !prevShift.Autopilot.Finished.IsZero() {
-		return nil
-	}
-
-	err = api.finishShift(rotation, prevShiftNumber, prevShift)
+	_, err = api.finishShift(rotation, prevShiftNumber)
 	if err != nil {
 		return err
 	}
 
-	prevShift.Autopilot.Finished = now
-	return api.ShiftStore.StoreShift(rotation.RotationID, prevShiftNumber, prevShift.Shift)
+	return err
 }
 
 func (api *api) autopilotStart(rotation *Rotation, now time.Time, currentShiftNumber int) error {
 	if !rotation.Autopilot.StartFinish || currentShiftNumber == -1 {
+		api.Debugf("<><> Start: nothing to do 1")
 		return nil
 	}
 
@@ -86,60 +87,40 @@ func (api *api) autopilotStart(rotation *Rotation, now time.Time, currentShiftNu
 		return err
 	}
 	if prevShiftNumber == currentShiftNumber {
+		api.Debugf("<><> Start: nothing to do 2")
 		return nil
 	}
 
-	currentShift, err := api.loadShift(rotation, currentShiftNumber)
-	if err != nil {
-		return err
-	}
-	if !currentShift.Autopilot.Started.IsZero() {
-		return nil
-	}
-
-	err = api.startShift(rotation, currentShiftNumber, currentShift)
+	_, err = api.startShift(rotation, currentShiftNumber)
 	if err != nil {
 		return err
 	}
 
-	currentShift.Autopilot.Started = now
-	return api.ShiftStore.StoreShift(rotation.RotationID, currentShiftNumber, currentShift.Shift)
+	return err
 }
 
-func (api *api) autopilotFill(rotation *Rotation, now time.Time, currentShiftNumber int) error {
+func (api *api) autopilotFill(rotation *Rotation, now time.Time, currentShiftNumber int, logger bot.Logger) error {
 	if !rotation.Autopilot.Fill {
 		return nil
 	}
 
-	fillShiftNumber, err := rotation.ShiftNumberForTime(now.Add(rotation.Autopilot.FillPrior))
+	startingShiftNumber := currentShiftNumber
+	if currentShiftNumber < 0 {
+		startingShiftNumber = 0
+	}
+
+	upToShiftNumber, err := rotation.ShiftNumberForTime(now.Add(rotation.Autopilot.FillPrior))
 	if err != nil {
 		return err
 	}
-	if fillShiftNumber == -1 {
+	if upToShiftNumber < currentShiftNumber {
 		return nil
 	}
+	numShifts := upToShiftNumber - currentShiftNumber + 1
 
-	for n := currentShiftNumber; n <= fillShiftNumber; n++ {
-		var shift *Shift
-		shift, err = api.OpenShift(rotation, fillShiftNumber)
-		if err != nil && err != ErrShiftAlreadyExists {
-			return err
-		}
-
-		if !shift.Autopilot.Filled.IsZero() {
-			continue
-		}
-
-		shift, _, _, _, _, err = api.FillShift(rotation, fillShiftNumber, true)
-		if err != nil && err != ErrShiftMustBeOpen {
-			return err
-		}
-
-		shift.Shift.Autopilot.Filled = now
-		err = api.ShiftStore.StoreShift(rotation.RotationID, n, shift.Shift)
-		if err != nil {
-			return errors.WithMessagef(err, "failed to store autofilled %s", MarkdownShift(rotation, n, shift))
-		}
+	_, _, err = api.fillShifts(rotation, startingShiftNumber, numShifts, true, now, logger)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -161,6 +142,7 @@ func (api *api) autopilotNotifyCurrent(rotation *Rotation, now time.Time, curren
 	if err != nil {
 		return err
 	}
+	api.Debugf("<><> NotifyCurrent:  %v", currentShiftNumber)
 	if !currentShift.Autopilot.NotifiedFinish.IsZero() {
 		return nil
 	}
@@ -188,6 +170,7 @@ func (api *api) autopilotNotifyNext(rotation *Rotation, now time.Time, currentSh
 	if err != nil {
 		return err
 	}
+	api.Debugf("<><> NotifyNext:  %v", nextShiftNumber)
 	if !nextShift.Autopilot.NotifiedStart.IsZero() {
 		return nil
 	}

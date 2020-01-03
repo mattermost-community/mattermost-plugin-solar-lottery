@@ -125,7 +125,7 @@ func (api *api) ArchiveRotation(rotation *Rotation) error {
 		return errors.WithMessagef(err, "failed to store rotation %s", rotation.RotationID)
 	}
 
-	logger.Infof("%s archived rotation %s.", MarkdownUser(api.actingUser), MarkdownRotation(rotation))
+	logger.Infof("%s archived rotation %s.", api.MarkdownUser(api.actingUser), MarkdownRotation(rotation))
 	return nil
 }
 
@@ -152,7 +152,7 @@ func (api *api) DebugDeleteRotation(rotationID string) error {
 		return errors.WithMessagef(err, "failed to store rotation %s", rotationID)
 	}
 
-	logger.Infof("%s deleted rotation %s.", MarkdownUser(api.actingUser), rotationID)
+	logger.Infof("%s deleted rotation %s.", api.MarkdownUser(api.actingUser), rotationID)
 	return nil
 }
 

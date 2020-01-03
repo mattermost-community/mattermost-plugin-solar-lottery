@@ -49,3 +49,11 @@ func (p *Plugin) GetMattermostUser(mattermostUserID string) (*model.User, error)
 	}
 	return mmuser, nil
 }
+
+func (p *Plugin) Clean() error {
+	appErr := p.API.KVDeleteAll()
+	if appErr != nil {
+		return appErr
+	}
+	return nil
+}

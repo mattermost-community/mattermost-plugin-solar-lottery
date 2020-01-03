@@ -31,6 +31,13 @@ func (rotation *Rotation) init(api *api) error {
 	return nil
 }
 
+func (rotation *Rotation) Clone(deep bool) *Rotation {
+	newRotation := *rotation
+	newRotation.Rotation = rotation.Rotation.Clone(deep)
+	newRotation.Users = rotation.Users.Clone(deep)
+	return &newRotation
+}
+
 func (rotation *Rotation) ChangeNeed(skill string, level Level, newNeed store.Need) {
 	for i, need := range rotation.Needs {
 		if need.Skill == skill && need.Level == int(level) {
@@ -175,4 +182,26 @@ func withRotationIsNotArchived(rotation *Rotation) func(api *api) error {
 		}
 		return nil
 	}
+}
+
+func (rotation *Rotation) markShiftUsersEvents(shiftNumber int, shift *Shift) {
+	for mattermostUserID := range shift.MattermostUserIDs {
+		u := rotation.Users[mattermostUserID]
+		u.AddEvent(NewShiftEvent(rotation, shiftNumber, shift))
+	}
+}
+
+func (rotation *Rotation) markShiftUsersServed(shiftNumber int, shift *Shift) {
+	for mattermostUserID := range shift.MattermostUserIDs {
+		u := rotation.Users[mattermostUserID]
+		u.LastServed[rotation.RotationID] = shiftNumber
+	}
+}
+
+func (rotation *Rotation) ShiftUsers(shift *Shift) UserMap {
+	users := UserMap{}
+	for mattermostUserID := range shift.MattermostUserIDs {
+		users[mattermostUserID] = rotation.Users[mattermostUserID]
+	}
+	return users
 }

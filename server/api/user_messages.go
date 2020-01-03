@@ -22,7 +22,7 @@ func (api *api) messageWelcomeToRotation(user *User, rotation *Rotation) {
 		"###### Welcome to rotation %s!\n"+
 			"You have been added%s. Please use `%s help` for more information.\n"+
 			"%s"+
-			api.by(user), config.CommandTrigger, MarkdownRotationWithDetails(rotation))
+			api.by(user), config.CommandTrigger, api.MarkdownRotationWithDetails(rotation))
 }
 
 func (api *api) messageLeftRotation(user *User, rotation *Rotation) {
@@ -47,95 +47,80 @@ func (api *api) messageAddedSkill(user *User, skillName string, level int) {
 
 func (api *api) messageShiftOpened(rotation *Rotation, shiftNumber int, shift *Shift) {
 	api.ExpandRotation(rotation)
-	api.ExpandShift(shift)
 
 	for _, user := range rotation.Users {
 		api.Poster.DM(user.MattermostUserID,
 			"%s opened%s.\n"+
 				"Use `/%s shift join -r %s -s %v` if you would like to participate.\n",
-			MarkdownShift(rotation, shiftNumber, shift), api.by(user),
+			MarkdownShift(rotation, shiftNumber), api.by(user),
 			config.CommandTrigger, rotation.Name, shiftNumber)
 	}
 }
 
 func (api *api) messageShiftStarted(rotation *Rotation, shiftNumber int, shift *Shift) {
 	api.ExpandRotation(rotation)
-	api.ExpandShift(shift)
 
-	for _, user := range shift.Users {
-		next, _, _ := rotation.ShiftDatesForNumber(user.NextRotationShift[rotation.RotationID])
-
+	for _, user := range rotation.ShiftUsers(shift) {
 		api.Poster.DM(user.MattermostUserID,
 			"###### Welcome to %s!\n"+
-				"%s started%s.\n"+
-				"After that you will not then need to serve until %s.\n"+
-				"Use `/%s user forecast -r %s` to see your expected service.\n\nTODO runbook URL/channel",
-			MarkdownShift(rotation, shiftNumber, shift), api.by(user),
-			next.Format(DateFormat),
-			config.CommandTrigger, rotation.Name)
+				"%s started%s.\n\nTODO runbook URL/channel",
+			MarkdownShift(rotation, shiftNumber),
+			MarkdownShift(rotation, shiftNumber), api.by(user))
 	}
 }
 
 func (api *api) messageShiftWillStart(rotation *Rotation, shiftNumber int, shift *Shift) {
 	api.ExpandRotation(rotation)
-	api.ExpandShift(shift)
 
-	for _, user := range shift.Users {
+	for _, user := range rotation.ShiftUsers(shift) {
 
 		api.Poster.DM(user.MattermostUserID,
 			"Your %s will start on %s\n\nTODO runbook URL/channel",
-			MarkdownShift(rotation, shiftNumber, shift),
+			MarkdownShift(rotation, shiftNumber),
 			shift.Start)
 	}
 }
 
 func (api *api) messageShiftFinished(rotation *Rotation, shiftNumber int, shift *Shift) {
 	api.ExpandRotation(rotation)
-	api.ExpandShift(shift)
 
-	for _, user := range shift.Users {
+	for _, user := range rotation.ShiftUsers(shift) {
 		api.Poster.DM(user.MattermostUserID,
 			"###### Done with your shift in %s!\n"+
 				"Your shift in %s is now finished%s. Details:\n%s",
 			MarkdownRotation(rotation),
-			MarkdownRotation(rotation), api.by(user), MarkdownShift(rotation, shiftNumber, shift))
+			MarkdownRotation(rotation), api.by(user), MarkdownShift(rotation, shiftNumber))
 	}
 }
 
 func (api *api) messageShiftWillFinish(rotation *Rotation, shiftNumber int, shift *Shift) {
 	api.ExpandRotation(rotation)
-	api.ExpandShift(shift)
 
-	for _, user := range shift.Users {
-		next, _, _ := rotation.ShiftDatesForNumber(user.NextRotationShift[rotation.RotationID])
-
+	for _, user := range rotation.ShiftUsers(shift) {
 		api.Poster.DM(user.MattermostUserID,
-			"Your %s will finish on %s\n"+
-				"After that you will not then need to serve until %s.\n\nTODO runbook URL/channel",
-			MarkdownShift(rotation, shiftNumber, shift),
-			shift.End,
-			next.Format(DateFormat))
+			"Your %s will finish on %s\n\nTODO runbook URL/channel",
+			MarkdownShift(rotation, shiftNumber),
+			shift.End)
 	}
 }
 
-func (api *api) messageShiftVolunteers(volunteers UserMap, rotation *Rotation, shiftNumber int, shift *Shift) {
+func (api *api) messageShiftJoined(joined UserMap, rotation *Rotation, shiftNumber int, shift *Shift) {
 	api.ExpandRotation(rotation)
-	api.ExpandShift(shift)
 
 	// Notify the previous shift users that new volunteers have been added
-	for _, user := range shift.Users {
-		if volunteers[user.MattermostUserID] != nil {
+	for _, user := range rotation.ShiftUsers(shift) {
+		if joined[user.MattermostUserID] != nil {
 			continue
 		}
 		api.Poster.DM(user.MattermostUserID,
 			"New users %s added your %s%s",
-			MarkdownUserMap(volunteers), MarkdownShift(rotation, shiftNumber, shift), api.by(user))
+			api.MarkdownUsers(joined), MarkdownShift(rotation, shiftNumber), api.by(user))
 	}
 
-	for _, user := range volunteers {
+	for _, user := range joined {
 		api.Poster.DM(user.MattermostUserID,
 			"You volunteered for shift %s%s",
-			MarkdownShift(rotation, shiftNumber, shift), api.by(user))
+			MarkdownShift(rotation, shiftNumber), api.by(user))
 	}
 }
 
@@ -144,5 +129,5 @@ func (api *api) by(forUser *User) string {
 		return ""
 	}
 	api.ExpandUser(api.actingUser)
-	return " by " + MarkdownUser(api.actingUser)
+	return " by " + api.MarkdownUser(api.actingUser)
 }

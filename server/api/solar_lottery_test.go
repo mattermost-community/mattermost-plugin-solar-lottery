@@ -35,7 +35,7 @@ var testUserGuru = makeUser(&store.User{
 		"server":  4,
 		"plugins": 4,
 	},
-	NextRotationShift: lastRotation0,
+	LastServed: lastRotation0,
 })
 
 var testUserServer1 = makeUser(&store.User{
@@ -45,7 +45,7 @@ var testUserServer1 = makeUser(&store.User{
 		"server":  3,
 		"plugins": 1,
 	},
-	NextRotationShift: lastRotation0,
+	LastServed: lastRotation0,
 })
 
 var testUserServer2 = makeUser(&store.User{
@@ -55,7 +55,7 @@ var testUserServer2 = makeUser(&store.User{
 		"server":  3,
 		"plugins": 1,
 	},
-	NextRotationShift: lastRotation0,
+	LastServed: lastRotation0,
 })
 
 var testUserServer3 = makeUser(&store.User{
@@ -65,7 +65,7 @@ var testUserServer3 = makeUser(&store.User{
 		"server":  3,
 		"plugins": 1,
 	},
-	NextRotationShift: lastRotation0,
+	LastServed: lastRotation0,
 })
 
 var testUserWebapp1 = makeUser(&store.User{
@@ -74,7 +74,7 @@ var testUserWebapp1 = makeUser(&store.User{
 		"webapp": 3,
 		"server": 1,
 	},
-	NextRotationShift: lastRotation0,
+	LastServed: lastRotation0,
 })
 
 var testUserWebapp2 = makeUser(&store.User{
@@ -83,7 +83,7 @@ var testUserWebapp2 = makeUser(&store.User{
 		"webapp": 2,
 		"server": 1,
 	},
-	NextRotationShift: lastRotation0,
+	LastServed: lastRotation0,
 })
 
 var testUserWebapp3 = makeUser(&store.User{
@@ -92,7 +92,7 @@ var testUserWebapp3 = makeUser(&store.User{
 		"webapp": 3,
 		"server": 1,
 	},
-	NextRotationShift: lastRotation0,
+	LastServed: lastRotation0,
 })
 
 var testUserMobile1 = makeUser(&store.User{
@@ -101,7 +101,7 @@ var testUserMobile1 = makeUser(&store.User{
 		"webapp": 1,
 		"mobile": 3,
 	},
-	NextRotationShift: lastRotation0,
+	LastServed: lastRotation0,
 })
 
 var testUserMobile2 = makeUser(&store.User{
@@ -110,7 +110,7 @@ var testUserMobile2 = makeUser(&store.User{
 		"webapp": 1,
 		"mobile": 3,
 	},
-	NextRotationShift: lastRotation0,
+	LastServed: lastRotation0,
 })
 
 var testUsers = UserMap{
@@ -266,10 +266,11 @@ func TestPrepareShiftEvenDistribution(t *testing.T) {
 
 	api := setupAPIForCrystalBall(t, ctrl, rotation, testUsers)
 
+	sampleSize := 200
 	counters := store.IntMap{}
-	shifts, err := api.Guess(rotation, 3, len(testUsers)*1000, true)
+	shifts, err := api.Guess(rotation, 3, len(testUsers)*sampleSize, true)
 	require.Nil(t, err)
-	require.Len(t, shifts, len(testUsers)*1000)
+	require.Len(t, shifts, len(testUsers)*sampleSize)
 
 	for _, shift := range shifts {
 		assert.NotNil(t, shift)
@@ -280,7 +281,7 @@ func TestPrepareShiftEvenDistribution(t *testing.T) {
 	}
 
 	for k, c := range counters {
-		assert.Greater(t, c, 900, k)
-		assert.Less(t, c, 1100, k)
+		assert.Greater(t, c, sampleSize*90/100, k)
+		assert.Less(t, c, sampleSize*110/100, k)
 	}
 }

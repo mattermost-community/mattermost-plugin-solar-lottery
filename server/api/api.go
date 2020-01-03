@@ -15,14 +15,17 @@ import (
 
 type API interface {
 	bot.Logger
-	Forecaster
 	PluginAPI
+
+	Expander
+	Forecaster
+	Markdowner
+
 	Rotations
 	Shifts
 	Skills
-	Users
 	UserActions
-	Expander
+	Users
 }
 
 type Rotations interface {
@@ -34,6 +37,7 @@ type Rotations interface {
 	MakeRotation(rotationName string) (*Rotation, error)
 	ResolveRotationName(namePattern string) ([]string, error)
 	UpdateRotation(*Rotation, func(*Rotation) error) error
+	AutopilotRotation(rotation *Rotation, now time.Time) error
 }
 
 type Shifts interface {
@@ -42,7 +46,8 @@ type Shifts interface {
 	StartShift(*Rotation, int) (*Shift, error)
 	FinishShift(*Rotation, int) (*Shift, error)
 	DebugDeleteShift(*Rotation, int) error
-	FillShift(*Rotation, int, bool) (shift *Shift, ready bool, whyNot string, before, added UserMap, err error)
+	FillShift(*Rotation, int) (*Shift, UserMap, error)
+	IsShiftReady(rotation *Rotation, shiftNumber int) (shift *Shift, ready bool, whyNot string, err error)
 }
 
 type Users interface {
@@ -53,11 +58,11 @@ type Users interface {
 
 type UserActions interface {
 	Qualify(mattermostUsernames, skillName string, level Level) error
-	JoinRotation(mattermostUsernames string, rotation *Rotation, graceShifts int, now time.Time) (added UserMap, err error)
+	JoinRotation(mattermostUsernames string, rotation *Rotation, starting time.Time) (added UserMap, err error)
 	LeaveRotation(mattermostUsernames string, rotation *Rotation) (deleted UserMap, err error)
 	Disqualify(mattermostUsernames, skillName string) error
-	JoinShift(mattermostUsernames string, rotation *Rotation, shiftNumber int) (*Shift, error)
-	AddEvent(mattermostUsernames string, event store.Event) error
+	JoinShift(mattermostUsernames string, rotation *Rotation, shiftNumber int) (*Shift, UserMap, error)
+	AddEvent(mattermostUsernames string, event Event) error
 	DeleteEvents(mattermostUsernames string, startDate, endDate string) error
 }
 
@@ -76,7 +81,6 @@ type Skills interface {
 type Expander interface {
 	ExpandUserMap(UserMap) error
 	ExpandUser(*User) error
-	ExpandShift(*Shift) error
 	ExpandRotation(*Rotation) error
 }
 
@@ -84,6 +88,7 @@ type PluginAPI interface {
 	GetMattermostUser(mattermostUserID string) (*model.User, error)
 	GetMattermostUserByUsername(mattermostUsername string) (*model.User, error)
 	IsPluginAdmin(mattermostUserID string) (bool, error)
+	Clean() error
 }
 
 // Dependencies contains all API dependencies

@@ -66,6 +66,15 @@ func NewRotation(name string) *Rotation {
 	}
 }
 
+func (rotation *Rotation) Clone(deep bool) *Rotation {
+	newRotation := *rotation
+	if deep {
+		newRotation.MattermostUserIDs = rotation.MattermostUserIDs.Clone()
+		newRotation.Needs = append([]Need{}, rotation.Needs...)
+	}
+	return &newRotation
+}
+
 func (s *pluginStore) LoadKnownRotations() (IDMap, error) {
 	rotations := IDMap{}
 	err := kvstore.LoadJSON(s.basicKV, KnownRotationsKey, &rotations)

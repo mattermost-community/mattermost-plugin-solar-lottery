@@ -48,7 +48,7 @@ func (api *api) AddSkill(skillName string) error {
 		return err
 	}
 
-	logger.Infof("%s added skill %s.", MarkdownUser(api.actingUser), skillName)
+	logger.Infof("%s added skill %s.", api.MarkdownUser(api.actingUser), skillName)
 	return nil
 }
 
@@ -80,7 +80,7 @@ func (api *api) DeleteSkill(skillName string) error {
 	if err != nil {
 		return err
 	}
-	logger.Infof("%s deleted skill %s.", MarkdownUser(api.actingUser), skillName)
+	logger.Infof("%s deleted skill %s.", api.MarkdownUser(api.actingUser), skillName)
 	return nil
 }
 

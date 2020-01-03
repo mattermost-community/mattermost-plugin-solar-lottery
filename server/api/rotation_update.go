@@ -31,6 +31,6 @@ func (api *api) UpdateRotation(rotation *Rotation, updatef func(*Rotation) error
 		return err
 	}
 
-	logger.Infof("%s updated rotation %s.", MarkdownUser(api.actingUser), MarkdownRotation(rotation))
+	logger.Infof("%s updated rotation %s.", api.MarkdownUser(api.actingUser), MarkdownRotation(rotation))
 	return nil
 }

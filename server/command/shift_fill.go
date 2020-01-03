@@ -17,33 +17,27 @@ func (c *Command) fillShift(parameters []string) (string, error) {
 			fs.BoolVar(&autofill, flagAutofill, false, "autofill shift if needed")
 		},
 		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
-			shift, ready, whyNot, before, added, err := c.API.FillShift(rotation, shiftNumber, autofill)
-			switch {
-			case err != nil:
+			shift, ready, whyNot, err := c.API.IsShiftReady(rotation, shiftNumber)
+			if err != nil {
 				return "", err
-
-			case !ready:
-				return fmt.Sprintf("%s is not ready.\nUsers: %s.\nReason: %s.",
-					api.MarkdownShift(rotation, shiftNumber, shift),
-					api.MarkdownUserMapWithSkills(shift.Users),
-					whyNot), nil
-
-			case ready && len(added) == 0:
-				return fmt.Sprintf("%s is ready, no fill required.\nUsers: %s.",
-					api.MarkdownShift(rotation, shiftNumber, shift),
-					api.MarkdownUserMapWithSkills(shift.Users)), nil
-
-			case ready && len(before) > 0:
-				return fmt.Sprintf("%s is ready.\nUsers already in the shift: %s\nAdded users: %s.",
-					api.MarkdownShift(rotation, shiftNumber, shift),
-					api.MarkdownUserMapWithSkills(before),
-					api.MarkdownUserMapWithSkills(added)), nil
-
-			default:
-				return fmt.Sprintf("%s is ready.\nAdded users: %s.",
-					api.MarkdownShift(rotation, shiftNumber, shift),
-					api.MarkdownUserMapWithSkills(added)), nil
-
 			}
+			if ready {
+				return fmt.Sprintf("%s is ready, no fill required.\nUsers: %s.",
+					api.MarkdownShift(rotation, shiftNumber),
+					c.API.MarkdownUsersWithSkills(rotation.ShiftUsers(shift))), nil
+			}
+			if !autofill {
+				return fmt.Sprintf("%s is not ready.\nUsers: %s.\nReason: %s.",
+					api.MarkdownShift(rotation, shiftNumber),
+					c.API.MarkdownUsersWithSkills(rotation.ShiftUsers(shift)),
+					whyNot), nil
+			}
+
+			shift, users, err := c.API.FillShift(rotation, shiftNumber)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("%s is filled, added: %s.",
+				api.MarkdownShift(rotation, shiftNumber), c.API.MarkdownUsersWithSkills(users)), nil
 		})
 }

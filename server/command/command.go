@@ -72,6 +72,7 @@ const (
 	flagMin        = "min"
 	flagNotifyDays = "notify"
 	flagNumber     = "number"
+	flagDebugRun   = "debug-run"
 	flagOff        = "off"
 	flagPeriod     = "period"
 	flagRotation   = "rotation"
@@ -118,8 +119,10 @@ func (c *Command) Handle() (out string, err error) {
 		commandInfo:     c.info,
 		commandRotation: c.rotation,
 		commandShift:    c.shift,
-		commandShow:     c.skill,
+		commandSkill:    c.skill,
 		commandUser:     c.user,
+
+		"debug-clean": c.debugClean,
 	}
 
 	defer func() {
@@ -186,4 +189,8 @@ func (c *Command) subUsage(subcommands map[string]func([]string) (string, error)
 	usage := fmt.Sprintf("`%s %s`", c.subcommand, strings.Join(subs, "|"))
 	return fmt.Sprintf("Usage: %s\nUse `%s <subcommand> help` for more info.",
 		usage, c.subcommand)
+}
+
+func (c *Command) debugClean(parameters []string) (string, error) {
+	return "Cleaned the KV store", c.API.Clean()
 }

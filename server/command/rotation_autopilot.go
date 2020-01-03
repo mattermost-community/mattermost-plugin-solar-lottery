@@ -12,7 +12,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
-func withRotationAutopilotFlags(fs *pflag.FlagSet, off *bool, autostart *bool, autofill *bool, autofillPriorDays *int, notifyPriorDays *int) {
+func withRotationAutopilotFlags(fs *pflag.FlagSet, off *bool, autostart *bool, autofill *bool, autofillPriorDays *int, notifyPriorDays *int, debugRunTime *string) {
+	fs.StringVar(debugRunTime, flagDebugRun, "", "run autopilot mocking the specified time")
 	fs.IntVar(notifyPriorDays, flagNotifyDays, 7, "notify shift users this many days prior to transition date")
 	fs.IntVar(autofillPriorDays, flagFillDays, 30, "autofill shifts this many days prior to start date")
 	fs.BoolVar(autostart, flagStart, true, "start and finish shifts automatically")
@@ -24,8 +25,9 @@ func (c *Command) autopilotRotation(parameters []string) (string, error) {
 	var rotationID, rotationName string
 	var autostart, autofill, off bool
 	var autofillPriorDays, notifyPriorDays int
+	var debugRunTime string
 	fs := newRotationFlagSet(&rotationID, &rotationName)
-	withRotationAutopilotFlags(fs, &off, &autostart, &autofill, &autofillPriorDays, &notifyPriorDays)
+	withRotationAutopilotFlags(fs, &off, &autostart, &autofill, &autofillPriorDays, &notifyPriorDays, &debugRunTime)
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err
@@ -38,6 +40,20 @@ func (c *Command) autopilotRotation(parameters []string) (string, error) {
 	rotation, err := c.API.LoadRotation(rotationID)
 	if err != nil {
 		return "", err
+	}
+
+	if debugRunTime != "" {
+		var now time.Time
+		now, err = time.Parse(api.DateFormat, debugRunTime)
+		if err != nil {
+			return c.flagUsage(fs), err
+		}
+
+		err = c.API.AutopilotRotation(rotation, now)
+		if err != nil {
+			return "", err
+		}
+		return "Ran autopilot for " + now.String(), nil
 	}
 
 	var updatef func(rotation *api.Rotation) error
@@ -65,5 +81,5 @@ func (c *Command) autopilotRotation(parameters []string) (string, error) {
 		return "", err
 	}
 
-	return "Updated rotation autopilot:\n" + api.MarkdownRotationWithDetails(rotation), nil
+	return "Updated rotation autopilot:\n" + c.API.MarkdownRotationWithDetails(rotation), nil
 }

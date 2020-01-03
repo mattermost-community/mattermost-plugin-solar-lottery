@@ -26,7 +26,7 @@ func (api *api) DeleteEvents(mattermostUsernames string, startDate, endDate stri
 	})
 
 	for _, user := range api.users {
-		intervalStart, intervalEnd, err := parseEventDates(startDate, endDate)
+		intervalStart, intervalEnd, err := ParseDatePair(startDate, endDate)
 		if err != nil {
 			return err
 		}
@@ -38,11 +38,11 @@ func (api *api) DeleteEvents(mattermostUsernames string, startDate, endDate stri
 
 		_, err = api.storeUserWelcomeNew(user)
 		if err != nil {
-			return errors.WithMessagef(err, "failed to update user %s", MarkdownUser(user))
+			return errors.WithMessagef(err, "failed to update user %s", api.MarkdownUser(user))
 		}
 	}
 
 	logger.Infof("%s deleted events from %s to %s from users %s.",
-		MarkdownUser(api.actingUser), startDate, endDate, MarkdownUserMapWithSkills(api.users))
+		api.MarkdownUser(api.actingUser), startDate, endDate, api.MarkdownUsersWithSkills(api.users))
 	return nil
 }
