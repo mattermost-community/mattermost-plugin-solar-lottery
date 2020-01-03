@@ -41,7 +41,7 @@ func (api *api) Guess(rotation *Rotation, startingShiftNumber int, numShifts int
 			return nil, err
 		}
 
-		if autofill && (shift.Status == "" || shift.Status == store.ShiftStatusOpen) {
+		if autofill && shift.Status == store.ShiftStatusOpen {
 			err = api.autofillShift(rotation, shiftNumber, shift, autofill)
 			if err != nil {
 				return nil, err

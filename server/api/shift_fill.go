@@ -93,8 +93,9 @@ func (api *api) fillShifts(rotation *Rotation, shiftNumber, numShifts int, autof
 		if err != nil && err != ErrShiftAlreadyExists {
 			return nil, nil, err
 		}
+		logger.Debugf("<><> loaded (created?) %s, status %s", MarkdownShift(rotation, shiftNumber), loadedShift.Status)
 		if loadedShift.Status != store.ShiftStatusOpen {
-			logger.Debugf("<><> ignored %s, status %s", MarkdownShift(rotation, shiftNumber), loadedShift.Status)
+			logger.Debugf("ignored %s, status %s", MarkdownShift(rotation, shiftNumber), loadedShift.Status)
 			continue
 		}
 		if autofill && !loadedShift.Autopilot.Filled.IsZero() {
@@ -104,6 +105,8 @@ func (api *api) fillShifts(rotation *Rotation, shiftNumber, numShifts int, autof
 
 		before := rotation.ShiftUsers(loadedShift).Clone(false)
 
+		// shifts coming from Guess are either loaded with their respective
+		// status, or are Open. (in reality should always be Open).
 		shift := shifts[n]
 		added := UserMap{}
 		for id, user := range rotation.ShiftUsers(shift) {
@@ -117,10 +120,15 @@ func (api *api) fillShifts(rotation *Rotation, shiftNumber, numShifts int, autof
 		}
 
 		if autofill {
-			shift.Autopilot.Filled = now
+			loadedShift.Autopilot.Filled = now
 		}
 
-		err = api.ShiftStore.StoreShift(rotation.RotationID, n, shift.Shift)
+		_, err = api.joinShift(rotation, shiftNumber, loadedShift, added, true)
+		if err != nil {
+			return nil, nil, errors.WithMessagef(err, "failed to join autofilled users to %s", MarkdownShift(rotation, shiftNumber))
+		}
+
+		err = api.ShiftStore.StoreShift(rotation.RotationID, n, loadedShift.Shift)
 		if err != nil {
 			return nil, nil, errors.WithMessagef(err, "failed to store autofilled %s", MarkdownShift(rotation, shiftNumber))
 		}

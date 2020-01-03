@@ -124,14 +124,17 @@ func (api *api) loadOrMakeStoredUser(mattermostUserID string) (*User, bool, erro
 // storeUserNotify checks if the user being stored is new, and welcomes the user.
 // note that it can be used inside of filters, so it must not use filters itself,
 //  nor assume that any runtime values have been filled.
-func (api *api) storeUserWelcomeNew(u *User) (*User, error) {
-	user := u.Clone()
+func (api *api) storeUserWelcomeNew(orig *User) (*User, error) {
+	user := orig.Clone()
 	user.PluginVersion = api.Config.PluginVersion
 	err := api.UserStore.StoreUser(user.User)
 	if err != nil {
 		return nil, err
 	}
 
-	api.messageWelcomeNewUser(user)
+	if orig.PluginVersion == "" {
+		api.messageWelcomeNewUser(user)
+	}
+
 	return user, nil
 }

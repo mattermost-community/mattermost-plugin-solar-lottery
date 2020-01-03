@@ -19,7 +19,7 @@ type Markdowner interface {
 }
 
 func MarkdownRotation(rotation *Rotation) string {
-	return fmt.Sprintf("%s", rotation.RotationID)
+	return fmt.Sprintf("rotation %s", rotation.Name)
 }
 
 func MarkdownEvent(event Event) string {
@@ -36,7 +36,7 @@ func (api *api) MarkdownUser(user *User) string {
 	if user.MattermostUser != nil {
 		return fmt.Sprintf("@%s", user.MattermostUser.Username)
 	} else {
-		return fmt.Sprintf("userID:`%s`", user.MattermostUserID)
+		return fmt.Sprintf("userID `%s`", user.MattermostUserID)
 	}
 }
 

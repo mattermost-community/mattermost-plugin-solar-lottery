@@ -10,6 +10,12 @@ import (
 )
 
 func (api *api) AutopilotRotation(rotation *Rotation, now time.Time) error {
+	err := api.Filter(
+		withActingUserExpanded,
+	)
+	if err != nil {
+		return err
+	}
 	logger := api.Logger.Timed().With(bot.LogContext{
 		"Location":       "api.AutopilotRotation",
 		"ActingUsername": api.actingUser.MattermostUsername(),
@@ -31,14 +37,14 @@ func (api *api) AutopilotRotation(rotation *Rotation, now time.Time) error {
 		api.Logger.Infof("Failed to finish previous shift: %s", err.Error())
 	}
 
-	err = api.autopilotStart(rotation, now, currentShiftNumber)
-	if err != nil {
-		api.Logger.Infof("Failed to start next shift: %s", err.Error())
-	}
-
 	err = api.autopilotFill(rotation, now, currentShiftNumber, logger)
 	if err != nil {
 		api.Logger.Infof("Failed to fill shift(s): %s", err.Error())
+	}
+
+	err = api.autopilotStart(rotation, now, currentShiftNumber)
+	if err != nil {
+		api.Logger.Infof("Failed to start next shift: %s", err.Error())
 	}
 
 	err = api.autopilotNotifyCurrent(rotation, now, currentShiftNumber)

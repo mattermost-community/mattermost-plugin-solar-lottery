@@ -47,6 +47,7 @@ func NewShift(start, end string, mattermostUserIDs IDMap) *Shift {
 		mattermostUserIDs = IDMap{}
 	}
 	return &Shift{
+		Status:            ShiftStatusOpen,
 		Start:             start,
 		End:               end,
 		MattermostUserIDs: mattermostUserIDs,
