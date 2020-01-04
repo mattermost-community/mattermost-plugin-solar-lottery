@@ -13,6 +13,7 @@ import (
 func (api *api) StartShift(rotation *Rotation, shiftNumber int) (*Shift, error) {
 	err := api.Filter(
 		withActingUserExpanded,
+		withRotationExpanded(rotation),
 	)
 	if err != nil {
 		return nil, err
@@ -39,16 +40,16 @@ func (api *api) startShift(rotation *Rotation, shiftNumber int) (*Shift, error) 
 		return nil, err
 	}
 	if shift.Status == store.ShiftStatusStarted {
-		return shift, nil
+		return shift, errors.New("already started")
 	}
 	if shift.Status != store.ShiftStatusOpen {
 		return nil, errors.Errorf("can't start a shift which is %s, must be open", shift.Status)
 	}
 
 	shift.Status = store.ShiftStatusStarted
-	rotation.markShiftUsersServed(shiftNumber, shift)
 
 	for _, user := range rotation.ShiftUsers(shift) {
+		rotation.markShiftUserServed(user, shiftNumber, shift)
 		_, err = api.storeUserWelcomeNew(user)
 		if err != nil {
 			return nil, err

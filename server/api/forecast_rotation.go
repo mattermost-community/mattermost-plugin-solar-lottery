@@ -53,6 +53,7 @@ func (api *api) ForecastRotation(rotation *Rotation, startingShiftNumber, numShi
 GUESS:
 	for i := 0; i < sampleSize; i++ {
 		var shifts []*Shift
+		// Guess' logs are too verbose - suppress
 		prevLogger := api.Logger
 		api.Logger = &bot.NilLogger{}
 		shifts, err = api.Guess(rotation, startingShiftNumber, numShifts, true)

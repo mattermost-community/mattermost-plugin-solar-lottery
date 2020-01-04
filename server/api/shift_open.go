@@ -31,7 +31,6 @@ func (api *api) OpenShift(rotation *Rotation, shiftNumber int) (*Shift, error) {
 		if err != nil {
 			return nil, err
 		}
-		api.Debugf("<><> OpenShift: already exists, status: %s", shift.Status)
 		return shift, ErrShiftAlreadyExists
 	}
 

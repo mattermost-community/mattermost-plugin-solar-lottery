@@ -198,6 +198,10 @@ func (rotation *Rotation) markShiftUsersServed(shiftNumber int, shift *Shift) {
 	}
 }
 
+func (rotation *Rotation) markShiftUserServed(user *User, shiftNumber int, shift *Shift) {
+	user.LastServed[rotation.RotationID] = shiftNumber
+}
+
 func (rotation *Rotation) ShiftUsers(shift *Shift) UserMap {
 	users := UserMap{}
 	for mattermostUserID := range shift.MattermostUserIDs {

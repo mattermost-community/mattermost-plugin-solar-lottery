@@ -9,7 +9,7 @@ import "fmt"
 
 func (api *api) dmUser(user *User, message string) {
 	api.Poster.DM(user.MattermostUserID, message)
-	api.Infof("###### Bot to %s:\n%s", api.MarkdownUser(user), message)
+	api.Debugf("DM bot to %s:\n%s", api.MarkdownUser(user), message)
 }
 
 func (api *api) messageWelcomeNewUser(user *User) {

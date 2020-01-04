@@ -59,7 +59,7 @@ func (api *api) FillShift(rotation *Rotation, shiftNumber int) (*Shift, UserMap,
 		"ShiftNumber":    shiftNumber,
 	})
 
-	shifts, addedUsers, err := api.fillShifts(rotation, shiftNumber, 1, false, time.Time{}, logger)
+	_, shifts, addedUsers, err := api.fillShifts(rotation, shiftNumber, 1, false, time.Time{}, logger)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -77,29 +77,43 @@ func (api *api) FillShift(rotation *Rotation, shiftNumber int) (*Shift, UserMap,
 	return shift, added, nil
 }
 
-func (api *api) fillShifts(rotation *Rotation, shiftNumber, numShifts int, autofill bool, now time.Time, logger bot.Logger) ([]*Shift, []UserMap, error) {
-	shifts, err := api.Guess(rotation, shiftNumber, numShifts, true)
+func (api *api) fillShifts(rotation *Rotation, startingShiftNumber, numShifts int, autofill bool, now time.Time, logger bot.Logger) ([]int, []*Shift, []UserMap, error) {
+	// Guess' logs are too verbose - suppress
+	prevLogger := api.Logger
+	api.Logger = &bot.NilLogger{}
+	shifts, err := api.Guess(rotation, startingShiftNumber, numShifts, true)
+	api.Logger = prevLogger
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	if len(shifts) != numShifts {
-		return nil, nil, errors.New("unreachable, must match")
+		return nil, nil, nil, errors.New("unreachable, must match")
 	}
 
+	var filledShiftNumbers []int
 	var filledShifts []*Shift
 	var addedUsers []UserMap
-	for n := shiftNumber; n < shiftNumber+numShifts; n++ {
-		loadedShift, err := api.OpenShift(rotation, n)
+
+	appendShift := func(shiftNumber int, shift *Shift, added UserMap) {
+		filledShiftNumbers = append(filledShiftNumbers, shiftNumber)
+		filledShifts = append(filledShifts, shift)
+		addedUsers = append(addedUsers, added)
+	}
+
+	shiftNumber := startingShiftNumber - 1
+	for n := 0; n < numShifts; n++ {
+		shiftNumber++
+
+		loadedShift, err := api.OpenShift(rotation, shiftNumber)
 		if err != nil && err != ErrShiftAlreadyExists {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
-		logger.Debugf("<><> loaded (created?) %s, status %s", MarkdownShift(rotation, shiftNumber), loadedShift.Status)
 		if loadedShift.Status != store.ShiftStatusOpen {
-			logger.Debugf("ignored %s, status %s", MarkdownShift(rotation, shiftNumber), loadedShift.Status)
+			appendShift(shiftNumber, loadedShift, nil)
 			continue
 		}
 		if autofill && !loadedShift.Autopilot.Filled.IsZero() {
-			logger.Debugf("<><> already filled on %v", loadedShift.Autopilot.Filled)
+			appendShift(shiftNumber, loadedShift, nil)
 			continue
 		}
 
@@ -115,7 +129,7 @@ func (api *api) fillShifts(rotation *Rotation, shiftNumber, numShifts int, autof
 			}
 		}
 		if len(added) == 0 {
-			logger.Debugf("<><> ignored %s, no users added", MarkdownShift(rotation, shiftNumber))
+			appendShift(shiftNumber, loadedShift, nil)
 			continue
 		}
 
@@ -125,19 +139,17 @@ func (api *api) fillShifts(rotation *Rotation, shiftNumber, numShifts int, autof
 
 		_, err = api.joinShift(rotation, shiftNumber, loadedShift, added, true)
 		if err != nil {
-			return nil, nil, errors.WithMessagef(err, "failed to join autofilled users to %s", MarkdownShift(rotation, shiftNumber))
+			return filledShiftNumbers, filledShifts, addedUsers, errors.WithMessagef(err, "failed to join autofilled users to %s", MarkdownShift(rotation, shiftNumber))
 		}
 
-		err = api.ShiftStore.StoreShift(rotation.RotationID, n, loadedShift.Shift)
+		err = api.ShiftStore.StoreShift(rotation.RotationID, shiftNumber, loadedShift.Shift)
 		if err != nil {
-			return nil, nil, errors.WithMessagef(err, "failed to store autofilled %s", MarkdownShift(rotation, shiftNumber))
+			return filledShiftNumbers, filledShifts, addedUsers, errors.WithMessagef(err, "failed to store autofilled %s", MarkdownShift(rotation, shiftNumber))
 		}
 
 		api.messageShiftJoined(added, rotation, shiftNumber, shift)
-
-		filledShifts = append(filledShifts, shift)
-		addedUsers = append(addedUsers, added)
+		appendShift(shiftNumber, shift, added)
 	}
 
-	return filledShifts, addedUsers, nil
+	return filledShiftNumbers, filledShifts, addedUsers, nil
 }

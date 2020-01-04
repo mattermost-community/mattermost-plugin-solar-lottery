@@ -19,7 +19,7 @@ type Markdowner interface {
 }
 
 func MarkdownRotation(rotation *Rotation) string {
-	return fmt.Sprintf("rotation %s", rotation.Name)
+	return fmt.Sprintf("%s", rotation.Name)
 }
 
 func MarkdownEvent(event Event) string {
@@ -28,7 +28,7 @@ func MarkdownEvent(event Event) string {
 }
 
 func MarkdownShift(rotation *Rotation, shiftNumber int) string {
-	return fmt.Sprintf("shift %s#%v", rotation.Name, shiftNumber)
+	return fmt.Sprintf("%s#%v", rotation.Name, shiftNumber)
 }
 
 func (api *api) MarkdownUser(user *User) string {
@@ -72,10 +72,20 @@ func (api *api) MarkdownUsersWithSkills(m UserMap) string {
 }
 
 func (api *api) MarkdownShiftDetails(rotation *Rotation, shiftNumber int, shift *Shift) string {
+	if shift == nil {
+		return ""
+	}
 	api.ExpandRotation(rotation)
-	return fmt.Sprintf("%s (%s to %s), status:%s, users: %s",
-		MarkdownShift(rotation, shiftNumber), shift.Start, shift.End, shift.Status,
+	return fmt.Sprintf("(%s to %s), status:%s, users: %s",
+		shift.Start, shift.End, shift.Status,
 		api.MarkdownUsersWithSkills(rotation.ShiftUsers(shift)))
+}
+
+func (api *api) MarkdownShiftWithDetails(rotation *Rotation, shiftNumber int, shift *Shift) string {
+	api.ExpandRotation(rotation)
+	return fmt.Sprintf("**%s**: %s",
+		MarkdownShift(rotation, shiftNumber),
+		api.MarkdownShiftDetails(rotation, shiftNumber, shift))
 }
 
 func (api *api) MarkdownUsers(m UserMap) string {
