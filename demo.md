@@ -1,11 +1,11 @@
-### Intro
+## Intro
 - Solar Lottery is a team rotation scheduler, nspired by PagerDuty (and Amazon.com pager tool before that).
 - Name inspired by https://en.wikipedia.org/wiki/Solar_Lottery
 - The main motivation to develop it was to automate the Sustaining Engineering Team (SET) schedulng.
 - Not a traditional queue, scheduling is based on (age-exponential) probabilities.
 - Basic support for qualifications and needs, and constraints on them
 
-###### Use cases
+### Use cases
 - Automate existing:
     - R&D ice breakers.
     - OKR status review.
@@ -18,12 +18,12 @@
     - Ops duty - plugin review, releases, config on community.
     - Community duty.
 
-###### Limitations 
+### Limitations 
 - Command-line only, optimized for debugging, not usability.
 - Slow performance - unoptimized RPC access, O(N**2) forecasting.
 - No cron yet - simulated for the demo with `/lotto rotation autopilot --debug-run <date>`.
 
-###### Demo outline
+### Demo outline
     - Scheduling the R&D "Ice Breakers".
     - Scheduling SET.
     - Setting "unavailabe" times.
@@ -33,16 +33,16 @@
         - Started as debugging (got annoyed grepping logs).
         - INFOs are useful as a "transparency" change log.
 
-### Demo Setup
+## Demo Setup
 
-###### Team ABC (full stack)
+#### Team ABC (full stack)
 - @aaron.medina - lead(3), server(3), webapp(3)
 - @aaron.peterson - server(1), webapp(2)
 - @aaron.ward - webapp(2)
 - @albert.torres - server(1)
 - @alice.johnston - server(2), webapp(1)
 
-###### Team DEF (perf)
+#### Team DEF (perf)
 - @deborah.freeman - lead(2), server(3), webapp(2)
 - @diana.wells - sever(3)
 - @douglas.daniels - server(4)
@@ -50,7 +50,7 @@
 - @eugene.rodriguez - server(2), webapp(1)
 - @frances.elliott - webapp(3)
 
-###### Team GHIJ (full stack)
+#### Team GHIJ (full stack)
 - @helen.hunter - lead(3),webapp(1),server(1)
 - @janice.armstrong - server(2), webapp(1)
 - @jeremy.williamson - webapp(2)
@@ -58,22 +58,22 @@
 - @johnny.hansen - webapp(1), server(1)
 - @jonathan.watson - server(2)
 
-###### Team KL (SRE)
+#### Team KL (SRE)
 - @karen.austin - lead(2), sre(3)
 - @karen.martin - webapp(1), sre(1), build(3)
 - @kathryn.mills - server(2), sre(3)
 - @laura.wagner - sre(2)
 
-###### Team MN (full stack)
+#### Team MN (full stack)
 - @margaret.morgan - lead(3), server(2)
 - @mark.rodriguez webapp(1), server(1)
 - @matthew.mendoza webapp(3), server(2)
 - @mildred.barnes webapp(2), server(2)
 - @nancy.roberts webapp(2), server(3)
 
-### Demo
+## Demo
 
-###### Setup
+### Setup
 (done beforehand)
 
 ```sh
@@ -104,8 +104,8 @@
 /lotto user qualify -k build -l advanced -u @karen.martin
 ```
 
-###### 1. Ice-breaker
-```
+### 1. Ice-breaker
+```sh
 /lotto rotation add -r icebreaker --period w --start 2019-12-17 --grace 3 --size 2
 
 /lotto rotation join -r icebreaker -s 2019-12-17 -u @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston,@deborah.freeman,@diana.wells,@douglas.daniels,@emily.meyer,@eugene.rodriguez,@frances.elliott,@helen.hunter,@janice.armstrong,@jeremy.williamson,@jerry.ramos,@johnny.hansen,@jonathan.watson,@karen.austin,@karen.martin,@kathryn.mills,@laura.wagner,@margaret.morgan,@mark.rodriguez,@matthew.mendoza,@mildred.barnes,@nancy.roberts
@@ -119,8 +119,9 @@
 /lotto rotation autopilot -r icebreaker --debug-run 2019-12-30
 ```
 
-# 2. Sustaining Engineering Team (SET)
+### 2. Sustaining Engineering Team (SET)
 
+```sh
 /lotto add rotation  -r SET --period m --start 2020-01-16 --grace 2 --size 5
 /lotto rotation need -r SET --skill webapp --level beginner --min 2 
 /lotto rotation need -r SET --skill webapp --level intermediate --min 1 
