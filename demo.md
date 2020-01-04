@@ -1,11 +1,17 @@
 ## Intro
-- Solar Lottery is a team rotation scheduler, nspired by PagerDuty (and Amazon.com pager tool before that).
+
+- Solar Lottery is a team rotation scheduler, inspired by PagerDuty (and Amazon.com pager tool before that).
 - Name inspired by https://en.wikipedia.org/wiki/Solar_Lottery
 - The main motivation to develop it was to automate the Sustaining Engineering Team (SET) schedulng.
-- Not a traditional queue, scheduling is based on (age-exponential) probabilities.
-- Basic support for qualifications and needs, and constraints on them
+- Not a traditional queue, scheduling is based on probabilities, exponentially increasing since last serve time.
+- Features (basic):
+    - Users have skills, rotations have needs, match and constrain.
+    - Grace periods after serving shifts.
+    - User "unavailable" events.
+    - Complete manual control over shifts, or "Autopilot"
 
 ### Use cases
+
 - Automate existing:
     - R&D ice breakers.
     - OKR status review.
@@ -19,19 +25,21 @@
     - Community duty.
 
 ### Limitations 
+
 - Command-line only, optimized for debugging, not usability.
 - Slow performance - unoptimized RPC access, O(N**2) forecasting.
 - No cron yet - simulated for the demo with `/lotto rotation autopilot --debug-run <date>`.
 
 ### Demo outline
-    - Scheduling the R&D "Ice Breakers".
-    - Scheduling SET.
-    - Setting "unavailabe" times.
-        - Grace after serving a shift
-        - Can create custom "Unavailable" intervals
-    - Logs tee-ed as DMs.
-        - Started as debugging (got annoyed grepping logs).
-        - INFOs are useful as a "transparency" change log.
+
+- Scheduling the R&D "Ice Breakers".
+- Scheduling SET.
+- Setting "unavailabe" times.
+    - Grace after serving a shift
+    - Can create custom "Unavailable" intervals
+- Logs tee-ed as DMs.
+    - Started as debugging (got annoyed grepping logs).
+    - INFOs are useful as a "transparency" change log.
 
 ## Demo Setup
 
@@ -102,39 +110,45 @@
 /lotto user qualify -k sre -l advanced -u @karen.austin,@kathryn.mills
 
 /lotto user qualify -k build -l advanced -u @karen.martin
-```
 
-### 1. Ice-breaker
-```sh
 /lotto rotation add -r icebreaker --period w --start 2019-12-17 --grace 3 --size 2
 
 /lotto rotation join -r icebreaker -s 2019-12-17 -u @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston,@deborah.freeman,@diana.wells,@douglas.daniels,@emily.meyer,@eugene.rodriguez,@frances.elliott,@helen.hunter,@janice.armstrong,@jeremy.williamson,@jerry.ramos,@johnny.hansen,@jonathan.watson,@karen.austin,@karen.martin,@kathryn.mills,@laura.wagner,@margaret.morgan,@mark.rodriguez,@matthew.mendoza,@mildred.barnes,@nancy.roberts
 
+```
+
+### 1. Ice-breaker
+```sh
 /lotto rotation guess -r icebreaker -s 0 -n 20 --autofill
 /lotto rotation forecast -r icebreaker -s 0 -n 20 --sample 100
 /lotto rotation autopilot -r icebreaker --notify 3 --fill-before 5
 /lotto rotation autopilot -r icebreaker --debug-run 2019-12-11
-/lotto rotation autopilot -r icebreaker --debug-run 2019-12-16
-/lotto rotation autopilot -r icebreaker --debug-run 2019-12-21
+/lotto rotation autopilot -r icebreaker --debug-run 2019-12-17
+/lotto rotation autopilot -r icebreaker --debug-run 2019-12-22
 /lotto rotation autopilot -r icebreaker --debug-run 2019-12-30
 ```
 
 ### 2. Sustaining Engineering Team (SET)
 
 ```sh
-/lotto add rotation  -r SET --period m --start 2020-01-16 --grace 2 --size 5
-/lotto rotation need -r SET --skill webapp --level beginner --min 2 
+/lotto rotation add  -r SET --period m --start 2020-01-16 --grace 2 --size 5
+/lotto rotation need -r SET --skill webapp --level beginner --min 1
 /lotto rotation need -r SET --skill webapp --level intermediate --min 1 
-/lotto rotation need -r SET --skill server --level beginner --min 2 --max 3
+/lotto rotation need -r SET --skill server --level beginner --min 1
 /lotto rotation need -r SET --skill server --level intermediate --min 1
 /lotto rotation need -r SET --skill lead --level beginner --min 1 --max 1
+/lotto rotation need -r SET --skill ABC --level beginner --min 1 --max 1
+/lotto rotation need -r SET --skill DEF --level beginner --min 1 --max 1
+/lotto rotation need -r SET --skill GHIJ --level beginner --min 1 --max 1
+/lotto rotation need -r SET --skill MN --level beginner --min 1 --max 1
+# No KL - it is not required to contribute, only opportunistically
 
 /lotto rotation join -r SET -u @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston,@deborah.freeman,@diana.wells,@douglas.daniels,@emily.meyer,@eugene.rodriguez,@frances.elliott,@helen.hunter,@janice.armstrong,@jeremy.williamson,@jerry.ramos,@johnny.hansen,@jonathan.watson,@karen.austin,@karen.martin,@kathryn.mills,@laura.wagner,@margaret.morgan,@mark.rodriguez,@matthew.mendoza,@mildred.barnes,@nancy.roberts
 
-/lotto show rotation --r SET
+/lotto rotation show -r SET
 
-/lotto rotation guess -r SET -s 0 -n 10 --autofill
-/lotto rotation forecast -r icebreaker -s 0 -n 10 --sample 100
+/lotto rotation guess -r SET -s 0 -n 3 --autofill
+/lotto rotation forecast -r SET -s 0 -n 10 --sample 5
 ```
 
 ### TODO
