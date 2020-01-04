@@ -66,9 +66,15 @@ func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift,
 		if err != nil {
 			return autofillError{orig: err}
 		}
-		if len(overlappingEvents) > 0 {
-			api.Logger.Debugf("Unavailable user %s", api.MarkdownUserWithSkills(user))
-			delete(pool, user.MattermostUserID)
+		for _, event := range overlappingEvents {
+			// Unavailable events apply to all rotations, Shift events apply
+			//  only to the rotation from which they come.
+			if event.Type == store.EventTypeUnavailable ||
+				(event.Type == store.EventTypeShift && event.RotationID == rotation.RotationID) {
+
+				delete(pool, user.MattermostUserID)
+				api.Logger.Debugf("Unavailable user %s", api.MarkdownUserWithSkills(user))
+			}
 		}
 	}
 

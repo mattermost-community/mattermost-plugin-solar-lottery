@@ -40,9 +40,8 @@ type User struct {
 }
 
 const (
-	EventTypeShift   = "shift"
-	EventTypePadding = "padding"
-	EventTypeOther   = "other"
+	EventTypeShift       = "shift"
+	EventTypeUnavailable = "unavavailable"
 )
 
 type Event struct {

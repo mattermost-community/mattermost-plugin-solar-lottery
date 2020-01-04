@@ -38,7 +38,7 @@ func NewShiftEvent(rotation *Rotation, shiftNumber int, shift *Shift) Event {
 func NewOtherEvent(startTime, endTime time.Time) Event {
 	return Event{
 		Event: store.Event{
-			Type:  store.EventTypeOther,
+			Type:  store.EventTypeUnavailable,
 			Start: startTime.Format(DateFormat),
 			End:   endTime.Format(DateFormat),
 		},

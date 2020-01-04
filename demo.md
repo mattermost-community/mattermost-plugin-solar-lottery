@@ -3,6 +3,7 @@
 - Name inspired by https://en.wikipedia.org/wiki/Solar_Lottery
 - The main motivation to develop it was to automate the Sustaining Engineering Team (SET) schedulng.
 - Not a traditional queue, scheduling is based on (age-exponential) probabilities.
+- Basic support for qualifications and needs, and constraints on them
 
 ###### Use cases
 - Automate existing:
@@ -71,6 +72,10 @@
 - @nancy.roberts webapp(2), server(3)
 
 ### Demo
+
+###### Setup
+(done beforehand)
+
 ```sh
 /lotto debug-clean
 
@@ -97,58 +102,38 @@
 /lotto user qualify -k sre -l advanced -u @karen.austin,@kathryn.mills
 
 /lotto user qualify -k build -l advanced -u @karen.martin
+```
 
-/lotto rotation add -r icebreaker --period w -s 2019-12-17 --grace 3 --size 2
+###### 1. Ice-breaker
+```
+/lotto rotation add -r icebreaker --period w --start 2019-12-17 --grace 3 --size 2
 
 /lotto rotation join -r icebreaker -s 2019-12-17 -u @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston,@deborah.freeman,@diana.wells,@douglas.daniels,@emily.meyer,@eugene.rodriguez,@frances.elliott,@helen.hunter,@janice.armstrong,@jeremy.williamson,@jerry.ramos,@johnny.hansen,@jonathan.watson,@karen.austin,@karen.martin,@kathryn.mills,@laura.wagner,@margaret.morgan,@mark.rodriguez,@matthew.mendoza,@mildred.barnes,@nancy.roberts
-
-#/lotto rotation leave -r icebreaker -u @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston,@deborah.freeman,@diana.wells,@douglas.daniels,@emily.meyer,@eugene.rodriguez,@frances.elliott,@helen.hunter,@janice.armstrong,@jeremy.williamson,@jerry.ramos,@johnny.hansen,@jonathan.watson,@karen.austin,@karen.martin,@kathryn.mills,@laura.wagner,@margaret.morgan,@mark.rodriguez,@matthew.mendoza,@mildred.barnes,@nancy.roberts
-
-# Live demo from here
 
 /lotto rotation guess -r icebreaker -s 0 -n 20 --autofill
 /lotto rotation forecast -r icebreaker -s 0 -n 20 --sample 100
 /lotto rotation autopilot -r icebreaker --notify 3 --fill-before 5
 /lotto rotation autopilot -r icebreaker --debug-run 2019-12-11
+/lotto rotation autopilot -r icebreaker --debug-run 2019-12-16
+/lotto rotation autopilot -r icebreaker --debug-run 2019-12-21
+/lotto rotation autopilot -r icebreaker --debug-run 2019-12-30
+```
 
+# 2. Sustaining Engineering Team (SET)
 
+/lotto add rotation  -r SET --period m --start 2020-01-16 --grace 2 --size 5
+/lotto rotation need -r SET --skill webapp --level beginner --min 2 
+/lotto rotation need -r SET --skill webapp --level intermediate --min 1 
+/lotto rotation need -r SET --skill server --level beginner --min 2 --max 3
+/lotto rotation need -r SET --skill server --level intermediate --min 1
+/lotto rotation need -r SET --skill lead --level beginner --min 1 --max 1
 
+/lotto rotation join -r SET -u @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston,@deborah.freeman,@diana.wells,@douglas.daniels,@emily.meyer,@eugene.rodriguez,@frances.elliott,@helen.hunter,@janice.armstrong,@jeremy.williamson,@jerry.ramos,@johnny.hansen,@jonathan.watson,@karen.austin,@karen.martin,@kathryn.mills,@laura.wagner,@margaret.morgan,@mark.rodriguez,@matthew.mendoza,@mildred.barnes,@nancy.roberts
 
+/lotto show rotation --r SET
 
-
-/lotto skill list
-
-/lotto user qualify -k webapp -l beginner -u @aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston
-/lotto user qualify -k webapp -l intermediate -u @benjamin.bennett,@betty.campbell,@brenda.boyd,@christina.wilson,@craig.reed
-/lotto user qualify -k server -l beginner -u @emily.meyer,@eugene.rodriguez,@frances.elliott,@helen.hunter,@jack.wheeler
-/lotto user qualify -k server -l intermediate -u @jeremy.williamson,@jerry.ramos 
-/lotto user qualify -k server -l advanced -u @benjamin.bennett,@janice.armstrong,@sysadmin
-/lotto user qualify -k webapp -l advanced -u @aaron.medina,@janice.armstrong,@sysadmin
-/lotto user qualify -k lead -l intermediate -u @aaron.medina,@benjamin.bennett,@emily.meyer,@janice.armstrong,@albert.torres,@alice.johnston
-
-/lotto user show --users @aaron.medina,@albert.torres,@sysadmin
-
-/lotto add rotation --rotation DEMO --period m --start 2019-12-17 --padding 1 --size 4
-/lotto rotation need --rotation DEMO --skill webapp --level beginner --min 2 
-/lotto rotation need --rotation DEMO --skill webapp --level intermediate --min 1 --max 1
-/lotto rotation need --rotation DEMO --skill server --level beginner --min 2 --max 3
-/lotto rotation need --rotation DEMO --skill server --level intermediate --min 1
-/lotto rotation need --rotation DEMO --skill lead --level beginner --min 1 --max 1
-/lotto rotation need --rotation DEMO --delete-need --skill lead --level beginner
-/lotto rotation need --rotation DEMO --skill lead --level beginner --min 1 --max 1
-
-/lotto join --rotation DEMO --users @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston,@benjamin.bennett,@betty.campbell,@brenda.boyd,@christina.wilson,@craig.reed,@emily.meyer,@eugene.rodriguez,@frances.elliott,@helen.hunter,@jack.wheeler,@janice.armstrong,@jeremy.williamson,@jerry.ramos,@sysadmin
-
-/lotto show rotation --rotation DEMO
-
-/lotto forecast schedule --rotation DEMO --start 2019-12-20 --shifts 3 --autofill
-/lotto rotation update --rotation DEMO --size 5
-/lotto rotation forecast DEMO --start 2019-12-20 --shifts 3 --autofill
-
-/lotto add shift  --rotation DEMO --number 2 
-/lotto shift join --rotation DEMO --number 2 --users @jack.wheeler,@janice.armstrong 
-
-/lotto rotation archive DEMO
+/lotto rotation guess -r SET -s 0 -n 10 --autofill
+/lotto rotation forecast -r icebreaker -s 0 -n 10 --sample 100
 ```
 
 ### TODO
@@ -157,6 +142,7 @@
 - **HTTP API**.
 - **Caching** the RPC/KV access within a single request.
 - **Ambitious** Integration with the **Welcome Bot**, **Workflow**, **Todo**, **Autolink** plugins.
+- **Ambitious** Integration with the **Calendar** plugins.
 - **Features**:
     - "Rotation Channel"
         - Tee relevant logs
