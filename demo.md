@@ -17,12 +17,12 @@
 ## Intro
 
 - Solar Lottery is a team rotation scheduler, inspired by PagerDuty (and Amazon.com pager tool before that).
-- Name inspired by https://en.wikipedia.org/wiki/Solar_Lottery
-- The main motivation to develop it was to automate the Sustaining Engineering Team (SET) schedulng.
-- Not a traditional queue, scheduling is based on probabilities, exponentially increasing since last serve time.
+- Name from a Philip K. Dick novel "[Solar Lottery](https://en.wikipedia.org/wiki/Solar_Lottery)".
+- The main motivation to develop was to automate the Sustaining Engineering Team (SET) schedulng.
+- Not a traditional queue, scheduling is based on probabilities, exponentially increasing since the last serve time.
 - Features (basic):
     - Users have skills, rotations have needs, match and constrain.
-    - Grace periods after serving shifts.
+    - Grace periods after serving shifts, apply within the rotation.
     - User "unavailable" events.
     - Complete manual control over shifts, or "Autopilot"
 
@@ -45,6 +45,7 @@
 - Command-line only, optimized for debugging, not usability.
 - Slow performance - unoptimized RPC access, O(N**2) forecasting.
 - No cron yet - simulated for the demo with `/lotto rotation autopilot --debug-run <date>`.
+- Practically no tests, the code can use a little refactoring.
 
 ### Demo notes
 
@@ -52,8 +53,9 @@
     - Grace after serving a shift.
     - Can create custom "Unavailable" intervals.
 - Logs tee-ed as DMs.
+    - Find very useful for debugging.
     - Started as debugging (got annoyed grepping logs).
-    - INFOs are useful as a "transparency" change log.
+    - INFOs are useful as a "transparency" change log, DEBUGs for customer support.
 
 ## Demo Setup
 
@@ -210,15 +212,15 @@
 - **HTTP API**.
 - **Caching** the RPC/KV access within a single request.
 - **Submit to marketplace**
-- **Ambitious** Integration with the **Welcome Bot**, **Workflow**, **Todo**, **Autolink** plugins.
-- **Ambitious** Integration with the **Calendar** plugins.
 - **Features**:
-    - "Rotation Channel"
-        - Tee relevant logs
-        - Automatically update the channel header
+    - A "Rotation Channel".
+        - Tee relevant logs.
+        - Automatically update the channel header.
     - History, archiving user events.
     - Past statistics.
     - Rotation name-spacing/isolation and admin access control.
-    - Alternate scheduling strategies
-        - traditional queue
-        - better fairness, use all history not just last served date
+    - Alternate scheduling strategies.
+        - traditional queue.
+        - better fairness, use all history not just last served date.
+    - **◈** Integration with the **Welcome Bot**, **Workflow**, **Todo**, **Autolink** plugins.
+    - **◈◈** Integration with the **Calendar** plugins.
