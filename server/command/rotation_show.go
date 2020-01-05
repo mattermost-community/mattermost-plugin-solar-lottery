@@ -23,5 +23,5 @@ func (c *Command) showRotation(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return c.API.MarkdownRotationWithDetails(rotation), nil
+	return c.API.MarkdownRotationBullets(rotation), nil
 }

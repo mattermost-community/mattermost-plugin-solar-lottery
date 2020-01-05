@@ -14,8 +14,8 @@ type Markdowner interface {
 	MarkdownUser(*User) string
 	MarkdownUsers(UserMap) string
 	MarkdownUsersWithSkills(UserMap) string
-	MarkdownRotationWithDetails(*Rotation) string
-	MarkdownShiftDetails(*Rotation, int, *Shift) string
+	MarkdownRotationBullets(*Rotation) string
+	MarkdownShiftBullets(*Rotation, int, *Shift) string
 }
 
 func MarkdownRotation(rotation *Rotation) string {
@@ -40,24 +40,25 @@ func (api *api) MarkdownUser(user *User) string {
 	}
 }
 
-func (api *api) MarkdownRotationWithDetails(rotation *Rotation) string {
+func (api *api) MarkdownRotationBullets(rotation *Rotation) string {
 	api.ExpandRotation(rotation)
 
-	out := fmt.Sprintf("###### %s\n", rotation.Name)
-	out += fmt.Sprintf("- ID: `%s`\n", rotation.RotationID)
-	out += fmt.Sprintf("- Starting: `%s`\n", rotation.Start)
-	out += fmt.Sprintf("- Period: `%s`\n", rotation.Period)
-	out += fmt.Sprintf("- Needs: %s\n", MarkdownNeeds(rotation.Needs))
-	out += fmt.Sprintf("- Grace: `%v`\n", rotation.Grace)
-	out += fmt.Sprintf("- Users (%v): %s\n", len(rotation.MattermostUserIDs), api.MarkdownUsersWithSkills(rotation.Users))
+	out := fmt.Sprintf("- **%s**\n", rotation.Name)
+	out += fmt.Sprintf("  - ID: `%s`.\n", rotation.RotationID)
+	out += fmt.Sprintf("  - Starting: **%s**.\n", rotation.Start)
+	out += fmt.Sprintf("  - Period: **%s**.\n", rotation.Period)
+	out += fmt.Sprintf("  - Size: **%v** people.\n", rotation.Size)
+	out += fmt.Sprintf("  - Needs (%v): %s.\n", len(rotation.Needs), MarkdownNeeds(rotation.Needs))
+	out += fmt.Sprintf("  - Grace: **%v** shifts.\n", rotation.Grace)
+	out += fmt.Sprintf("  - Users (%v): %s.\n", len(rotation.MattermostUserIDs), api.MarkdownUsersWithSkills(rotation.Users))
 
 	if rotation.Autopilot.On {
-		out += fmt.Sprintf("- Autopilot: `on`\n")
-		out += fmt.Sprintf("  - Auto-start: `%v`\n", rotation.Autopilot.StartFinish)
-		out += fmt.Sprintf("  - Auto-fill: `%v`, %v prior to start\n", rotation.Autopilot.Fill, rotation.Autopilot.FillPrior)
-		out += fmt.Sprintf("  - Notify users: `%v`, %v prior to transition\n", rotation.Autopilot.Notify, rotation.Autopilot.NotifyPrior)
+		out += fmt.Sprintf("  - Autopilot: **on**\n")
+		out += fmt.Sprintf("    - Auto-start: **%v**\n", rotation.Autopilot.StartFinish)
+		out += fmt.Sprintf("    - Auto-fill: **%v**, %v days prior to start\n", rotation.Autopilot.Fill, rotation.Autopilot.FillPrior)
+		out += fmt.Sprintf("    - Notify users in advance: **%v**, %v days prior to transition\n", rotation.Autopilot.Notify, rotation.Autopilot.NotifyPrior)
 	} else {
-		out += fmt.Sprintf("- Autopilot: `off`\n")
+		out += fmt.Sprintf("  - Autopilot: **off**\n")
 	}
 
 	return out
@@ -71,21 +72,19 @@ func (api *api) MarkdownUsersWithSkills(m UserMap) string {
 	return strings.Join(out, ", ")
 }
 
-func (api *api) MarkdownShiftDetails(rotation *Rotation, shiftNumber int, shift *Shift) string {
+func (api *api) MarkdownShiftBullets(rotation *Rotation, shiftNumber int, shift *Shift) string {
 	if shift == nil {
-		return ""
+		return "n/a"
 	}
 	api.ExpandRotation(rotation)
-	return fmt.Sprintf("(%s to %s), status:%s, users: %s",
-		shift.Start, shift.End, shift.Status,
-		api.MarkdownUsersWithSkills(rotation.ShiftUsers(shift)))
-}
 
-func (api *api) MarkdownShiftWithDetails(rotation *Rotation, shiftNumber int, shift *Shift) string {
-	api.ExpandRotation(rotation)
-	return fmt.Sprintf("**%s**: %s",
-		MarkdownShift(rotation, shiftNumber),
-		api.MarkdownShiftDetails(rotation, shiftNumber, shift))
+	out := fmt.Sprintf("- **%s**: %s to %s\n", MarkdownShift(rotation, shiftNumber), shift.Start, shift.End)
+	out += fmt.Sprintf("  - Status: **%s**\n", shift.Status)
+	out += fmt.Sprintf("  - Users: **%v**\n", len(shift.MattermostUserIDs))
+	for _, user := range rotation.ShiftUsers(shift) {
+		out += fmt.Sprintf("    - %s\n", api.MarkdownUserWithSkills(user))
+	}
+	return out
 }
 
 func (api *api) MarkdownUsers(m UserMap) string {
@@ -118,10 +117,10 @@ func MarkdownSkillLevel(skillName string, level Level) string {
 }
 
 func MarkdownNeed(need store.Need) string {
-	if need.Max == 0 {
-		return fmt.Sprintf("%v of %s", need.Min, MarkdownSkillLevel(need.Skill, Level(need.Level)))
+	if need.Max == -1 {
+		return fmt.Sprintf("**%v** %s", need.Min, MarkdownSkillLevel(need.Skill, Level(need.Level)))
 	} else {
-		return fmt.Sprintf("%v(%v) of %s", need.Min, need.Max, MarkdownSkillLevel(need.Skill, Level(need.Level)))
+		return fmt.Sprintf("**%v(%v)** %s", need.Min, need.Max, MarkdownSkillLevel(need.Skill, Level(need.Level)))
 	}
 }
 
@@ -133,10 +132,18 @@ func MarkdownNeeds(needs []store.Need) string {
 	return strings.Join(out, ", ")
 }
 
-func MarkdownNeedsList(needs map[string]store.Need, indent string) string {
+func MarkdownNeedsBullets(needs map[string]store.Need, indent string) string {
 	out := ""
 	for _, need := range needs {
 		out += indent + "- " + MarkdownNeed(need) + "\n"
 	}
 	return out
+}
+
+func MarkdownIndent(in, prefix string) string {
+	lines := strings.Split(in, "\n")
+	for i, l := range lines {
+		lines[i] = prefix + l
+	}
+	return strings.Join(lines, "\n")
 }

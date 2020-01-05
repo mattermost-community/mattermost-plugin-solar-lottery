@@ -38,7 +38,7 @@ func (api *api) messageWelcomeToRotation(user *User, rotation *Rotation) {
 			api.MarkdownUser(api.actingUser),
 			MarkdownRotation(rotation),
 			config.CommandTrigger,
-			api.MarkdownRotationWithDetails(rotation)))
+			api.MarkdownRotationBullets(rotation)))
 }
 
 func (api *api) messageLeftRotation(user *User, rotation *Rotation) {
@@ -118,7 +118,7 @@ func (api *api) messageShiftFinished(rotation *Rotation, shiftNumber int, shift 
 				MarkdownShift(rotation, shiftNumber),
 				api.MarkdownUser(api.actingUser),
 				MarkdownShift(rotation, shiftNumber),
-				api.MarkdownShiftDetails(rotation, shiftNumber, shift)))
+				api.MarkdownShiftBullets(rotation, shiftNumber, shift)))
 	}
 }
 

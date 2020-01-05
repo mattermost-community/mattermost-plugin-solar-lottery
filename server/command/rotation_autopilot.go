@@ -81,5 +81,5 @@ func (c *Command) autopilotRotation(parameters []string) (string, error) {
 		return "", err
 	}
 
-	return "Updated rotation autopilot:\n" + c.API.MarkdownRotationWithDetails(rotation), nil
+	return "Updated rotation autopilot:\n" + c.API.MarkdownRotationBullets(rotation), nil
 }

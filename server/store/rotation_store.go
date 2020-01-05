@@ -54,8 +54,17 @@ type Need struct {
 	Level int
 }
 
+func NewNeed(skill string, level int, min int) Need {
+	return Need{
+		Min:   min,
+		Max:   -1,
+		Skill: skill,
+		Level: level,
+	}
+}
+
 func (need Need) String() string {
-	return fmt.Sprintf("%s-%v-%v-%v", need.Skill, need.Level, need.Min, need.Max)
+	return fmt.Sprintf("%s-%v-%v(%v)", need.Skill, need.Level, need.Min, need.Max)
 }
 
 func NewRotation(name string) *Rotation {

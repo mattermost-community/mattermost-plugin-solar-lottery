@@ -11,10 +11,8 @@ import (
 
 func (c *Command) guessRotation(parameters []string) (string, error) {
 	var rotationID, rotationName string
-	autofill := false
 	start, numShifts := 0, 3
 	fs := newRotationFlagSet(&rotationID, &rotationName)
-	fs.BoolVar(&autofill, flagAutofill, false, "automatically fill shifts that are not scheduled yet")
 	fs.IntVarP(&numShifts, flagNumber, flagPNumber, numShifts, "number of shifts to forecast")
 	fs.IntVarP(&start, flagStart, flagPStart, start, "number of shifts to forecast")
 	err := fs.Parse(parameters)
@@ -31,7 +29,7 @@ func (c *Command) guessRotation(parameters []string) (string, error) {
 		return "", err
 	}
 
-	shifts, err := c.API.Guess(rotation, start, numShifts, autofill)
+	shifts, err := c.API.Guess(rotation, start, numShifts)
 	if err != nil {
 		return "", err
 	}
@@ -39,7 +37,7 @@ func (c *Command) guessRotation(parameters []string) (string, error) {
 	out := fmt.Sprintf("Rotation %s %v shifts, starting %v:\n", api.MarkdownRotation(rotation), numShifts, start)
 	for shiftNumber, shift := range shifts {
 		if shift != nil {
-			out += "- " + c.API.MarkdownShiftDetails(rotation, shiftNumber, shift) + "\n"
+			out += c.API.MarkdownShiftBullets(rotation, shiftNumber, shift)
 		}
 	}
 	return out, nil

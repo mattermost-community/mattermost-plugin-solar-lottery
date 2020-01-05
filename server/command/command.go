@@ -59,7 +59,6 @@ const (
 )
 
 const (
-	flagAutofill   = "autofill"
 	flagClear      = "clear"
 	flagDeleteNeed = "delete-need"
 	flagEnd        = "end"

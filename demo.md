@@ -45,7 +45,7 @@
 
 #### Team ABC (full stack)
 - @aaron.medina - lead(3), server(3), webapp(3)
-- @aaron.peterson - server(1), webapp(2)
+- @aaron.peterson - server(1), webapp(2), mobile(1)
 - @aaron.ward - webapp(2)
 - @albert.torres - server(1)
 - @alice.johnston - server(2), webapp(1)
@@ -56,14 +56,14 @@
 - @douglas.daniels - server(4)
 - @emily.meyer - server(3), webapp(1)
 - @eugene.rodriguez - server(2), webapp(1)
-- @frances.elliott - webapp(3)
+- @frances.elliott - webapp(3), mobile(3)
 
 #### Team GHIJ (full stack)
 - @helen.hunter - lead(3),webapp(1),server(1)
 - @janice.armstrong - server(2), webapp(1)
 - @jeremy.williamson - webapp(2)
 - @jerry.ramos - server(2), webapp(2)
-- @johnny.hansen - webapp(1), server(1)
+- @johnny.hansen - webapp(1), server(1), mobile(1)
 - @jonathan.watson - server(2)
 
 #### Team KL (SRE)
@@ -77,85 +77,125 @@
 - @mark.rodriguez webapp(1), server(1)
 - @matthew.mendoza webapp(3), server(2)
 - @mildred.barnes webapp(2), server(2)
-- @nancy.roberts webapp(2), server(3)
+- @nancy.roberts webapp(2), server(3), mobile(1)
+
+#### Team R (mobile)
+- @ralph.watson - lead(2), mobile(3), webapp(2)
+- @raymond.austin - mobile(2), webapp(1)
+- @raymond.fisher - mobile(2), webapp(1)
+- @raymond.fox - mobile(2), server(1), webapp(1)
 
 ## Demo
 
-### Setup
-(done beforehand)
+### `/lotto demo clean-init`
 
 ```sh
 /lotto debug-clean
 
-/lotto user qualify -k ABC -l intermediate -u @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston
-/lotto user qualify -k DEF -l intermediate -u @deborah.freeman,@diana.wells,@douglas.daniels,@emily.meyer,@eugene.rodriguez,@frances.elliott
-/lotto user qualify -k GHIJ -l intermediate -u @helen.hunter,@janice.armstrong,@jeremy.williamson,@jerry.ramos,@johnny.hansen,@jonathan.watson
-/lotto user qualify -k KL -l intermediate -u @karen.austin,@karen.martin,@kathryn.mills,@laura.wagner
-/lotto user qualify -k MN -l intermediate -u @margaret.morgan,@mark.rodriguez,@matthew.mendoza,@mildred.barnes,@nancy.roberts
+/lotto user qualify -k ABC-FS1 -l intermediate -u @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston
+/lotto user qualify -k DEF-PERF -l intermediate -u @deborah.freeman,@diana.wells,@douglas.daniels,@emily.meyer,@eugene.rodriguez,@frances.elliott
+/lotto user qualify -k GHIJ-FS2 -l intermediate -u @helen.hunter,@janice.armstrong,@jeremy.williamson,@jerry.ramos,@johnny.hansen,@jonathan.watson
+/lotto user qualify -k KL-SRE -l intermediate -u @karen.austin,@karen.martin,@kathryn.mills,@laura.wagner
+/lotto user qualify -k MN-FS3 -l intermediate -u @margaret.morgan,@mark.rodriguez,@matthew.mendoza,@mildred.barnes,@nancy.roberts
+/lotto user qualify -k R-MOBILE -l intermediate -u @ralph.watson,@raymond.austin,@raymond.fisher,@raymond.fox
 
-/lotto user qualify -k lead -l intermediate -u @deborah.freeman,@karen.austin
+/lotto user qualify -k lead -l intermediate -u @deborah.freeman,@karen.austin,@ralph.watson
 /lotto user qualify -k lead -l advanced -u @aaron.medina,@helen.hunter,@margaret.morgan
 
-/lotto user qualify -k server -l beginner -u @aaron.peterson,@albert.torres,@helen.hunter,@johnny.hansen,@mark.rodriguez
+/lotto user qualify -k server -l beginner -u @aaron.peterson,@albert.torres,@helen.hunter,@johnny.hansen,@mark.rodriguez,@raymond.fox
 /lotto user qualify -k server -l intermediate -u @alice.johnston,@eugene.rodriguez,@janice.armstrong,@jerry.ramos,@jonathan.watson,@kathryn.mills,@margaret.morgan,@matthew.mendoza,@mildred.barnes
 /lotto user qualify -k server -l advanced -u @aaron.medina,@deborah.freeman,@diana.wells,@emily.meyer,@nancy.roberts
 /lotto user qualify -k server -l expert -u @douglas.daniels
 
-/lotto user qualify -k webapp -l beginner -u @emily.meyer,@eugene.rodriguez,@helen.hunter,@janice.armstrong,@johnny.hansen,@karen.martin,@mark.rodriguez,@mildred.barnes
+/lotto user qualify -k webapp -l beginner -u @emily.meyer,@eugene.rodriguez,@helen.hunter,@janice.armstrong,@johnny.hansen,@karen.martin,@mark.rodriguez,@mildred.barnes,@raymond.austin,@raymond.fisher,@raymond.fox
 /lotto user qualify -k webapp -l intermediate -u @aaron.peterson,@aaron.ward,@deborah.freeman,@jeremy.williamson,@jerry.ramos,@nancy.roberts
 /lotto user qualify -k webapp -l advanced -u @aaron.medina,@frances.elliott,@matthew.mendoza
+
+/lotto user qualify -k mobile -l beginner -u @johnny.hansen,@aaron.peterson,@nancy.roberts
+/lotto user qualify -k mobile -l intermediate -u @raymond.austin,@raymond.fisher,@raymond.fox
+/lotto user qualify -k mobile -l advanced -u @ralph.watson,@frances.elliott
 
 /lotto user qualify -k sre -l beginner -u @karen.martin
 /lotto user qualify -k sre -l intermediate -u @laura.wagner
 /lotto user qualify -k sre -l advanced -u @karen.austin,@kathryn.mills
 
 /lotto user qualify -k build -l advanced -u @karen.martin
-
-/lotto rotation add -r icebreaker --period w --start 2019-12-17 --grace 3 --size 2
-
-/lotto rotation join -r icebreaker -s 2019-12-17 -u @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston,@deborah.freeman,@diana.wells,@douglas.daniels,@emily.meyer,@eugene.rodriguez,@frances.elliott,@helen.hunter,@janice.armstrong,@jeremy.williamson,@jerry.ramos,@johnny.hansen,@jonathan.watson,@karen.austin,@karen.martin,@kathryn.mills,@laura.wagner,@margaret.morgan,@mark.rodriguez,@matthew.mendoza,@mildred.barnes,@nancy.roberts
-
 ```
 
-### 1. Ice-breaker
+### `/lotto demo icebreaker-init`
+
 ```sh
-/lotto rotation guess -r icebreaker -s 0 -n 20 --autofill
+/lotto rotation add -r icebreaker --period w --start 2019-12-17 --grace 3 --size 2
+
+/lotto rotation join -r icebreaker -s 2019-12-17 -u @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston,@deborah.freeman,@diana.wells,@douglas.daniels,@emily.meyer,@eugene.rodriguez,@frances.elliott,@helen.hunter,@janice.armstrong,@jeremy.williamson,@jerry.ramos,@johnny.hansen,@jonathan.watson,@karen.austin,@karen.martin,@kathryn.mills,@laura.wagner,@margaret.morgan,@mark.rodriguez,@matthew.mendoza,@mildred.barnes,@nancy.roberts,@ralph.watson,@raymond.austin,@raymond.fisher,@raymond.fox
+/lotto rotation show -r icebreaker
+```
+
+### `/lotto demo icebreaker-forecast`
+
+```sh
+/lotto rotation guess -r icebreaker -s 0 -n 20
 /lotto rotation forecast -r icebreaker -s 0 -n 20 --sample 100
+```
+
+### `/lotto demo icebreaker-autopilot`
+
+```sh
 /lotto rotation autopilot -r icebreaker --notify 3 --fill-before 5
 /lotto rotation autopilot -r icebreaker --debug-run 2019-12-11
+/lotto rotation autopilot -r icebreaker --debug-run 2019-12-12
+/lotto rotation autopilot -r icebreaker --debug-run 2019-12-13
 /lotto rotation autopilot -r icebreaker --debug-run 2019-12-17
-/lotto rotation autopilot -r icebreaker --debug-run 2019-12-22
+/lotto rotation autopilot -r icebreaker --debug-run 2019-12-21
+/lotto rotation autopilot -r icebreaker --debug-run 2019-12-25
+/lotto rotation autopilot -r icebreaker --debug-run 2019-12-29
 /lotto rotation autopilot -r icebreaker --debug-run 2019-12-30
 ```
 
-### 2. Sustaining Engineering Team (SET)
+### `/lotto demo SET-init`
+
+1. 6 "teams", 5 people in rotation, 1 grace shift after each serve.
+2. require exactly 1 lead.
+3. require a minimum of 2 each server and webapp, any level.
+4. require exactly 1 mobile, any level.
+5. require exactly 1 from each FS team.
+6. require no minimum, max 1 from each of the other teams.
 
 ```sh
-/lotto rotation add  -r SET --period m --start 2020-01-16 --grace 2 --size 5
-/lotto rotation need -r SET --skill webapp --level beginner --min 1
-/lotto rotation need -r SET --skill webapp --level intermediate --min 1 
-/lotto rotation need -r SET --skill server --level beginner --min 1
-/lotto rotation need -r SET --skill server --level intermediate --min 1
-/lotto rotation need -r SET --skill lead --level beginner --min 1 --max 1
-/lotto rotation need -r SET --skill ABC --level beginner --min 1 --max 1
-/lotto rotation need -r SET --skill DEF --level beginner --min 1 --max 1
-/lotto rotation need -r SET --skill GHIJ --level beginner --min 1 --max 1
-/lotto rotation need -r SET --skill MN --level beginner --min 1 --max 1
-# No KL - it is not required to contribute, only opportunistically
+/lotto rotation add  -r SET --period m --start 2020-01-16 --grace 1 --size 5
 
-/lotto rotation join -r SET -u @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston,@deborah.freeman,@diana.wells,@douglas.daniels,@emily.meyer,@eugene.rodriguez,@frances.elliott,@helen.hunter,@janice.armstrong,@jeremy.williamson,@jerry.ramos,@johnny.hansen,@jonathan.watson,@karen.austin,@karen.martin,@kathryn.mills,@laura.wagner,@margaret.morgan,@mark.rodriguez,@matthew.mendoza,@mildred.barnes,@nancy.roberts
+/lotto rotation need -r SET --skill webapp --level beginner --min 2
+/lotto rotation need -r SET --skill server --level beginner --min 2
+/lotto rotation need -r SET --skill mobile --level beginner --min 1
+/lotto rotation need -r SET --skill lead --level beginner --min 1 --max 1
+
+/lotto rotation need -r SET --skill ABC-FS1 --level beginner --min 1 --max 1
+/lotto rotation need -r SET --skill GHIJ-FS2 --level beginner --min 1 --max 1
+/lotto rotation need -r SET --skill MN-FS3 --level beginner --min 1 --max 1
+/lotto rotation need -r SET --skill DEF-PERF --level beginner --min -1 --max 1
+/lotto rotation need -r SET --skill KL-SRE --level beginner --min -1 --max 1
+/lotto rotation need -r SET --skill R-MOBILE --level beginner --min -1 --max 1
+
+/lotto rotation join -r SET -u @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston,@deborah.freeman,@diana.wells,@douglas.daniels,@emily.meyer,@eugene.rodriguez,@frances.elliott,@helen.hunter,@janice.armstrong,@jeremy.williamson,@jerry.ramos,@johnny.hansen,@jonathan.watson,@karen.austin,@karen.martin,@kathryn.mills,@laura.wagner,@margaret.morgan,@mark.rodriguez,@matthew.mendoza,@mildred.barnes,@nancy.roberts,@ralph.watson,@raymond.austin,@raymond.fisher,@raymond.fox
 
 /lotto rotation show -r SET
 
-/lotto rotation guess -r SET -s 0 -n 3 --autofill
-/lotto rotation forecast -r SET -s 0 -n 10 --sample 5
 ```
 
-### TODO
+### `/lotto demo SET-forecast`
+
+```sh
+/lotto rotation guess -r SET -s 0 -n 3
+/lotto rotation forecast -r SET -s 0 -n 3 --sample 5
+```
+
+## Next Steps and TODO
+- **Intake** the plugin - review, transfer
 - **Cron**, HA-aware.
 - **UI**, a more usable command set - intuitive, less verbose.
 - **HTTP API**.
 - **Caching** the RPC/KV access within a single request.
+- **Submit to marketplace**
 - **Ambitious** Integration with the **Welcome Bot**, **Workflow**, **Todo**, **Autolink** plugins.
 - **Ambitious** Integration with the **Calendar** plugins.
 - **Features**:
@@ -165,4 +205,6 @@
     - History, archiving user events.
     - Past statistics.
     - Rotation name-spacing/isolation and admin access control.
-    - Alternate scheduling strategies - traditional queue.
+    - Alternate scheduling strategies
+        - traditional queue
+        - better fairness, use all history not just last served date

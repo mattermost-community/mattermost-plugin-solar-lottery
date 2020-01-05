@@ -200,18 +200,6 @@ func setupAPIForCrystalBall(t testing.TB, ctrl *gomock.Controller, rotation *Rot
 	return api
 }
 
-func need(c int, skill string, level int) store.Need {
-	return store.Need{
-		Min:   c,
-		Skill: skill,
-		Level: level,
-	}
-}
-
-func needOne(skill string, level int) store.Need {
-	return need(1, skill, level)
-}
-
 func TestPrepareShiftHappy(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -224,9 +212,9 @@ func TestPrepareShiftHappy(t *testing.T) {
 			Period:     EveryMonth,
 			Size:       3,
 			Needs: []store.Need{
-				needOne("server", 1),
-				needOne("webapp", 2),
-				needOne("mobile", 1),
+				store.NewNeed("server", 1, 1),
+				store.NewNeed("webapp", 2, 1),
+				store.NewNeed("mobile", 1, 1),
 			},
 		},
 		Users: UserMap{},
@@ -238,7 +226,7 @@ func TestPrepareShiftHappy(t *testing.T) {
 
 	api := setupAPIForCrystalBall(t, ctrl, rotation, testUsers)
 
-	shifts, err := api.Guess(rotation, 0, 1, true)
+	shifts, err := api.Guess(rotation, 0, 1)
 	require.Nil(t, err)
 	assert.Len(t, shifts, 1)
 	require.Equal(t, rotation.Size, len(shifts[0].MattermostUserIDs))
@@ -255,7 +243,7 @@ func TestPrepareShiftEvenDistribution(t *testing.T) {
 			Period: EveryMonth,
 			Size:   1,
 			Needs: []store.Need{
-				needOne("webapp", 1),
+				store.NewNeed("webapp", 1, 1),
 			},
 		},
 	}
@@ -268,7 +256,7 @@ func TestPrepareShiftEvenDistribution(t *testing.T) {
 
 	sampleSize := 200
 	counters := store.IntMap{}
-	shifts, err := api.Guess(rotation, 3, len(testUsers)*sampleSize, true)
+	shifts, err := api.Guess(rotation, 3, len(testUsers)*sampleSize)
 	require.Nil(t, err)
 	require.Len(t, shifts, len(testUsers)*sampleSize)
 

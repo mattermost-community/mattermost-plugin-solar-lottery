@@ -50,7 +50,7 @@ GUESS:
 		var shifts []*Shift
 		prevLogger := api.Logger
 		api.Logger = &bot.NilLogger{}
-		shifts, err = api.Guess(rotation, shiftNumber, numShifts, true)
+		shifts, err = api.Guess(rotation, shiftNumber, numShifts)
 		api.Logger = prevLogger
 		if err != nil {
 			continue GUESS

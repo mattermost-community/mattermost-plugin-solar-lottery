@@ -23,22 +23,22 @@ func (api *api) IsShiftReady(rotation *Rotation, shiftNumber int) (shift *Shift,
 		return nil, false, "", ErrShiftMustBeOpen
 	}
 
-	ShiftUsers := rotation.ShiftUsers(shift)
-	unsatisfiedNeeds := api.unsatisfiedNeeds(rotation.Needs, ShiftUsers)
-	unsatisfiedCapacity := 0
+	shiftUsers := rotation.ShiftUsers(shift)
+	unmetNeeds := unmetNeeds(rotation.Needs, shiftUsers)
+	unmetCapacity := 0
 	if rotation.Size != 0 {
-		unsatisfiedCapacity = rotation.Size - len(shift.MattermostUserIDs)
+		unmetCapacity = rotation.Size - len(shift.MattermostUserIDs)
 	}
 
-	if len(unsatisfiedNeeds) == 0 && unsatisfiedCapacity <= 0 {
+	if len(unmetNeeds) == 0 && unmetCapacity <= 0 {
 		return shift, true, "", nil
 	}
 
 	whyNot = autofillError{
-		unsatisfiedNeeds:    unsatisfiedNeeds,
-		unsatisfiedCapacity: unsatisfiedCapacity,
-		orig:                errors.New("not ready"),
-		shiftNumber:         shiftNumber,
+		causeUnmetNeeds: unmetNeeds,
+		causeCapacity:   unmetCapacity,
+		orig:            errors.New("not ready"),
+		shiftNumber:     shiftNumber,
 	}.Error()
 
 	return shift, false, whyNot, nil
@@ -59,7 +59,7 @@ func (api *api) FillShift(rotation *Rotation, shiftNumber int) (*Shift, UserMap,
 		"ShiftNumber":    shiftNumber,
 	})
 
-	_, shifts, addedUsers, err := api.fillShifts(rotation, shiftNumber, 1, false, time.Time{}, logger)
+	_, shifts, addedUsers, err := api.fillShifts(rotation, shiftNumber, 1, time.Time{}, logger)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -77,11 +77,11 @@ func (api *api) FillShift(rotation *Rotation, shiftNumber int) (*Shift, UserMap,
 	return shift, added, nil
 }
 
-func (api *api) fillShifts(rotation *Rotation, startingShiftNumber, numShifts int, autofill bool, now time.Time, logger bot.Logger) ([]int, []*Shift, []UserMap, error) {
+func (api *api) fillShifts(rotation *Rotation, startingShiftNumber, numShifts int, now time.Time, logger bot.Logger) ([]int, []*Shift, []UserMap, error) {
 	// Guess' logs are too verbose - suppress
 	prevLogger := api.Logger
 	api.Logger = &bot.NilLogger{}
-	shifts, err := api.Guess(rotation, startingShiftNumber, numShifts, true)
+	shifts, err := api.Guess(rotation, startingShiftNumber, numShifts)
 	api.Logger = prevLogger
 	if err != nil {
 		return nil, nil, nil, err
@@ -112,7 +112,7 @@ func (api *api) fillShifts(rotation *Rotation, startingShiftNumber, numShifts in
 			appendShift(shiftNumber, loadedShift, nil)
 			continue
 		}
-		if autofill && !loadedShift.Autopilot.Filled.IsZero() {
+		if !loadedShift.Autopilot.Filled.IsZero() {
 			appendShift(shiftNumber, loadedShift, nil)
 			continue
 		}
@@ -133,9 +133,7 @@ func (api *api) fillShifts(rotation *Rotation, startingShiftNumber, numShifts in
 			continue
 		}
 
-		if autofill {
-			loadedShift.Autopilot.Filled = now
-		}
+		loadedShift.Autopilot.Filled = now
 
 		_, err = api.joinShift(rotation, shiftNumber, loadedShift, added, true)
 		if err != nil {

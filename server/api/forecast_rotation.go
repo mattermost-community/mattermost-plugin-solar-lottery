@@ -56,7 +56,7 @@ GUESS:
 		// Guess' logs are too verbose - suppress
 		prevLogger := api.Logger
 		api.Logger = &bot.NilLogger{}
-		shifts, err = api.Guess(rotation, startingShiftNumber, numShifts, true)
+		shifts, err = api.Guess(rotation, startingShiftNumber, numShifts)
 		api.Logger = prevLogger
 		var aerr autofillError
 		if err != nil {
@@ -69,13 +69,13 @@ GUESS:
 			switch aerr.orig {
 			case ErrFailedInsufficientForNeeds:
 				f.CountErrFailedInsufficientForNeeds++
-				for _, need := range aerr.unsatisfiedNeeds {
+				for _, need := range aerr.causeUnmetNeeds {
 					f.NeedErrCounts[need.String()]++
 				}
 
 			case ErrFailedInsufficientForSize:
 				f.CountErrFailedInsufficientForSize++
-				for _, need := range aerr.unsatisfiedNeeds {
+				for _, need := range aerr.causeUnmetNeeds {
 					f.NeedErrCounts[need.String()]++
 				}
 

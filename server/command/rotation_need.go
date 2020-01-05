@@ -11,6 +11,14 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
+func withRotationNeedFlags(fs *pflag.FlagSet, skill *string, level *api.Level, min, max *int, deleteNeed *bool) {
+	fs.StringVarP(skill, flagSkill, flagPSkill, "", "the needed skill.")
+	fs.VarP(level, flagLevel, flagPLevel, "the needed skill level.")
+	fs.IntVar(min, flagMin, 0, "minimum number of users with at least this skill level, must be set, -1 not to enforce.")
+	fs.IntVar(max, flagMax, -1, "maximum number of users with at least this skill level. -1 for unlimited.")
+	fs.BoolVar(deleteNeed, flagDeleteNeed, false, "remove the need from rotation.")
+}
+
 func (c *Command) rotationNeed(parameters []string) (string, error) {
 	var rotationID, rotationName, skill string
 	var level api.Level
@@ -24,7 +32,17 @@ func (c *Command) rotationNeed(parameters []string) (string, error) {
 	}
 	if level == 0 || skill == "" {
 		return c.flagUsage(fs),
-			errors.Errorf("requires `%s` and `%s` to be specified.", flagSkill, flagLevel)
+			errors.Errorf("requires `%s` and `%s` to be specified", flagSkill, flagLevel)
+	}
+	if !deleteNeed {
+		if min == 0 {
+			return c.flagUsage(fs),
+				errors.Errorf("requires `%s` to be specified", flagMin)
+		}
+		if min == -1 && max == -1 {
+			return c.flagUsage(fs),
+				errors.New("min=0 and max=-1 is not valid")
+		}
 	}
 
 	rotationID, err = c.parseRotationFlags(rotationID, rotationName)
@@ -61,13 +79,5 @@ func (c *Command) rotationNeed(parameters []string) (string, error) {
 		return "", err
 	}
 
-	return "Updated rotation needs:\n" + c.API.MarkdownRotationWithDetails(rotation), nil
-}
-
-func withRotationNeedFlags(fs *pflag.FlagSet, skill *string, level *api.Level, min, max *int, deleteNeed *bool) {
-	fs.StringVarP(skill, flagSkill, flagPSkill, "", "if used with --need, indicates the needed skill")
-	fs.VarP(level, flagLevel, flagPLevel, "if used with --need, indicates the needed skill level")
-	fs.IntVar(min, flagMin, 0, "if used with --need, indicates the minimum needed headcount")
-	fs.IntVar(max, flagMax, 0, "if used with --need, indicates the maximum needed headcount")
-	fs.BoolVar(deleteNeed, flagDeleteNeed, false, "remove a need from rotation")
+	return "Updated rotation needs:\n" + c.API.MarkdownRotationBullets(rotation), nil
 }

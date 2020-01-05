@@ -50,8 +50,9 @@ func (api *api) AutopilotRotation(rotation *Rotation, now time.Time) error {
 
 	finishedShiftNumber, finishedShift, err :=
 		api.autopilotFinishShift(rotation, now, currentShiftNumber)
-	finishedStatus := status(err, fmt.Sprintf("finished %s",
-		api.MarkdownShiftWithDetails(rotation, finishedShiftNumber, finishedShift)))
+	finishedStatus := status(err, fmt.Sprintf("finished %s.\n%s",
+		MarkdownShift(rotation, finishedShiftNumber),
+		MarkdownIndent(api.MarkdownShiftBullets(rotation, finishedShiftNumber, finishedShift), "  ")))
 
 	filledShiftNumbers, filledShifts, filledAdded, err :=
 		api.autopilotFill(rotation, now, currentShiftNumber, logger)
@@ -69,11 +70,10 @@ func (api *api) AutopilotRotation(rotation *Rotation, now time.Time) error {
 	for i, shift := range filledShifts {
 		if len(filledAdded[i]) > 0 {
 			fillStatus += fmt.Sprintf(
-				"  - %s: **added users** %s.\n"+
-					"    - %s\n",
+				"  - %s: **added users** %s.\n%s",
 				MarkdownShift(rotation, filledShiftNumbers[i]),
 				api.MarkdownUsers(filledAdded[i]),
-				api.MarkdownShiftDetails(rotation, filledShiftNumbers[i], shift))
+				MarkdownIndent(api.MarkdownShiftBullets(rotation, filledShiftNumbers[i], shift), "    "))
 		} else {
 			fillStatus += fmt.Sprintf(
 				"  - %s: no change.\n",
@@ -82,8 +82,9 @@ func (api *api) AutopilotRotation(rotation *Rotation, now time.Time) error {
 	}
 
 	startedShiftNumber, startedShift, err := api.autopilotStartShift(rotation, now, currentShiftNumber)
-	startedStatus := status(err, fmt.Sprintf("started %s",
-		api.MarkdownShiftWithDetails(rotation, startedShiftNumber, startedShift)))
+	startedStatus := status(err, fmt.Sprintf("started %s.\n%s",
+		MarkdownShift(rotation, startedShiftNumber),
+		MarkdownIndent(api.MarkdownShiftBullets(rotation, startedShiftNumber, startedShift), "  ")))
 
 	currentNotified, err := api.autopilotNotifyCurrent(rotation, now, currentShiftNumber)
 	currentNotifiedStatus := status(err, fmt.Sprintf("notified %s", api.MarkdownUsers(currentNotified)))
@@ -161,7 +162,7 @@ func (api *api) autopilotFill(rotation *Rotation, now time.Time, currentShiftNum
 	}
 	numShifts := upToShiftNumber - startingShiftNumber + 1
 
-	return api.fillShifts(rotation, startingShiftNumber, numShifts, true, now, logger)
+	return api.fillShifts(rotation, startingShiftNumber, numShifts, now, logger)
 }
 
 func (api *api) autopilotNotifyCurrent(rotation *Rotation, now time.Time, currentShiftNumber int) (UserMap, error) {

@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (api *api) Guess(rotation *Rotation, startingShiftNumber int, numShifts int, autofill bool) ([]*Shift, error) {
+func (api *api) Guess(rotation *Rotation, startingShiftNumber int, numShifts int) ([]*Shift, error) {
 	// Clone the rotation right away so we don't change the source.
 	rotation = rotation.Clone(true)
 
@@ -24,25 +24,25 @@ func (api *api) Guess(rotation *Rotation, startingShiftNumber int, numShifts int
 		"Location":       "api.Guess",
 		"ActingUsername": api.actingUser.MattermostUsername(),
 		"NumShifts":      numShifts,
-		"Autofill":       autofill,
 		"ShiftNumber":    startingShiftNumber,
 		"RotationID":     rotation.RotationID,
 	})
 
+	logger.Debugf("...running guess for\n%s", api.MarkdownRotationBullets(rotation))
 	var shifts []*Shift
 	for shiftNumber := startingShiftNumber; shiftNumber < startingShiftNumber+numShifts; shiftNumber++ {
 		var shift *Shift
-		shift, _, err := api.getShiftForGuess(rotation, shiftNumber, autofill)
+		shift, _, err := api.getShiftForGuess(rotation, shiftNumber)
 		if err != nil {
-			if !autofill && err == store.ErrNotFound {
+			if err == store.ErrNotFound {
 				shifts = append(shifts, nil)
 				continue
 			}
 			return nil, err
 		}
 
-		if autofill && shift.Status == store.ShiftStatusOpen {
-			err = api.autofillShift(rotation, shiftNumber, shift, autofill)
+		if shift.Status == store.ShiftStatusOpen {
+			err = api.autofillShift(rotation, shiftNumber, shift)
 			if err != nil {
 				return nil, err
 			}
@@ -58,7 +58,7 @@ func (api *api) Guess(rotation *Rotation, startingShiftNumber int, numShifts int
 }
 
 // Returns an un-expanded shift - will be populated with Users from rotation
-func (api *api) getShiftForGuess(rotation *Rotation, shiftNumber int, autofill bool) (*Shift, bool, error) {
+func (api *api) getShiftForGuess(rotation *Rotation, shiftNumber int) (*Shift, bool, error) {
 	start, end, err := rotation.ShiftDatesForNumber(shiftNumber)
 	if err != nil {
 		return nil, false, err
@@ -74,9 +74,6 @@ func (api *api) getShiftForGuess(rotation *Rotation, shiftNumber int, autofill b
 		}
 
 	case store.ErrNotFound:
-		if !autofill {
-			return nil, false, err
-		}
 		shift, err = rotation.makeShift(shiftNumber)
 		if err != nil {
 			return nil, false, err
