@@ -6,9 +6,11 @@ package plugin
 import (
 	"strings"
 
+	"github.com/mattermost/mattermost-server/v5/model"
+
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
-	"github.com/mattermost/mattermost-server/v5/model"
 )
 
 // IsPluginAdmin returns true if the user is authorized to use the workflow plugin's admin-level APIs/commands.
@@ -56,4 +58,21 @@ func (p *Plugin) Clean() error {
 		return appErr
 	}
 	return nil
+}
+
+func (p *Plugin) SendEphemeralPost(channelID, userID, message string) {
+	ephemeralPost := &model.Post{
+		ChannelId: channelID,
+		UserId:    p.getConfig().BotUserID,
+		Message:   message,
+	}
+	_ = p.API.SendEphemeralPost(userID, ephemeralPost)
+}
+
+func (p *Plugin) UpdateStoredConfig(f func(*config.Config)) {
+	conf := p.updateConfig(f)
+	go func() {
+		p.API.SavePluginConfig(conf.ToStorableConfig(nil))
+	}()
+	return
 }

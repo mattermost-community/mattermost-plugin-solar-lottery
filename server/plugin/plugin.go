@@ -112,6 +112,14 @@ func (p *Plugin) OnConfigurationChange() error {
 }
 
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
+	wasDemo := p.executeDemoCommand(c, args)
+	if wasDemo {
+		return &model.CommandResponse{
+			ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
+			Text:         "Demo done",
+		}, nil
+	}
+
 	apiconf := p.newAPIConfig()
 	command := command.Command{
 		Context:   c,
@@ -122,11 +130,8 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	}
 
 	out, _ := command.Handle()
-
-	return &model.CommandResponse{
-		ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-		Text:         out,
-	}, nil
+	p.SendEphemeralPost(args.ChannelId, args.UserId, out)
+	return &model.CommandResponse{}, nil
 }
 
 func (p *Plugin) ServeHTTP(pc *plugin.Context, w gohttp.ResponseWriter, req *gohttp.Request) {

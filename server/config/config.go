@@ -8,6 +8,10 @@ type StoredConfig struct {
 	bot.BotConfig
 }
 
+func (c StoredConfig) ToStorableConfig(configMap map[string]interface{}) map[string]interface{} {
+	return c.BotConfig.ToStorableConfig(nil)
+}
+
 // Config represents the the metadata handed to all request runners (command,
 // http).
 type Config struct {

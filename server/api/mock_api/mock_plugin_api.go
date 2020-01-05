@@ -6,6 +6,7 @@ package mock_api
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	config "github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 	model "github.com/mattermost/mattermost-server/v5/model"
 	reflect "reflect"
 )
@@ -90,4 +91,16 @@ func (m *MockPluginAPI) IsPluginAdmin(arg0 string) (bool, error) {
 func (mr *MockPluginAPIMockRecorder) IsPluginAdmin(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPluginAdmin", reflect.TypeOf((*MockPluginAPI)(nil).IsPluginAdmin), arg0)
+}
+
+// UpdateStoredConfig mocks base method
+func (m *MockPluginAPI) UpdateStoredConfig(arg0 func(*config.Config)) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateStoredConfig", arg0)
+}
+
+// UpdateStoredConfig indicates an expected call of UpdateStoredConfig
+func (mr *MockPluginAPIMockRecorder) UpdateStoredConfig(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStoredConfig", reflect.TypeOf((*MockPluginAPI)(nil).UpdateStoredConfig), arg0)
 }

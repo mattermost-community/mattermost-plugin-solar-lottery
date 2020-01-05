@@ -8,7 +8,7 @@
         - [initialize Ice Breaker: `/lotto demo icebreaker-init`](#lotto-demo-icebreaker-init)
         - [run forecast for Ice Breaker: `/lotto demo icebreaker-forecast`](#lotto-demo-icebreaker-forecast)
         - [set up and run autopilot for Ice Breaker: `/lotto demo icebreaker-autopilot`](#lotto-demo-icebreaker-autopilot)
-        - [run user forecast in Ice Breaker: `/lotto demo icebreaker-user`](#lotto-demo-icebreaker-user)
+        - [run user demo in Ice Breaker: `/lotto demo icebreaker-user`](#lotto-demo-icebreaker-user)
     - Sustaining Engineering Team (SET) rotation
         - [initialize SET: `/lotto demo SET-init`](#lotto-demo-set-init)
         - [run forecast for SET: `/lotto demo SET-forecast`](#lotto-demo-set-forecast)
@@ -16,7 +16,7 @@
 
 ## Intro
 
-- Solar Lottery is a team rotation scheduler, inspired by PagerDuty (and Amazon.com pager tool before that).
+- Solar Lottery is a team rotation scheduler, inspired by [PagerDuty OnCall](https://www.pagerduty.com/platform/on-call-management/), and its predecessor the early amazon.com pager tool.
 - Name from a Philip K. Dick novel "[Solar Lottery](https://en.wikipedia.org/wiki/Solar_Lottery)".
 - The main motivation to develop was to automate the Sustaining Engineering Team (SET) schedulng.
 - Not a traditional queue, scheduling is based on probabilities, exponentially increasing since the last serve time.
@@ -207,7 +207,10 @@
 
 ## Next Steps and TODO
 - **Intake** the plugin - review, transfer
-- **Cron**, HA-aware.
+- **Missing MVP features**:
+    - **`/lotto shift leave`**, a little non-trivial for started shifts.
+    - **Cron**, HA-aware.
+    - **Import/Export** - for backups, especially while in beta
 - **UI**, a more usable command set - intuitive, less verbose.
 - **HTTP API**.
 - **Caching** the RPC/KV access within a single request.

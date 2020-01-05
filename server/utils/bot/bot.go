@@ -27,6 +27,16 @@ type BotConfig struct {
 	AdminLogVerbose bool
 }
 
+func (c BotConfig) ToStorableConfig(configMap map[string]interface{}) map[string]interface{} {
+	if configMap == nil {
+		configMap = map[string]interface{}{}
+	}
+	configMap["AdminUserIDs"] = c.AdminUserIDs
+	configMap["AdminLogLevel"] = c.AdminLogLevel
+	configMap["AdminLogVerbose"] = c.AdminLogVerbose
+	return configMap
+}
+
 type bot struct {
 	BotConfig
 	pluginAPI        plugin.API

@@ -20,19 +20,21 @@ import (
 )
 
 const (
-	commandAutopilot   = "autopilot"
 	commandAdd         = "add"
 	commandArchive     = "archive"
+	commandAutopilot   = "autopilot"
 	commandDebugDelete = "debug-delete"
 	commandDelete      = "delete"
 	commandDisqualify  = "disqualify"
 	commandFill        = "fill"
+	commandFinish      = "finish"
 	commandForecast    = "forecast"
 	commandGuess       = "guess"
 	commandInfo        = "info"
 	commandJoin        = "join"
 	commandLeave       = "leave"
 	commandList        = "list"
+	commandLog         = "log"
 	commandNeed        = "need"
 	commandOpen        = "open"
 	commandQualify     = "qualify"
@@ -41,7 +43,6 @@ const (
 	commandShow        = "show"
 	commandSkill       = "skill"
 	commandStart       = "start"
-	commandFinish      = "finish"
 	commandUnavailable = "unavailable"
 	commandUpdate      = "update"
 	commandUser        = "user"
@@ -52,14 +53,15 @@ const (
 	flagPLevel    = "l"
 	flagPNumber   = "n"
 	flagPRotation = "r"
+	flagPShift    = "s"
 	flagPSkill    = "k"
 	flagPStart    = "s"
-	flagPShift    = "s"
 	flagPUsers    = "u"
 )
 
 const (
 	flagClear      = "clear"
+	flagDebugRun   = "debug-run"
 	flagDeleteNeed = "delete-need"
 	flagEnd        = "end"
 	flagFill       = "fill"
@@ -71,7 +73,6 @@ const (
 	flagMin        = "min"
 	flagNotifyDays = "notify"
 	flagNumber     = "number"
-	flagDebugRun   = "debug-run"
 	flagOff        = "off"
 	flagPeriod     = "period"
 	flagRotation   = "rotation"
@@ -120,6 +121,7 @@ func (c *Command) Handle() (out string, err error) {
 		commandShift:    c.shift,
 		commandSkill:    c.skill,
 		commandUser:     c.user,
+		commandLog:      c.log,
 
 		"debug-clean": c.debugClean,
 	}

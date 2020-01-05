@@ -88,6 +88,7 @@ type PluginAPI interface {
 	GetMattermostUser(mattermostUserID string) (*model.User, error)
 	GetMattermostUserByUsername(mattermostUsername string) (*model.User, error)
 	IsPluginAdmin(mattermostUserID string) (bool, error)
+	UpdateStoredConfig(f func(*config.Config))
 	Clean() error
 }
 
