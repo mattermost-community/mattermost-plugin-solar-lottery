@@ -1,3 +1,18 @@
+# Contents
+#### [Intro](#intro)
+#### [Demo Setup](#demo-setup)
+#### [Demo](#demo)
+- [cleanup and initialize: `/lotto demo clean-init`](#lotto-demo-clean-init)
+##### R&D Ice Breaker rotation
+- [initialize Ice Breaker: `/lotto demo icebreaker-init`](#lotto-demo-icebreaker-init)
+- [run forecast for Ice Breaker: `/lotto demo icebreaker-forecast`](#lotto-demo-icebreaker-forecast)
+- [set up and run autopilot for Ice Breaker: `/lotto demo icebreaker-autopilot`](#lotto-demo-icebreaker-autopilot)
+- [run user forecast in Ice Breaker: `/lotto demo icebreaker-user`](#lotto-demo-icebreaker-user)
+##### Sustaining Engineering Team (SET) rotation
+- [initialize SET: `/lotto demo SET-init`](#lotto-demo-set-init)
+- [run forecast for SET: `/lotto demo SET-forecast`](#lotto-demo-set-forecast)
+## [Next Steps and TODO](#next-steps-and-todo)
+
 ## Intro
 
 - Solar Lottery is a team rotation scheduler, inspired by PagerDuty (and Amazon.com pager tool before that).
@@ -30,13 +45,11 @@
 - Slow performance - unoptimized RPC access, O(N**2) forecasting.
 - No cron yet - simulated for the demo with `/lotto rotation autopilot --debug-run <date>`.
 
-### Demo outline
+### Demo notes
 
-- Scheduling the R&D "Ice Breakers".
-- Scheduling SET.
-- Setting "unavailabe" times.
-    - Grace after serving a shift
-    - Can create custom "Unavailable" intervals
+- Setting "unavailabe" times - supported but not explicitly demoed.
+    - Grace after serving a shift.
+    - Can create custom "Unavailable" intervals.
 - Logs tee-ed as DMs.
     - Started as debugging (got annoyed grepping logs).
     - INFOs are useful as a "transparency" change log.
