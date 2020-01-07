@@ -228,6 +228,7 @@
     - **`/lotto shift leave`**, a little non-trivial for started shifts.
     - **Cron**, HA-aware.
     - **Import/Export** - for backups, especially while in beta
+    - Tune and add tests to the `solar-lottery.go **Scheduler**`, specifically it appears to un-randomize users while sorting, or something of the sort (a bug?). Measure the algorithm performance and efficiency (error rate) on at least one scenario/benchmark.
 - **UI**, a more usable command set - intuitive, less verbose.
 - **HTTP API**.
 - **Caching** the RPC/KV access within a single request.
