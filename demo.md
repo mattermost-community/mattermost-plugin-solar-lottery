@@ -154,6 +154,11 @@
 /lotto rotation forecast -r icebreaker -s 0 -n 20 --sample 100
 ```
 
+![image](https://user-images.githubusercontent.com/1187448/71902132-454df580-3116-11ea-97f6-1f1e882c26e0.png)
+
+![image](https://user-images.githubusercontent.com/1187448/71902207-64e51e00-3116-11ea-9985-231783bbceec.png)
+![image](https://user-images.githubusercontent.com/1187448/71902250-834b1980-3116-11ea-80b4-b1711a4ba2ac.png)
+
 ### `/lotto demo icebreaker-autopilot`
 
 ```sh
@@ -167,6 +172,10 @@
 /lotto rotation autopilot -r icebreaker --debug-run 2019-12-29
 /lotto rotation autopilot -r icebreaker --debug-run 2019-12-30
 ```
+
+![image](https://user-images.githubusercontent.com/1187448/71902347-ba212f80-3116-11ea-872c-e6af0b93bbe5.png)
+![image](https://user-images.githubusercontent.com/1187448/71902393-d9b85800-3116-11ea-9675-d398a8f25baf.png)
+
 
 ### `/lotto demo SET-init`
 
@@ -205,12 +214,21 @@
 /lotto rotation forecast -r SET -s 0 -n 3 --sample 5
 ```
 
+![image](https://user-images.githubusercontent.com/1187448/71903664-6fed7d80-3119-11ea-9665-7410f35d86e4.png)
+![image](https://user-images.githubusercontent.com/1187448/71903747-9b706800-3119-11ea-977b-c696162c052f.png)
+![image](https://user-images.githubusercontent.com/1187448/71903783-b17e2880-3119-11ea-881a-5468b32fde80.png)
+
+![image](https://user-images.githubusercontent.com/1187448/71904112-5e58a580-311a-11ea-9f19-4f32ba18e0d0.png)
+![image](https://user-images.githubusercontent.com/1187448/71904158-72040c00-311a-11ea-9f4a-36e2a67364e2.png)
+
+
 ## Next Steps and TODO
 - **Intake** the plugin - review, transfer
 - **Missing MVP features**:
     - **`/lotto shift leave`**, a little non-trivial for started shifts.
     - **Cron**, HA-aware.
     - **Import/Export** - for backups, especially while in beta
+    - Tune and add tests to the `solar-lottery.go **Scheduler**`, specifically it appears to un-randomize users while sorting, or something of the sort (a bug?). Measure the algorithm performance and efficiency (error rate) on at least one scenario/benchmark.
 - **UI**, a more usable command set - intuitive, less verbose.
 - **HTTP API**.
 - **Caching** the RPC/KV access within a single request.
