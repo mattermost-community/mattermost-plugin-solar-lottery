@@ -118,7 +118,7 @@ var constCommandAll = strings.Join([]string{
 	commandSETForecast,
 }, "\n")
 
-const commandSETForecast = commandSETForecast1 + "\n" + commandIcebreakerForecast2
+const commandSETForecast = commandSETForecast1 + "\n" + commandSETForecast2
 
 func (p *Plugin) executeDemoCommand(c *plugin.Context, args *model.CommandArgs) bool {
 	if c == nil || args == nil {
