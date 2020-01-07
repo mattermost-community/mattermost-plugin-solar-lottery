@@ -35,6 +35,8 @@
 - New rotations:
     - Monthly tech talks.
     - Blog posts.
+    - Release testing (10 people enough?)
+    - Cloud Ops
 - Integrations team:
     - Rotating scrum master (triage, run the meeting, daily checks).
     - Ops duty - plugin review, releases, config on community.
