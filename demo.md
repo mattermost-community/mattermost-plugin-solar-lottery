@@ -57,6 +57,30 @@
     - Started as debugging (got annoyed grepping logs).
     - INFOs are useful as a "transparency" change log, DEBUGs for customer support.
 
+## Next Steps and TODO
+- **Intake** the plugin - review, transfer
+- **Missing MVP features**:
+    - **`/lotto shift leave`**, a little non-trivial for started shifts.
+    - **Cron**, HA-aware.
+    - **Import/Export** - for backups, especially while in beta
+    - Tune and add tests to the `solar-lottery.go **Scheduler**`, specifically it appears to un-randomize users while sorting, or something of the sort (a bug?). Measure the algorithm performance and efficiency (error rate) on at least one scenario/benchmark.
+- **UI**, a more usable command set - intuitive, less verbose.
+- **HTTP API**.
+- **Caching** the RPC/KV access within a single request.
+- **Submit to marketplace**
+- **Features**:
+    - A "Rotation Channel".
+        - Tee relevant logs.
+        - Automatically update the channel header.
+    - History, archiving user events.
+    - Past statistics.
+    - Rotation name-spacing/isolation and admin access control.
+    - Alternate scheduling strategies.
+        - traditional queue.
+        - better fairness, use all history not just last served date.
+    - **◈** Integration with the **Welcome Bot**, **Workflow**, **Todo**, **Autolink** plugins.
+    - **◈◈** Integration with the **Calendar** plugins.
+
 ## Demo Setup
 
 #### Team ABC (full stack)
@@ -221,27 +245,3 @@
 ![image](https://user-images.githubusercontent.com/1187448/71904112-5e58a580-311a-11ea-9f19-4f32ba18e0d0.png)
 ![image](https://user-images.githubusercontent.com/1187448/71904158-72040c00-311a-11ea-9f4a-36e2a67364e2.png)
 
-
-## Next Steps and TODO
-- **Intake** the plugin - review, transfer
-- **Missing MVP features**:
-    - **`/lotto shift leave`**, a little non-trivial for started shifts.
-    - **Cron**, HA-aware.
-    - **Import/Export** - for backups, especially while in beta
-    - Tune and add tests to the `solar-lottery.go **Scheduler**`, specifically it appears to un-randomize users while sorting, or something of the sort (a bug?). Measure the algorithm performance and efficiency (error rate) on at least one scenario/benchmark.
-- **UI**, a more usable command set - intuitive, less verbose.
-- **HTTP API**.
-- **Caching** the RPC/KV access within a single request.
-- **Submit to marketplace**
-- **Features**:
-    - A "Rotation Channel".
-        - Tee relevant logs.
-        - Automatically update the channel header.
-    - History, archiving user events.
-    - Past statistics.
-    - Rotation name-spacing/isolation and admin access control.
-    - Alternate scheduling strategies.
-        - traditional queue.
-        - better fairness, use all history not just last served date.
-    - **◈** Integration with the **Welcome Bot**, **Workflow**, **Todo**, **Autolink** plugins.
-    - **◈◈** Integration with the **Calendar** plugins.
