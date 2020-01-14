@@ -46,6 +46,6 @@ func (api *api) OpenShift(rotation *Rotation, shiftNumber int) (*Shift, error) {
 	}
 
 	api.messageShiftOpened(rotation, shiftNumber, shift)
-	logger.Infof("%s opened %s.", api.MarkdownUser(api.actingUser), MarkdownShift(rotation, shiftNumber))
+	logger.Infof("%s opened %s.", api.MarkdownUser(api.actingUser), api.MarkdownShift(rotation, shiftNumber))
 	return shift, nil
 }

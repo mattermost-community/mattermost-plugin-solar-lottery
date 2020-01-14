@@ -83,35 +83,3 @@ func (api *api) DeleteSkill(skillName string) error {
 	logger.Infof("%s deleted skill %s.", api.MarkdownUser(api.actingUser), skillName)
 	return nil
 }
-
-func withKnownSkills(api *api) error {
-	if api.knownSkills != nil {
-		return nil
-	}
-
-	skills, err := api.SkillsStore.LoadKnownSkills()
-	if err == store.ErrNotFound {
-		api.knownSkills = store.IDMap{}
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	api.knownSkills = skills
-	return nil
-}
-
-func withValidSkillName(skillName string) func(api *api) error {
-	return func(api *api) error {
-		err := api.Filter(withKnownSkills)
-		if err != nil {
-			return err
-		}
-		for s := range api.knownSkills {
-			if s == skillName {
-				return nil
-			}
-		}
-		return errors.Errorf("skill %s is not found", skillName)
-	}
-}

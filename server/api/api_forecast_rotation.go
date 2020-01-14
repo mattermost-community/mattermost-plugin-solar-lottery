@@ -100,6 +100,6 @@ GUESS:
 		}
 	}
 
-	logger.Infof("Ran forecast for %s", MarkdownRotation(rotation))
+	logger.Infof("Ran forecast for %s", api.MarkdownRotation(rotation))
 	return f, nil
 }

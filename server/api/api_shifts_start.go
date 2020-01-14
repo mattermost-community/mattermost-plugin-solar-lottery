@@ -7,30 +7,26 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
-func (api *api) UpdateRotation(rotation *Rotation, updatef func(*Rotation) error) error {
+func (api *api) StartShift(rotation *Rotation, shiftNumber int) (*Shift, error) {
 	err := api.Filter(
 		withActingUserExpanded,
 		withRotationExpanded(rotation),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	logger := api.Logger.Timed().With(bot.LogContext{
-		"Location":       "api.UpdateRotation",
+		"Location":       "api.StartShift",
 		"ActingUsername": api.actingUser.MattermostUsername(),
 		"RotationID":     rotation.RotationID,
+		"ShiftNumber":    shiftNumber,
 	})
 
-	err = updatef(rotation)
+	shift, err := api.startShift(rotation, shiftNumber)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = api.RotationStore.StoreRotation(rotation.Rotation)
-	if err != nil {
-		return err
-	}
-
-	logger.Infof("%s updated rotation %s.", api.MarkdownUser(api.actingUser), MarkdownRotation(rotation))
-	return nil
+	logger.Infof("%s started %s.", api.MarkdownUser(api.actingUser), api.MarkdownShift(rotation, shiftNumber))
+	return shift, nil
 }

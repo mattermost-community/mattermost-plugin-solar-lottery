@@ -6,7 +6,6 @@ package api
 import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
-	"github.com/pkg/errors"
 )
 
 func (api *api) Guess(rotation *Rotation, startingShiftNumber int, numShifts int) ([]*Shift, error) {
@@ -53,41 +52,6 @@ func (api *api) Guess(rotation *Rotation, startingShiftNumber int, numShifts int
 		shifts = append(shifts, shift)
 	}
 
-	logger.Debugf("Ran guess for %s", MarkdownRotation(rotation))
+	logger.Debugf("Ran guess for %s", api.MarkdownRotation(rotation))
 	return shifts, nil
-}
-
-// Returns an un-expanded shift - will be populated with Users from rotation
-func (api *api) getShiftForGuess(rotation *Rotation, shiftNumber int) (*Shift, bool, error) {
-	start, end, err := rotation.ShiftDatesForNumber(shiftNumber)
-	if err != nil {
-		return nil, false, err
-	}
-
-	var shift *Shift
-	created := false
-	storedShift, err := api.ShiftStore.LoadShift(rotation.RotationID, shiftNumber)
-	switch err {
-	case nil:
-		shift = &Shift{
-			Shift: storedShift,
-		}
-
-	case store.ErrNotFound:
-		shift, err = rotation.makeShift(shiftNumber)
-		if err != nil {
-			return nil, false, err
-		}
-		created = true
-
-	default:
-		return nil, false, err
-	}
-
-	if shift.Start != start.Format(DateFormat) || shift.End != end.Format(DateFormat) {
-		return nil, false, errors.Errorf("loaded shift has wrong dates %v-%v, expected %v-%v",
-			shift.Start, shift.End, start, end)
-	}
-
-	return shift, created, nil
 }

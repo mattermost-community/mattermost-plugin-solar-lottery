@@ -59,7 +59,7 @@ func (rotation *Rotation) DeleteNeed(skill string, level Level) error {
 			return nil
 		}
 	}
-	return errors.Errorf("%s is not found in rotation %s", MarkdownSkillLevel(skill, level), MarkdownRotation(rotation))
+	return errors.Errorf("%s is not found in rotation %s", markdownSkillLevel(skill, level), markdownRotation(rotation))
 }
 
 func (rotation *Rotation) ShiftNumberForTime(t time.Time) (int, error) {
@@ -138,50 +138,6 @@ func (rotation *Rotation) ShiftDatesForNumber(shiftNumber int) (time.Time, time.
 		return time.Time{}, time.Time{}, errors.Errorf("Invalid rotation period value %q", rotation.Period)
 	}
 	return begin, end, nil
-}
-
-func (api *api) ExpandRotation(rotation *Rotation) error {
-	if !rotation.StartTime.IsZero() && len(rotation.Users) == len(rotation.MattermostUserIDs) {
-		return nil
-	}
-
-	err := rotation.init(api)
-	if err != nil {
-		return err
-	}
-
-	users, err := api.LoadStoredUsers(rotation.MattermostUserIDs)
-	if err != nil {
-		return err
-	}
-	err = api.ExpandUserMap(users)
-	if err != nil {
-		return err
-	}
-	rotation.Users = users
-
-	return nil
-}
-
-func withRotation(rotationID string) func(api *api) error {
-	return func(api *api) error {
-		return nil
-	}
-}
-
-func withRotationExpanded(rotation *Rotation) func(api *api) error {
-	return func(api *api) error {
-		return api.ExpandRotation(rotation)
-	}
-}
-
-func withRotationIsNotArchived(rotation *Rotation) func(api *api) error {
-	return func(api *api) error {
-		if rotation.IsArchived {
-			return errors.Errorf("rotation %s is archived", MarkdownRotation(rotation))
-		}
-		return nil
-	}
 }
 
 func (rotation *Rotation) markShiftUsersEvents(shiftNumber int, shift *Shift) {

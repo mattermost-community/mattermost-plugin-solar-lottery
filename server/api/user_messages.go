@@ -34,9 +34,9 @@ func (api *api) messageWelcomeToRotation(user *User, rotation *Rotation) {
 		fmt.Sprintf("### Welcome to %s!\n"+
 			"%s added you to %s. Please use `/%s info` for more information.\n"+
 			"%s",
-			MarkdownRotation(rotation),
+			api.MarkdownRotation(rotation),
 			api.MarkdownUser(api.actingUser),
-			MarkdownRotation(rotation),
+			api.MarkdownRotation(rotation),
 			config.CommandTrigger,
 			api.MarkdownRotationBullets(rotation)))
 }
@@ -45,7 +45,7 @@ func (api *api) messageLeftRotation(user *User, rotation *Rotation) {
 	api.dmUser(user,
 		fmt.Sprintf("%s removed you from %s.",
 			api.MarkdownUser(api.actingUser),
-			MarkdownRotation(rotation)))
+			api.MarkdownRotation(rotation)))
 }
 
 func (api *api) messageAddedSkill(user *User, skillName string, level int) {
@@ -57,14 +57,14 @@ func (api *api) messageAddedSkill(user *User, skillName string, level int) {
 				api.MarkdownUser(api.actingUser),
 				skillName,
 				Level(level),
-				MarkdownUserSkills(user)))
+				api.MarkdownUserSkills(user)))
 	} else {
 		api.dmUser(user,
 			fmt.Sprintf("%s deleted skill %v from your profile.\n"+
 				"Your current skills are: %s.\n",
 				api.MarkdownUser(api.actingUser),
 				skillName,
-				MarkdownUserSkills(user)))
+				api.MarkdownUserSkills(user)))
 	}
 }
 
@@ -76,7 +76,7 @@ func (api *api) messageShiftOpened(rotation *Rotation, shiftNumber int, shift *S
 			fmt.Sprintf("%s opened %s.\n"+
 				"Use `/%s shift join -r %s -s %v` if you would like to participate.\n",
 				api.MarkdownUser(api.actingUser),
-				MarkdownShift(rotation, shiftNumber),
+				api.MarkdownShift(rotation, shiftNumber),
 				config.CommandTrigger,
 				rotation.Name,
 				shiftNumber))
@@ -90,9 +90,9 @@ func (api *api) messageShiftStarted(rotation *Rotation, shiftNumber int, shift *
 		api.dmUser(user,
 			fmt.Sprintf("###### Your %s started!\n"+
 				"%s started %s.\n\nTODO runbook URL/channel",
-				MarkdownShift(rotation, shiftNumber),
+				api.MarkdownShift(rotation, shiftNumber),
 				api.MarkdownUser(api.actingUser),
-				MarkdownShift(rotation, shiftNumber)))
+				api.MarkdownShift(rotation, shiftNumber)))
 	}
 }
 
@@ -103,7 +103,7 @@ func (api *api) messageShiftWillStart(rotation *Rotation, shiftNumber int, shift
 
 		api.dmUser(user,
 			fmt.Sprintf("Your %s will start on %s\n\nTODO runbook URL/channel",
-				MarkdownShift(rotation, shiftNumber),
+				api.MarkdownShift(rotation, shiftNumber),
 				shift.Start))
 	}
 }
@@ -115,9 +115,9 @@ func (api *api) messageShiftFinished(rotation *Rotation, shiftNumber int, shift 
 		api.dmUser(user,
 			fmt.Sprintf("###### Done with %s!\n"+
 				"%s finished %s. Details:\n%s",
-				MarkdownShift(rotation, shiftNumber),
+				api.MarkdownShift(rotation, shiftNumber),
 				api.MarkdownUser(api.actingUser),
-				MarkdownShift(rotation, shiftNumber),
+				api.MarkdownShift(rotation, shiftNumber),
 				api.MarkdownShiftBullets(rotation, shiftNumber, shift)))
 	}
 }
@@ -128,7 +128,7 @@ func (api *api) messageShiftWillFinish(rotation *Rotation, shiftNumber int, shif
 	for _, user := range rotation.ShiftUsers(shift) {
 		api.dmUser(user,
 			fmt.Sprintf("Your %s will finish on %s\n\nTODO runbook URL/channel",
-				MarkdownShift(rotation, shiftNumber),
+				api.MarkdownShift(rotation, shiftNumber),
 				shift.End))
 	}
 }
@@ -145,13 +145,13 @@ func (api *api) messageShiftJoined(joined UserMap, rotation *Rotation, shiftNumb
 			fmt.Sprintf("%s added users %s to your %s",
 				api.MarkdownUser(api.actingUser),
 				api.MarkdownUsers(joined),
-				MarkdownShift(rotation, shiftNumber)))
+				api.MarkdownShift(rotation, shiftNumber)))
 	}
 
 	for _, user := range joined {
 		api.dmUser(user,
 			fmt.Sprintf("%s joined you into %s",
 				api.MarkdownUser(api.actingUser),
-				MarkdownShift(rotation, shiftNumber)))
+				api.MarkdownShift(rotation, shiftNumber)))
 	}
 }

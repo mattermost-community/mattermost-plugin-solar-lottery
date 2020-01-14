@@ -5,8 +5,6 @@ package command
 
 import (
 	"fmt"
-
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 )
 
 func (c *Command) guessRotation(parameters []string) (string, error) {
@@ -34,7 +32,7 @@ func (c *Command) guessRotation(parameters []string) (string, error) {
 		return "", err
 	}
 
-	out := fmt.Sprintf("Rotation %s %v shifts, starting %v:\n", api.MarkdownRotation(rotation), numShifts, start)
+	out := fmt.Sprintf("Rotation %s %v shifts, starting %v:\n", c.API.MarkdownRotation(rotation), numShifts, start)
 	for shiftNumber, shift := range shifts {
 		if shift != nil {
 			out += c.API.MarkdownShiftBullets(rotation, shiftNumber, shift)

@@ -73,7 +73,7 @@ func (c *Command) startShift(parameters []string) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			return fmt.Sprintf("Started %s", api.MarkdownShift(rotation, shiftNumber)), nil
+			return fmt.Sprintf("Started %s", c.API.MarkdownShift(rotation, shiftNumber)), nil
 		})
 }
 
@@ -85,7 +85,7 @@ func (c *Command) finishShift(parameters []string) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			return fmt.Sprintf("Finished %s", api.MarkdownShift(rotation, shiftNumber)), nil
+			return fmt.Sprintf("Finished %s", c.API.MarkdownShift(rotation, shiftNumber)), nil
 		})
 }
 

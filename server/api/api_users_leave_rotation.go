@@ -26,7 +26,7 @@ func (api *api) LeaveRotation(mattermostUsernames string, rotation *Rotation) (U
 	for _, user := range api.users {
 		_, ok := rotation.MattermostUserIDs[user.MattermostUserID]
 		if !ok {
-			logger.Debugf("%s is not found in rotation %s", api.MarkdownUser(user), MarkdownRotation(rotation))
+			logger.Debugf("%s is not found in rotation %s", api.MarkdownUser(user), api.MarkdownRotation(rotation))
 			continue
 		}
 
@@ -48,6 +48,6 @@ func (api *api) LeaveRotation(mattermostUsernames string, rotation *Rotation) (U
 		return deleted, err
 	}
 
-	logger.Infof("%s removed from %s.", api.MarkdownUsers(deleted), MarkdownRotation(rotation))
+	logger.Infof("%s removed from %s.", api.MarkdownUsers(deleted), api.MarkdownRotation(rotation))
 	return deleted, nil
 }

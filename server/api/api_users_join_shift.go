@@ -6,7 +6,6 @@ package api
 import (
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
@@ -43,31 +42,6 @@ func (api *api) JoinShift(mattermostUsernames string, rotation *Rotation, shiftN
 
 	api.messageShiftJoined(joined, rotation, shiftNumber, shift)
 	logger.Infof("%s volunteered %s to %s.",
-		api.MarkdownUser(api.actingUser), api.MarkdownUsersWithSkills(joined), MarkdownShift(rotation, shiftNumber))
+		api.MarkdownUser(api.actingUser), api.MarkdownUsersWithSkills(joined), api.MarkdownShift(rotation, shiftNumber))
 	return shift, joined, nil
-}
-
-func (api *api) joinShift(rotation *Rotation, shiftNumber int, shift *Shift, users UserMap, persist bool) (UserMap, error) {
-	if shift.Status != store.ShiftStatusOpen {
-		return nil, errors.Errorf("can't join a shift with status %s, must be Open", shift.Status)
-	}
-
-	joined := UserMap{}
-	for _, user := range users {
-		if shift.Shift.MattermostUserIDs[user.MattermostUserID] != "" {
-			continue
-		}
-		if len(shift.MattermostUserIDs) >= rotation.Size {
-			return nil, errors.Errorf("rotation size %v exceeded", rotation.Size)
-		}
-		shift.Shift.MattermostUserIDs[user.MattermostUserID] = store.NotEmpty
-		joined[user.MattermostUserID] = user
-	}
-
-	err := api.addEventToUsers(joined, NewShiftEvent(rotation, shiftNumber, shift), persist)
-	if err != nil {
-		return nil, err
-	}
-
-	return joined, nil
 }

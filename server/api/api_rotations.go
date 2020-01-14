@@ -44,59 +44,7 @@ func (api *api) AddRotation(rotation *Rotation) error {
 	if err != nil {
 		return err
 	}
-	logger.Infof("New rotation %s added", MarkdownRotation(rotation))
-	return nil
-}
-
-func (api *api) LoadKnownRotations() (store.IDMap, error) {
-	err := api.Filter(
-		withActingUser,
-		withKnownRotations,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return api.knownRotations, nil
-}
-
-func (api *api) ResolveRotationName(namePattern string) ([]string, error) {
-	err := api.Filter(
-		withKnownRotations,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := []string{}
-	re, err := regexp.Compile(`.*` + namePattern + `.*`)
-	if err != nil {
-		return nil, err
-	}
-	for id, name := range api.knownRotations {
-		if re.MatchString(name) {
-			ids = append(ids, id)
-		}
-	}
-	return ids, nil
-}
-
-var ErrMultipleResults = errors.New("multiple resolts found")
-
-func withKnownRotations(api *api) error {
-	if api.knownRotations != nil {
-		return nil
-	}
-
-	rr, err := api.RotationStore.LoadKnownRotations()
-	if err != nil {
-		if err == store.ErrNotFound {
-			rr = store.IDMap{}
-		} else {
-			return err
-		}
-	}
-
-	api.knownRotations = rr
+	logger.Infof("New rotation %s added", api.MarkdownRotation(rotation))
 	return nil
 }
 
@@ -125,7 +73,7 @@ func (api *api) ArchiveRotation(rotation *Rotation) error {
 		return errors.WithMessagef(err, "failed to store rotation %s", rotation.RotationID)
 	}
 
-	logger.Infof("%s archived rotation %s.", api.MarkdownUser(api.actingUser), MarkdownRotation(rotation))
+	logger.Infof("%s archived rotation %s.", api.MarkdownUser(api.actingUser), api.MarkdownRotation(rotation))
 	return nil
 }
 
@@ -156,26 +104,15 @@ func (api *api) DebugDeleteRotation(rotationID string) error {
 	return nil
 }
 
-func (api *api) MakeRotation(rotationName string) (*Rotation, error) {
-	id := ""
-	for i := 0; i < 5; i++ {
-		tryId := rotationName + "-" + model.NewId()[:7]
-		if len(api.knownRotations) == 0 || api.knownRotations[tryId] == "" {
-			id = tryId
-			break
-		}
+func (api *api) LoadKnownRotations() (store.IDMap, error) {
+	err := api.Filter(
+		withActingUser,
+		withKnownRotations,
+	)
+	if err != nil {
+		return nil, err
 	}
-	if id == "" {
-		return nil, errors.New("Failed to generate unique rotation ID")
-	}
-
-	return &Rotation{
-		Rotation: &store.Rotation{
-			RotationID: id,
-			Name:       rotationName,
-		},
-		Users: UserMap{},
-	}, nil
+	return api.knownRotations, nil
 }
 
 func (api *api) LoadRotation(rotationID string) (*Rotation, error) {
@@ -201,4 +138,77 @@ func (api *api) LoadRotation(rotationID string) (*Rotation, error) {
 	}
 
 	return rotation, nil
+}
+
+var ErrMultipleResults = errors.New("multiple resolts found")
+
+func (api *api) MakeRotation(rotationName string) (*Rotation, error) {
+	id := ""
+	for i := 0; i < 5; i++ {
+		tryId := rotationName + "-" + model.NewId()[:7]
+		if len(api.knownRotations) == 0 || api.knownRotations[tryId] == "" {
+			id = tryId
+			break
+		}
+	}
+	if id == "" {
+		return nil, errors.New("Failed to generate unique rotation ID")
+	}
+
+	return &Rotation{
+		Rotation: &store.Rotation{
+			RotationID: id,
+			Name:       rotationName,
+		},
+		Users: UserMap{},
+	}, nil
+}
+
+func (api *api) ResolveRotationName(namePattern string) ([]string, error) {
+	err := api.Filter(
+		withKnownRotations,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := []string{}
+	re, err := regexp.Compile(`.*` + namePattern + `.*`)
+	if err != nil {
+		return nil, err
+	}
+	for id, name := range api.knownRotations {
+		if re.MatchString(name) {
+			ids = append(ids, id)
+		}
+	}
+	return ids, nil
+}
+
+func (api *api) UpdateRotation(rotation *Rotation, updatef func(*Rotation) error) error {
+	err := api.Filter(
+		withActingUserExpanded,
+		withRotationExpanded(rotation),
+	)
+	if err != nil {
+		return err
+	}
+	logger := api.Logger.Timed().With(bot.LogContext{
+		"Location":       "api.UpdateRotation",
+		"ActingUsername": api.actingUser.MattermostUsername(),
+		"RotationID":     rotation.RotationID,
+	})
+
+	err = updatef(rotation)
+	if err != nil {
+		return err
+	}
+
+	err = api.RotationStore.StoreRotation(rotation.Rotation)
+	if err != nil {
+		return err
+	}
+
+	logger.Infof("%s updated rotation %s.", api.MarkdownUser(api.actingUser), api.MarkdownRotation(rotation))
+	return nil
 }

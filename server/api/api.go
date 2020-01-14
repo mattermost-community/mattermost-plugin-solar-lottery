@@ -20,11 +20,11 @@ type API interface {
 	Expander
 	Forecaster
 	Markdowner
+	Autopilot
 
 	Rotations
 	Shifts
 	Skills
-	UserActions
 	Users
 }
 
@@ -37,6 +37,9 @@ type Rotations interface {
 	MakeRotation(rotationName string) (*Rotation, error)
 	ResolveRotationName(namePattern string) ([]string, error)
 	UpdateRotation(*Rotation, func(*Rotation) error) error
+}
+
+type Autopilot interface {
 	AutopilotRotation(rotation *Rotation, now time.Time) error
 }
 
@@ -54,16 +57,14 @@ type Users interface {
 	GetActingUser() (*User, error)
 	LoadMattermostUsers(mattermostUsernames string) (UserMap, error)
 	LoadStoredUsers(mattermostUserIDs store.IDMap) (UserMap, error)
-}
 
-type UserActions interface {
-	Qualify(mattermostUsernames, skillName string, level Level) error
-	JoinRotation(mattermostUsernames string, rotation *Rotation, starting time.Time) (added UserMap, err error)
-	LeaveRotation(mattermostUsernames string, rotation *Rotation) (deleted UserMap, err error)
-	Disqualify(mattermostUsernames, skillName string) error
-	JoinShift(mattermostUsernames string, rotation *Rotation, shiftNumber int) (*Shift, UserMap, error)
 	AddEvent(mattermostUsernames string, event Event) error
 	DeleteEvents(mattermostUsernames string, startDate, endDate string) error
+	Disqualify(mattermostUsernames, skillName string) error
+	JoinRotation(mattermostUsernames string, rotation *Rotation, starting time.Time) (added UserMap, err error)
+	JoinShift(mattermostUsernames string, rotation *Rotation, shiftNumber int) (*Shift, UserMap, error)
+	LeaveRotation(mattermostUsernames string, rotation *Rotation) (deleted UserMap, err error)
+	Qualify(mattermostUsernames, skillName string, level Level) error
 }
 
 type Forecaster interface {
@@ -123,9 +124,6 @@ type api struct {
 
 	// use withKnownRotations or withRotation(rotationID) to initialize, not expanded by default.
 	knownRotations store.IDMap
-
-	// use withRotation(rotationID) to initialize, not expanded by default.
-	// rotation *Rotation
 
 	// use withMattermostUsers(usernames) or withUsers(mattermostUserIDs) to initialize, not expanded by default.
 	users UserMap

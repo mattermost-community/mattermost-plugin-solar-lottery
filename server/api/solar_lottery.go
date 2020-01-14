@@ -32,7 +32,7 @@ func (e autofillError) Error() string {
 		if message != "" {
 			message += ", "
 		}
-		message += fmt.Sprintf("failed filling need %s", MarkdownNeed(*e.causeUnmetNeed))
+		message += fmt.Sprintf("failed filling need %s", markdownNeed(*e.causeUnmetNeed))
 	}
 	if e.orig != nil {
 		return errors.WithMessage(e.orig, message).Error()
@@ -102,7 +102,7 @@ func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift)
 	// Set and snapshot the initial state for logging later
 	cycle()
 
-	out := fmt.Sprintf("filling %s, choosing from:\n", MarkdownShift(rotation, shiftNumber))
+	out := fmt.Sprintf("filling %s, choosing from:\n", api.MarkdownShift(rotation, shiftNumber))
 	sort.Sort(cdf)
 	for i, id := range cdf.ids {
 		out += fmt.Sprintf("- **%.3f**: %s\n", cdf.weights[i]/cdf.total, api.MarkdownUserWithSkills(pool[id]))
@@ -157,12 +157,12 @@ CYCLE:
 
 			if maxedNeed != nil {
 				api.Logger.Debugf("Disqualified user %s from %s: would hit max on %s.",
-					api.MarkdownUser(pickedUser), MarkdownNeed(need), MarkdownNeed(*maxedNeed))
+					api.MarkdownUser(pickedUser), api.MarkdownNeed(need), api.MarkdownNeed(*maxedNeed))
 				continue
 			}
 
 			chosenUser = pickedUser
-			api.Logger.Debugf("Accepted user %s for %s", api.MarkdownUser(chosenUser), MarkdownNeed(need))
+			api.Logger.Debugf("Accepted user %s for %s", api.MarkdownUser(chosenUser), api.MarkdownNeed(need))
 			continue CYCLE
 		}
 	}
@@ -199,7 +199,7 @@ CYCLE:
 
 		if maxedNeed != nil {
 			api.Logger.Debugf("Disqualified user %s from backfill: would hit max on %s.",
-				api.MarkdownUser(pickedUser), MarkdownNeed(*maxedNeed))
+				api.MarkdownUser(pickedUser), api.MarkdownNeed(*maxedNeed))
 		} else {
 			chosenUser = pickedUser
 			api.Logger.Debugf("Accepted user %s for backfill",
@@ -215,7 +215,7 @@ CYCLE:
 		shift.MattermostUserIDs[user.MattermostUserID] = user.MattermostUserID
 	}
 	api.Logger.Debugf("Filled %s, chose %s. Details:\n%s",
-		MarkdownShift(rotation, shiftNumber),
+		api.MarkdownShift(rotation, shiftNumber),
 		api.MarkdownUsers(chosen),
 		api.MarkdownShiftBullets(rotation, shiftNumber, shift))
 

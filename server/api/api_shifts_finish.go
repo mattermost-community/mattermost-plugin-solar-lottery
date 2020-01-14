@@ -4,9 +4,6 @@
 package api
 
 import (
-	"github.com/pkg/errors"
-
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
@@ -29,7 +26,7 @@ func (api *api) DebugDeleteShift(rotation *Rotation, shiftNumber int) error {
 		return err
 	}
 
-	logger.Infof("%s deleted shift %v in %s.", api.MarkdownUser(api.actingUser), shiftNumber, MarkdownRotation(rotation))
+	logger.Infof("%s deleted shift %v in %s.", api.MarkdownUser(api.actingUser), shiftNumber, api.MarkdownRotation(rotation))
 	return nil
 }
 
@@ -52,29 +49,6 @@ func (api *api) FinishShift(rotation *Rotation, shiftNumber int) (*Shift, error)
 		return nil, err
 	}
 
-	logger.Infof("%s finished %s.", api.MarkdownUser(api.actingUser), MarkdownShift(rotation, shiftNumber))
-	return shift, nil
-}
-
-func (api *api) finishShift(rotation *Rotation, shiftNumber int) (*Shift, error) {
-	shift, err := api.loadShift(rotation, shiftNumber)
-	if err != nil {
-		return nil, err
-	}
-	if shift.Status == store.ShiftStatusFinished {
-		return shift, nil
-	}
-	if shift.Status != store.ShiftStatusStarted {
-		return nil, errors.Errorf("can't finish a shift which is %s, must be started", shift.Status)
-	}
-
-	shift.Status = store.ShiftStatusFinished
-	err = api.ShiftStore.StoreShift(rotation.RotationID, shiftNumber, shift.Shift)
-	if err != nil {
-		return nil, err
-	}
-
-	api.messageShiftFinished(rotation, shiftNumber, shift)
-
+	logger.Infof("%s finished %s.", api.MarkdownUser(api.actingUser), api.MarkdownShift(rotation, shiftNumber))
 	return shift, nil
 }

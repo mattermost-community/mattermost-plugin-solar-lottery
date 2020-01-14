@@ -34,7 +34,7 @@ func (api *api) JoinRotation(mattermostUsernames string, rotation *Rotation, sta
 	for _, user := range api.users {
 		if len(rotation.MattermostUserIDs[user.MattermostUserID]) != 0 {
 			logger.Debugf("%s is already in rotation %s.",
-				api.MarkdownUsersWithSkills(added), MarkdownRotation(rotation))
+				api.MarkdownUsersWithSkills(added), api.MarkdownRotation(rotation))
 			continue
 		}
 
@@ -61,6 +61,6 @@ func (api *api) JoinRotation(mattermostUsernames string, rotation *Rotation, sta
 		return added, errors.WithMessagef(err, "failed to store rotation %s", rotation.RotationID)
 	}
 	logger.Infof("%s added %s to %s.",
-		api.MarkdownUser(api.actingUser), api.MarkdownUsersWithSkills(added), MarkdownRotation(rotation))
+		api.MarkdownUser(api.actingUser), api.MarkdownUsersWithSkills(added), api.MarkdownRotation(rotation))
 	return added, nil
 }

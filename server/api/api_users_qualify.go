@@ -4,8 +4,6 @@
 package api
 
 import (
-	"github.com/pkg/errors"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
@@ -38,31 +36,6 @@ func (api *api) Qualify(mattermostUsernames, skillName string, level Level) erro
 	}
 
 	logger.Infof("%s added skill %s to %s.",
-		api.MarkdownUser(api.actingUser), MarkdownSkillLevel(skillName, level), api.MarkdownUsersWithSkills(api.users))
+		api.MarkdownUser(api.actingUser), api.MarkdownSkillLevel(skillName, level), api.MarkdownUsersWithSkills(api.users))
 	return nil
-}
-
-func (api *api) updateUserSkill(user *User, skillName string, level Level) (*User, error) {
-	if user.SkillLevels[skillName] == int(level) {
-		// nothing to do
-		api.Logger.Debugf("nothing to do for user %s, already has skill %s (%v)", api.MarkdownUser(user), skillName, level)
-		return user, nil
-	}
-
-	if level == 0 {
-		_, ok := user.SkillLevels[skillName]
-		if !ok {
-			return nil, errors.Errorf("%s does not have skill %s", api.MarkdownUser(user), skillName)
-		}
-		delete(user.SkillLevels, skillName)
-	} else {
-		user.SkillLevels[skillName] = int(level)
-	}
-
-	user, err := api.storeUserWelcomeNew(user)
-	if err != nil {
-		return nil, err
-	}
-	api.Logger.Debugf("%s (%v) skill updated user %s", skillName, level, api.MarkdownUser(user))
-	return user, nil
 }
