@@ -182,6 +182,10 @@ func (api *api) ResolveRotationName(namePattern string) ([]string, error) {
 			ids = append(ids, id)
 		}
 	}
+
+	if len(ids) == 0 {
+		return nil, store.ErrNotFound
+	}
 	return ids, nil
 }
 
