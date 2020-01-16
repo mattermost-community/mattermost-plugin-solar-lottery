@@ -105,9 +105,6 @@ func (p *Plugin) OnConfigurationChange() error {
 		c.PluginURLPath = pluginURLPath
 	})
 
-	// if p.notificationHandler != nil {
-	// 	p.notificationHandler.Configure(p.newAPIConfig())
-	// }
 	return nil
 }
 
@@ -139,7 +136,6 @@ func (p *Plugin) ServeHTTP(pc *plugin.Context, w gohttp.ResponseWriter, req *goh
 	mattermostUserID := req.Header.Get("Mattermost-User-ID")
 	ctx := req.Context()
 	ctx = api.Context(ctx, api.New(apiconf, mattermostUserID))
-	// ctx = api.Context(ctx, api.New(apiconf, mattermostUserID), p.notificationHandler)
 	ctx = config.Context(ctx, apiconf.Config)
 
 	p.httpHandler.ServeHTTP(w, req.WithContext(ctx))
