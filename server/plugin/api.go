@@ -8,10 +8,14 @@ import (
 
 	"github.com/mattermost/mattermost-server/v5/model"
 
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
+
+// This file provides an implementation of api.PluginAPI
+var _ api.PluginAPI = (*Plugin)(nil)
 
 // IsPluginAdmin returns true if the user is authorized to use the workflow plugin's admin-level APIs/commands.
 func (p *Plugin) IsPluginAdmin(mattermostUserID string) (bool, error) {
