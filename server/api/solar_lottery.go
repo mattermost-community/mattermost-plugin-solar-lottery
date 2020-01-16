@@ -70,7 +70,7 @@ func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift)
 		for _, event := range overlappingEvents {
 			// Unavailable events apply to all rotations, Shift events apply
 			//  only to the rotation from which they come.
-			if event.Type == store.EventTypeUnavailable ||
+			if event.Type == store.EventTypePersonal ||
 				(event.Type == store.EventTypeShift && event.RotationID == rotation.RotationID) {
 
 				delete(pool, user.MattermostUserID)

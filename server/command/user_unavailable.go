@@ -40,7 +40,7 @@ func (c *Command) userUnavailable(parameters []string) (string, error) {
 		return fmt.Sprintf("cleared %s to %s from %s", start, end, usernames), nil
 	}
 
-	event := api.NewOtherEvent(startTime, endTime)
+	event := api.NewPersonalEvent(startTime, endTime)
 	err = c.API.AddEvent(usernames, event)
 	if err != nil {
 		return "", err
