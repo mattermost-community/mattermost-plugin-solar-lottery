@@ -270,22 +270,6 @@ func unmetNeeds(needs []store.Need, users UserMap) []store.Need {
 	return unmet
 }
 
-func unmetNeedsOld(needs []store.Need, users UserMap) []store.Need {
-	unmet := []store.Need{}
-	for _, need := range needs {
-		cQualified := 0
-		for _, user := range users {
-			if qualifiedForNeed(user, need) {
-				cQualified++
-			}
-		}
-		if cQualified < need.Min {
-			unmet = append(unmet, need)
-		}
-	}
-	return unmet
-}
-
 func (rotation *Rotation) sortNeedsByHeat(cdf *cdf) {
 	needWeights := make([]float64, len(rotation.Needs))
 	for i, need := range rotation.Needs {

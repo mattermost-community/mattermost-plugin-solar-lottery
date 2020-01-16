@@ -23,11 +23,11 @@ func (api *api) autopilotFinishShift(rotation *Rotation, now time.Time, currentS
 		return 0, nil, errors.New("no previous shift")
 	}
 
-	shift, err := api.finishShift(rotation, prevShiftNumber)
+	prevShift, err := api.finishShift(rotation, prevShiftNumber)
 	if err != nil {
 		return 0, nil, err
 	}
-	return prevShiftNumber, shift, nil
+	return prevShiftNumber, prevShift, nil
 }
 
 func (api *api) autopilotStartShift(rotation *Rotation, now time.Time, currentShiftNumber int) (int, *Shift, error) {
@@ -38,11 +38,11 @@ func (api *api) autopilotStartShift(rotation *Rotation, now time.Time, currentSh
 		return 0, nil, errors.New("no shift to start")
 	}
 
-	shift, err := api.startShift(rotation, currentShiftNumber)
+	currentShift, err := api.startShift(rotation, currentShiftNumber)
 	if err != nil {
 		return 0, nil, err
 	}
-	return currentShiftNumber, shift, nil
+	return currentShiftNumber, currentShift, nil
 }
 
 func (api *api) autopilotFill(rotation *Rotation, now time.Time, currentShiftNumber int, logger bot.Logger) ([]int, []*Shift, []UserMap, error) {
@@ -51,7 +51,7 @@ func (api *api) autopilotFill(rotation *Rotation, now time.Time, currentShiftNum
 	}
 
 	startingShiftNumber := currentShiftNumber
-	if currentShiftNumber < 0 {
+	if startingShiftNumber < 0 {
 		startingShiftNumber = 0
 	}
 
