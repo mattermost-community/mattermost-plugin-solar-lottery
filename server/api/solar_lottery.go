@@ -182,13 +182,13 @@ func (af *autofill) pickUser(from UserMap) *User {
 }
 
 func userWeight(rotationID string, user *User, shiftNumber int) float64 {
-	next, _ := user.LastServed[rotationID]
-	if next > shiftNumber {
+	last, _ := user.LastServed[rotationID]
+	if last > shiftNumber {
 		// return a non-0 but very low number, to prevent user from serving
 		// other than if all have 0 weights
 		return 1e-12
 	}
-	return math.Pow(2.0, float64(shiftNumber-next))
+	return math.Pow(2.0, float64(shiftNumber-last))
 }
 
 func (af *autofill) hottestRequiredNeed() (*store.Need, UserMap) {
@@ -352,13 +352,10 @@ func (s *weightedNeedSorter) Len() int {
 // limit opportunistically. Otherwise sort by normalized weight representing
 // staffing heat level.
 func (s *weightedNeedSorter) Less(i, j int) bool {
-	if s.needs[i].Max >= 0 && s.needs[j].Max < 0 {
-		return true
+	if (s.needs[i].Max < 0) != (s.needs[j].Max < 0) {
+		return s.needs[j].Max < 0
 	}
-	if s.needs[i].Max < 0 && s.needs[j].Max >= 0 {
-		return false
-	}
-	return s.weights[i] < s.weights[j]
+	return s.weights[i] > s.weights[j]
 }
 
 func (s *weightedNeedSorter) Swap(i, j int) {
