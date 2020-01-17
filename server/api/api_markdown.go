@@ -11,20 +11,21 @@ import (
 )
 
 type Markdowner interface {
-	MarkdownRotation(rotation *Rotation) string
 	MarkdownEvent(event Event) string
-	MarkdownShift(rotation *Rotation, shiftNumber int) string
-	MarkdownUserSkills(user *User) string
-	MarkdownUser(*User) string
-	MarkdownUsers(UserMap) string
-	MarkdownUsersWithSkills(UserMap) string
-	MarkdownRotationBullets(*Rotation) string
-	MarkdownShiftBullets(*Rotation, int, *Shift) string
-	MarkdownSkillLevel(skillName string, level Level) string
+	MarkdownIndent(in, prefix string) string
 	MarkdownNeed(need store.Need) string
 	MarkdownNeeds(needs []store.Need) string
 	MarkdownNeedsBullets(needs map[string]store.Need, indent string) string
-	MarkdownIndent(in, prefix string) string
+	MarkdownRotation(rotation *Rotation) string
+	MarkdownRotationBullets(*Rotation) string
+	MarkdownShift(rotation *Rotation, shiftNumber int) string
+	MarkdownShiftBullets(*Rotation, int, *Shift) string
+	MarkdownSkillLevel(skillName string, level Level) string
+	MarkdownUser(*User) string
+	MarkdownUsers(UserMap) string
+	MarkdownUserSkills(user *User) string
+	MarkdownUsersWithSkills(UserMap) string
+	MarkdownUserWithSkills(user *User) string
 }
 
 func (api *api) MarkdownRotation(rotation *Rotation) string {

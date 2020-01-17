@@ -8,14 +8,14 @@ import (
 )
 
 type Forecast struct {
-	StartingShift                      int
-	NumShifts                          int
-	SampleSize                         int
-	CountErrFailedInsufficientForNeeds int
-	CountErrFailedInsufficientForSize  int
-	CountErrFailedSizeExceeded         int
-	NeedErrCounts                      map[string]int
-	ShiftErrCounts                     []int
+	StartingShift                int
+	NumShifts                    int
+	SampleSize                   int
+	CountErrInsufficientForNeeds int
+	CountErrInsufficientForSize  int
+	CountErrSizeExceeded         int
+	NeedErrCounts                map[string]int
+	ShiftErrCounts               []int
 
 	// for each user (MattermostUserID) contains NumShifts probabilities, of
 	// the user being selected into the respective shift number. This is based
@@ -66,21 +66,19 @@ GUESS:
 				return nil, err
 			}
 
+			for _, need := range aerr.causeUnmetNeeds {
+				f.NeedErrCounts[need.String()]++
+			}
+
 			switch aerr.orig {
-			case ErrFailedInsufficientForNeeds:
-				f.CountErrFailedInsufficientForNeeds++
-				for _, need := range aerr.causeUnmetNeeds {
-					f.NeedErrCounts[need.String()]++
-				}
+			case ErrInsufficientForNeeds:
+				f.CountErrInsufficientForNeeds++
 
-			case ErrFailedInsufficientForSize:
-				f.CountErrFailedInsufficientForSize++
-				for _, need := range aerr.causeUnmetNeeds {
-					f.NeedErrCounts[need.String()]++
-				}
+			case ErrInsufficientForSize:
+				f.CountErrInsufficientForSize++
 
-			case ErrFailedSizeExceeded:
-				f.CountErrFailedSizeExceeded++
+			case ErrSizeExceeded:
+				f.CountErrSizeExceeded++
 			}
 
 			f.ShiftErrCounts[aerr.shiftNumber]++

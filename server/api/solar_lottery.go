@@ -15,12 +15,295 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
+var ErrInsufficientForNeeds = errors.New("failed to satisfy needs, not enough skilled users available")
+var ErrSizeExceeded = errors.New("failed to satisfy needs, exceeded rotation size")
+var ErrInsufficientForSize = errors.New("failed to satisfy rotation size requirement")
+
+type autofill struct {
+	api API
+
+	size        int
+	shiftNumber int
+
+	pool   UserMap
+	chosen UserMap
+
+	// requiredNeeds contains the map of all needs that are still required, to
+	// the pool of available, qualified, not yet chosen users for each need.
+	requiredNeeds map[*store.Need]UserMap
+
+	constrainedNeeds []*store.Need
+}
+
+func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift) error {
+	if len(shift.MattermostUserIDs) > 0 {
+		api.Logger.Debugf("Shift %v already has users %v: %v",
+			shiftNumber, len(shift.MattermostUserIDs), api.MarkdownUsersWithSkills(rotation.ShiftUsers(shift)))
+	}
+
+	af, err := api.makeAutofill(rotation, shiftNumber, shift)
+	if err != nil {
+		return err
+	}
+	api.Logger.Debugf("Autofill: %s", af.markdown(rotation, shiftNumber))
+
+	chosen, err := af.fill()
+	if err != nil {
+		return err
+	}
+
+	for _, user := range chosen {
+		shift.MattermostUserIDs[user.MattermostUserID] = user.MattermostUserID
+	}
+
+	api.Logger.Debugf("Filled %s, chose %s. Details:\n%s",
+		api.MarkdownShift(rotation, shiftNumber),
+		api.MarkdownUsers(chosen),
+		api.MarkdownShiftBullets(rotation, shiftNumber, shift))
+
+	return nil
+}
+
+func (af *autofill) fill() (UserMap, error) {
+	for len(af.chosen) < af.size {
+		err := af.fillOne()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(af.requiredNeeds) > 0 {
+		return nil, af.newError(nil, ErrSizeExceeded)
+	}
+
+	return af.chosen, nil
+}
+
+func (af *autofill) fillOne() error {
+	need, pool := af.hottestRequiredNeed()
+	if pool == nil {
+		pool = af.pool
+	}
+
+	var user *User
+	for {
+		user = af.pickUser(pool)
+		if user == nil {
+			if need != nil {
+				return af.newError(need, ErrInsufficientForNeeds)
+			} else {
+				return af.newError(nil, ErrInsufficientForSize)
+			}
+		}
+
+		if af.meetsConstraints(user) {
+			break
+		}
+
+		af.dismissUser(user)
+	}
+
+	return af.acceptUser(user)
+}
+
+func (af *autofill) meetsConstraints(user *User) bool {
+	for _, need := range af.constrainedNeeds {
+		if qualifiedForNeed(user, *need) && need.Max-1 < 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func (af *autofill) dismissUser(user *User) {
+	delete(af.pool, user.MattermostUserID)
+	for _, pool := range af.requiredNeeds {
+		delete(pool, user.MattermostUserID)
+	}
+}
+
+func (af *autofill) acceptUser(user *User) error {
+	// remove the user from all pools whether it is accepted or not.
+	af.dismissUser(user)
+
+	// update the constraints
+	for _, need := range af.constrainedNeeds {
+		if qualifiedForNeed(user, *need) {
+			need.Max--
+		}
+	}
+
+	// update the requirements
+	updatedRequiredNeeds := map[*store.Need]UserMap{}
+	for need, pool := range af.requiredNeeds {
+		if qualifiedForNeed(user, *need) {
+			need.Min--
+			if need.Min == 0 {
+				// filled to requirement, do not include in the updated map
+				continue
+			}
+			if len(pool) == 0 {
+				return af.newError(need, ErrInsufficientForNeeds)
+			}
+			// the user is already removed from the pool
+			updatedRequiredNeeds[need] = pool
+		}
+	}
+	af.requiredNeeds = updatedRequiredNeeds
+
+	af.chosen[user.MattermostUserID] = user
+	return nil
+}
+
+func (af *autofill) pickUser(from UserMap) *User {
+	if len(from) == 0 {
+		return nil
+	}
+
+	cdf := make([]float64, len(from))
+	weights := []float64{}
+	ids := []string{}
+	total := float64(0)
+	for id, user := range from {
+		ids = append(ids, id)
+		weights = append(weights, user.weight)
+		total += user.weight
+	}
+	floats.CumSum(cdf, weights)
+	random := rand.Float64() * total
+	i := sort.Search(len(cdf), func(i int) bool {
+		return cdf[i] >= random
+	})
+	if i < 0 || i >= len(cdf) {
+		return nil
+	}
+
+	return from[ids[i]]
+}
+
+func userWeight(rotationID string, user *User, shiftNumber int) float64 {
+	next, _ := user.LastServed[rotationID]
+	if next > shiftNumber {
+		// return a non-0 but very low number, to prevent user from serving
+		// other than if all have 0 weights
+		return 1e-12
+	}
+	return math.Pow(2.0, float64(shiftNumber-next))
+}
+
+func (af *autofill) hottestRequiredNeed() (*store.Need, UserMap) {
+	if len(af.requiredNeeds) == 0 {
+		return nil, nil
+	}
+
+	s := &weightedNeedSorter{
+		weights: make([]float64, len(af.requiredNeeds)),
+		needs:   make([]*store.Need, len(af.requiredNeeds)),
+	}
+	i := 0
+	for need, pool := range af.requiredNeeds {
+		for _, user := range pool {
+			s.weights[i] += user.weight
+		}
+
+		// Normalize per remaining needed user
+		s.weights[i] = s.weights[i] / float64(need.Min)
+		i++
+	}
+
+	sort.Sort(s)
+	need := s.needs[0]
+	pool := af.requiredNeeds[need]
+	return need, pool
+}
+
+func (api *api) makeAutofill(rotation *Rotation, shiftNumber int, shift *Shift) (autofill, error) {
+	af := autofill{
+		api:           api,
+		size:          rotation.Size,
+		pool:          rotation.Users.Clone(false),
+		chosen:        rotation.ShiftUsers(shift),
+		shiftNumber:   shiftNumber,
+		requiredNeeds: map[*store.Need]UserMap{},
+	}
+
+	// remove any users already chosen from the pool
+	for id := range af.chosen {
+		_, ok := af.pool[id]
+		if ok {
+			delete(af.pool, id)
+		}
+	}
+
+	// remove any unavailable users from the pool, update weights
+	for _, user := range af.pool {
+		overlappingEvents, err := user.overlapEvents(shift.StartTime, shift.EndTime, false)
+		if err != nil {
+			return autofill{}, autofillError{orig: err}
+		}
+		for _, event := range overlappingEvents {
+			// Unavailable events apply to all rotations, Shift events apply
+			//  only to the rotation from which they come.
+			if event.Type == store.EventTypePersonal ||
+				(event.Type == store.EventTypeShift && event.RotationID == rotation.RotationID) {
+
+				delete(af.pool, user.MattermostUserID)
+				api.Logger.Debugf("Disqualified user %s: unavailable", api.MarkdownUserWithSkills(user))
+			}
+		}
+
+		user.weight = userWeight(rotation.RotationID, user, shiftNumber)
+	}
+
+	// sort out the need requirements and constraints
+	for _, need := range rotation.Needs {
+		if need.Min > 0 {
+			af.requiredNeeds[&need] = usersQualifiedForNeed(af.pool, need)
+		}
+		if need.Max >= 0 {
+			af.constrainedNeeds = append(af.constrainedNeeds, &need)
+		}
+	}
+
+	return af, nil
+}
+
+func (af *autofill) markdown(rotation *Rotation, shiftNumber int) string {
+	ws := weightedUserSorter{}
+	total := float64(0)
+	for id, user := range af.pool {
+		ws.ids = append(ws.ids, id)
+		ws.weights = append(ws.weights, user.weight)
+		total += user.weight
+	}
+	sort.Sort(&ws)
+	out := fmt.Sprintf("filling %s, choosing from:\n", af.api.MarkdownShift(rotation, shiftNumber))
+	for i, id := range ws.ids {
+		out += fmt.Sprintf("- **%.3f**: %s\n", ws.weights[i]/total, af.api.MarkdownUserWithSkills(af.pool[id]))
+	}
+	return out
+}
+
 type autofillError struct {
 	orig            error
 	causeUnmetNeeds []store.Need
 	causeUnmetNeed  *store.Need
 	causeCapacity   int
 	shiftNumber     int
+}
+
+func (af *autofill) newError(need *store.Need, err error) autofillError {
+	unmet := []store.Need{}
+	for need := range af.requiredNeeds {
+		unmet = append(unmet, *need)
+	}
+	return autofillError{
+		orig:            err,
+		causeUnmetNeeds: unmet,
+		causeUnmetNeed:  need,
+		causeCapacity:   af.size - len(af.chosen),
+		shiftNumber:     af.shiftNumber,
+	}
 }
 
 func (e autofillError) Error() string {
@@ -41,187 +324,6 @@ func (e autofillError) Error() string {
 	}
 }
 
-var ErrFailedInsufficientForNeeds = errors.New("failed to satisfy needs, not enough skilled users available")
-var ErrFailedSizeExceeded = errors.New("failed to satisfy needs, exceeded rotation size")
-var ErrFailedInsufficientForSize = errors.New("failed to satisfy rotation size requirement")
-
-func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift) error {
-	if len(shift.MattermostUserIDs) > 0 {
-		api.Logger.Debugf("Shift %v already has users %v: %v",
-			shiftNumber, len(shift.MattermostUserIDs), api.MarkdownUsersWithSkills(rotation.ShiftUsers(shift)))
-	}
-
-	pool := rotation.Users.Clone(false)
-	chosen := rotation.ShiftUsers(shift)
-	// remove any users already chosen from the pool
-	for id := range chosen {
-		_, ok := pool[id]
-		if ok {
-			delete(pool, id)
-		}
-	}
-
-	// remove any unavailable users from the pool
-	for _, user := range pool {
-		overlappingEvents, err := user.overlapEvents(shift.StartTime, shift.EndTime, false)
-		if err != nil {
-			return autofillError{orig: err}
-		}
-		for _, event := range overlappingEvents {
-			// Unavailable events apply to all rotations, Shift events apply
-			//  only to the rotation from which they come.
-			if event.Type == store.EventTypePersonal ||
-				(event.Type == store.EventTypeShift && event.RotationID == rotation.RotationID) {
-
-				delete(pool, user.MattermostUserID)
-				api.Logger.Debugf("Disqualified user %s: unavailable", api.MarkdownUserWithSkills(user))
-			}
-		}
-	}
-
-	// Get a snapshot of the initial probability distribution
-	var cdf *cdf
-	var unmet []store.Need
-	var pickedUser, chosenUser *User
-	var qualifiedUsers UserMap
-	cycle := func() {
-		if pickedUser != nil {
-			delete(pool, pickedUser.MattermostUserID)
-			delete(qualifiedUsers, pickedUser.MattermostUserID)
-		}
-		if chosenUser != nil {
-			chosen[chosenUser.MattermostUserID] = chosenUser
-			chosenUser = nil
-		}
-
-		cdf = api.calculateCDF(rotation, pool, shiftNumber)
-		rotation.sortNeedsByHeat(cdf)
-		unmet = unmetNeeds(rotation.Needs, chosen)
-	}
-
-	// Set and snapshot the initial state for logging later
-	cycle()
-
-	out := fmt.Sprintf("filling %s, choosing from:\n", api.MarkdownShift(rotation, shiftNumber))
-	sort.Sort(cdf)
-	for i, id := range cdf.ids {
-		out += fmt.Sprintf("- **%.3f**: %s\n", cdf.weights[i]/cdf.total, api.MarkdownUserWithSkills(pool[id]))
-	}
-	api.Logger.Debugf("%s", out)
-
-CYCLE:
-	for ; len(unmet) > 0; cycle() {
-		need := unmet[0]
-		autoerr := func(err error) autofillError {
-			return autofillError{
-				causeUnmetNeed:  &need,
-				causeUnmetNeeds: unmet,
-				causeCapacity:   rotation.Size - len(chosen),
-				orig:            err,
-				shiftNumber:     shiftNumber,
-			}
-		}
-
-		if need.Max == 0 {
-			// nothing else to do, not a realistic possibility unless misconfigured
-			continue
-		}
-
-		if len(chosen) >= rotation.Size {
-			return autoerr(ErrFailedSizeExceeded)
-		}
-
-		qualifiedUsers = usersQualifiedForNeed(pool, need)
-		if len(qualifiedUsers) == 0 {
-			return autoerr(ErrFailedInsufficientForNeeds)
-		}
-
-		for ; len(qualifiedUsers) > 0; cycle() {
-			pickedUser = api.pickUser(rotation, qualifiedUsers, shiftNumber)
-			if pickedUser == nil {
-				// not really a possibility
-				return autoerr(errors.Errorf("failed to pick a user out of %v qualified", len(qualifiedUsers)))
-			}
-
-			var maxedNeed *store.Need
-			for _, rotationNeed := range rotation.Needs {
-				if rotationNeed.Max < 0 {
-					continue
-				}
-				if qualifiedForNeed(pickedUser, rotationNeed) &&
-					rotationNeed.Max-len(usersQualifiedForNeed(chosen, rotationNeed))-1 < 0 {
-					maxedNeed = &rotationNeed
-					break
-				}
-			}
-
-			if maxedNeed != nil {
-				api.Logger.Debugf("Disqualified user %s from %s: would hit max on %s.",
-					api.MarkdownUser(pickedUser), api.MarkdownNeed(need), api.MarkdownNeed(*maxedNeed))
-				continue
-			}
-
-			chosenUser = pickedUser
-			api.Logger.Debugf("Accepted user %s for %s", api.MarkdownUser(chosenUser), api.MarkdownNeed(need))
-			continue CYCLE
-		}
-	}
-
-	// All needs are met
-
-	autoerr := func(err error) autofillError {
-		return autofillError{
-			causeCapacity: rotation.Size - len(chosen),
-			orig:          err,
-			shiftNumber:   shiftNumber,
-		}
-	}
-
-	for ; len(chosen) < rotation.Size && len(pool) > 0; cycle() {
-		// Choose next user from the pool, weighted-randomly.
-		pickedUser = api.pickUser(rotation, pool, shiftNumber)
-		if pickedUser == nil {
-			// not really a possibility
-			return autoerr(errors.Errorf("failed to pick a user out of %v qualified", len(qualifiedUsers)))
-		}
-
-		var maxedNeed *store.Need
-		for _, rotationNeed := range rotation.Needs {
-			if rotationNeed.Max < 0 {
-				continue
-			}
-			if qualifiedForNeed(pickedUser, rotationNeed) &&
-				rotationNeed.Max-len(usersQualifiedForNeed(chosen, rotationNeed))-1 < 0 {
-				maxedNeed = &rotationNeed
-				break
-			}
-		}
-
-		if maxedNeed != nil {
-			api.Logger.Debugf("Disqualified user %s from backfill: would hit max on %s.",
-				api.MarkdownUser(pickedUser), api.MarkdownNeed(*maxedNeed))
-		} else {
-			chosenUser = pickedUser
-			api.Logger.Debugf("Accepted user %s for backfill",
-				api.MarkdownUser(chosenUser))
-		}
-	}
-
-	if len(chosen) < rotation.Size {
-		return autoerr(ErrFailedInsufficientForSize)
-	}
-
-	for _, user := range chosen {
-		shift.MattermostUserIDs[user.MattermostUserID] = user.MattermostUserID
-	}
-	api.Logger.Debugf("Filled %s, chose %s. Details:\n%s",
-		api.MarkdownShift(rotation, shiftNumber),
-		api.MarkdownUsers(chosen),
-		api.MarkdownShiftBullets(rotation, shiftNumber, shift))
-
-	return nil
-}
-
 func qualifiedForNeed(user *User, need store.Need) bool {
 	skillLevel, _ := user.SkillLevels[need.Skill]
 	return skillLevel >= need.Level
@@ -237,67 +339,8 @@ func usersQualifiedForNeed(users UserMap, need store.Need) UserMap {
 	return qualified
 }
 
-func (api *api) pickUser(rotation *Rotation, from UserMap, shiftNumber int) *User {
-	cdf := api.calculateCDF(rotation, from, shiftNumber)
-	random := rand.Float64() * cdf.total
-	i := sort.Search(len(cdf.cdf), func(i int) bool {
-		return cdf.cdf[i] >= random
-	})
-	if i < 0 || i >= len(cdf.cdf) {
-		return nil
-	}
-
-	return from[cdf.ids[i]]
-}
-
-func unmetNeeds(needs []store.Need, users UserMap) []store.Need {
-	work := append([]store.Need{}, needs...)
-	for i, need := range work {
-		for _, user := range users {
-			if qualifiedForNeed(user, need) {
-				work[i].Min--
-				work[i].Max--
-			}
-		}
-	}
-
-	var unmet []store.Need
-	for _, need := range work {
-		if need.Min > 0 {
-			unmet = append(unmet, need)
-		}
-	}
-	return unmet
-}
-
-func (rotation *Rotation) sortNeedsByHeat(cdf *cdf) {
-	needWeights := make([]float64, len(rotation.Needs))
-	for i, need := range rotation.Needs {
-		if need.Min <= 0 {
-			// Maximum weight will move the need to the bottom, so it's last matched against
-			needWeights[i] = math.MaxFloat64
-			continue
-		}
-
-		for j, id := range cdf.ids {
-			user := cdf.users[id]
-			if qualifiedForNeed(user, need) {
-				needWeights[i] += cdf.weights[j]
-			}
-		}
-
-		// Normalize per remaining needed user
-		needWeights[i] = needWeights[i] / float64(need.Min)
-	}
-
-	sort.Sort(&weightedNeedSorter{
-		needs:   rotation.Needs,
-		weights: needWeights,
-	})
-}
-
 type weightedNeedSorter struct {
-	needs   []store.Need
+	needs   []*store.Need
 	weights []float64
 }
 
@@ -323,54 +366,40 @@ func (s *weightedNeedSorter) Swap(i, j int) {
 	s.needs[i], s.needs[j] = s.needs[j], s.needs[i]
 }
 
-type cdf struct {
+type weightedUserSorter struct {
 	ids     []string
 	weights []float64
-	cdf     []float64
-	users   UserMap
-	total   float64
 }
 
-func (cdf *cdf) Len() int {
-	return len(cdf.ids)
+func (s *weightedUserSorter) Len() int {
+	return len(s.ids)
 }
 
-func (cdf *cdf) Less(i, j int) bool {
-	return cdf.weights[i] > cdf.weights[j]
+func (s *weightedUserSorter) Less(i, j int) bool {
+	return s.weights[i] > s.weights[j]
 }
 
-func (cdf *cdf) Swap(i, j int) {
-	cdf.weights[i], cdf.weights[j] = cdf.weights[j], cdf.weights[i]
-	cdf.ids[i], cdf.ids[j] = cdf.ids[j], cdf.ids[i]
-	cdf.cdf[i], cdf.cdf[j] = cdf.cdf[j], cdf.cdf[i]
+func (s *weightedUserSorter) Swap(i, j int) {
+	s.weights[i], s.weights[j] = s.weights[j], s.weights[i]
+	s.ids[i], s.ids[j] = s.ids[j], s.ids[i]
 }
 
-func (api *api) calculateCDF(rotation *Rotation, users UserMap, shiftNumber int) *cdf {
-	cdf := &cdf{
-		ids:     []string{},
-		weights: []float64{},
-		users:   UserMap{},
+func unmetNeeds(needs []store.Need, users UserMap) []store.Need {
+	work := append([]store.Need{}, needs...)
+	for i, need := range work {
+		for _, user := range users {
+			if qualifiedForNeed(user, need) {
+				work[i].Min--
+				work[i].Max--
+			}
+		}
 	}
 
-	for _, user := range users {
-		weight := userWeight(rotation, user, shiftNumber)
-		cdf.ids = append(cdf.ids, user.MattermostUserID)
-		cdf.weights = append(cdf.weights, weight)
-		cdf.total += weight
-		cdf.users[user.MattermostUserID] = user
+	var unmet []store.Need
+	for _, need := range work {
+		if need.Min > 0 {
+			unmet = append(unmet, need)
+		}
 	}
-
-	cdf.cdf = make([]float64, len(cdf.weights))
-	floats.CumSum(cdf.cdf, cdf.weights)
-	return cdf
-}
-
-func userWeight(rotation *Rotation, user *User, shiftNumber int) float64 {
-	next, _ := user.LastServed[rotation.RotationID]
-	if next > shiftNumber {
-		// return a non-0 but very low number, to prevent user from serving
-		// other than if all have 0 weights
-		return 1e-12
-	}
-	return math.Pow(2.0, float64(shiftNumber-next))
+	return unmet
 }

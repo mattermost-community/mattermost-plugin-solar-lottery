@@ -17,6 +17,10 @@ type User struct {
 
 	// nil is assumed to be valid
 	MattermostUser *model.User
+
+	// weight is used internally, by autofill functions. When set, it is the
+	// user's weight against all available users in the rotation.
+	weight float64
 }
 
 func (user *User) Clone() *User {
