@@ -155,13 +155,12 @@ func (api *api) MakeRotation(rotationName string) (*Rotation, error) {
 		return nil, errors.New("Failed to generate unique rotation ID")
 	}
 
-	return &Rotation{
-		Rotation: &store.Rotation{
-			RotationID: id,
-			Name:       rotationName,
-		},
-		Users: UserMap{},
-	}, nil
+	rotation := &Rotation{
+		Rotation: store.NewRotation(rotationName),
+	}
+	rotation.RotationID = id
+	rotation.init(nil)
+	return rotation, nil
 }
 
 func (api *api) ResolveRotationName(namePattern string) ([]string, error) {

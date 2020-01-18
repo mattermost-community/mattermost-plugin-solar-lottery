@@ -22,14 +22,21 @@ func TestPickUser(t *testing.T) {
 		expectedPercentages map[string]float64
 	}{
 		{
-			name: "fair weighted",
-			users: UserMap{
-				testUserGuru.MattermostUserID:    testUserGuru.withWeight(64),
-				testUserServer1.MattermostUserID: testUserServer1.withWeight(32),
-				testUserServer2.MattermostUserID: testUserServer2.withWeight(32),
-				testUserServer3.MattermostUserID: testUserServer3.withWeight(16),
-				testUserMobile1.MattermostUserID: testUserMobile1.withWeight(16),
+			name:  "1-way",
+			users: usermap(testUserMobile1.withWeight(1e20), testUserMobile2),
+			expectedPercentages: map[string]float64{
+				testUserMobile1.MattermostUserID: 1,
+				testUserMobile2.MattermostUserID: 0,
 			},
+		},
+		{
+			name: "fair weighted",
+			users: usermap(testUserGuru.withWeight(64),
+				testUserServer1.withWeight(32),
+				testUserServer2.withWeight(32),
+				testUserServer3.withWeight(16),
+				testUserMobile1.withWeight(16),
+			),
 			expectedPercentages: map[string]float64{
 				testUserGuru.MattermostUserID:    .4,
 				testUserServer1.MattermostUserID: .2,
@@ -47,18 +54,11 @@ func TestPickUser(t *testing.T) {
 				counters[picked.MattermostUserID]++
 			}
 
-			require.Len(t, counters, 5)
-			for id, c := range counters {
-				p := float64(c) / float64(sampleSize)
-				require.GreaterOrEqual(t, p, tc.expectedPercentages[id]*low, "percentage %v, expected %v", p, tc.expectedPercentages[id])
-				require.LessOrEqual(t, p, tc.expectedPercentages[id]*high)
+			for id := range tc.users {
+				p := float64(counters[id]) / float64(sampleSize)
+				require.GreaterOrEqual(t, p, tc.expectedPercentages[id]*low, "id %s, percentage %v, expected %v", id, p, tc.expectedPercentages[id])
+				require.LessOrEqual(t, p, tc.expectedPercentages[id]*high, "id %s, percentage %v, expected %v", id, p, tc.expectedPercentages[id])
 			}
 		})
 	}
-}
-
-func (user *User) withWeight(weight float64) *User {
-	newUser := user.Clone()
-	newUser.weight = weight
-	return newUser
 }

@@ -58,10 +58,10 @@ GUESS:
 		api.Logger = &bot.NilLogger{}
 		shifts, err = api.Guess(rotation, startingShiftNumber, numShifts)
 		api.Logger = prevLogger
-		var aerr autofillError
+		var aerr *autofillError
 		if err != nil {
 			var ok bool
-			aerr, ok = err.(autofillError)
+			aerr, ok = err.(*autofillError)
 			if !ok {
 				return nil, err
 			}

@@ -54,8 +54,8 @@ type Need struct {
 	Level int
 }
 
-func NewNeed(skill string, level int, min int) Need {
-	return Need{
+func NewNeed(skill string, level int, min int) *Need {
+	return &Need{
 		Min:   min,
 		Max:   -1,
 		Skill: skill,
@@ -63,6 +63,14 @@ func NewNeed(skill string, level int, min int) Need {
 	}
 }
 
+func (need Need) WithMax(max int) Need {
+	return *need.WithMaxP(max)
+}
+
+func (need Need) WithMaxP(max int) *Need {
+	need.Max = max
+	return &need
+}
 func (need Need) String() string {
 	return fmt.Sprintf("%s-%v-%v(%v)", need.Skill, need.Level, need.Min, need.Max)
 }

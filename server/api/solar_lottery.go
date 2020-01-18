@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/rand"
 	"sort"
+	"time"
 
 	"github.com/pkg/errors"
 	"gonum.org/v1/gonum/floats"
@@ -36,11 +37,29 @@ type autofill struct {
 }
 
 func (api *api) makeAutofill(rotation *Rotation, shiftNumber int, shift *Shift) (autofill, error) {
+	return api.makeAutofillImpl(
+		rotation.RotationID,
+		rotation.Size,
+		rotation.Needs,
+		rotation.Users.Clone(false),
+		rotation.ShiftUsers(shift),
+		shiftNumber,
+		shift.StartTime,
+		shift.EndTime,
+	)
+}
+
+func (api *api) makeAutofillImpl(rotationID string, size int, needs []store.Need,
+	pool UserMap, chosen UserMap, shiftNumber int, shiftStart, shiftEnd time.Time) (autofill, error) {
+	if chosen == nil {
+		chosen = UserMap{}
+	}
+
 	af := autofill{
 		api:           api,
-		size:          rotation.Size,
-		pool:          rotation.Users.Clone(false),
-		chosen:        rotation.ShiftUsers(shift),
+		size:          size,
+		pool:          pool,
+		chosen:        chosen,
 		shiftNumber:   shiftNumber,
 		requiredNeeds: map[*store.Need]UserMap{},
 	}
@@ -55,7 +74,7 @@ func (api *api) makeAutofill(rotation *Rotation, shiftNumber int, shift *Shift) 
 
 	// remove any unavailable users from the pool, update weights
 	for _, user := range af.pool {
-		overlappingEvents, err := user.overlapEvents(shift.StartTime, shift.EndTime, false)
+		overlappingEvents, err := user.overlapEvents(shiftStart, shiftEnd, false)
 		if err != nil {
 			return autofill{}, autofillError{orig: err}
 		}
@@ -63,18 +82,18 @@ func (api *api) makeAutofill(rotation *Rotation, shiftNumber int, shift *Shift) 
 			// Unavailable events apply to all rotations, Shift events apply
 			//  only to the rotation from which they come.
 			if event.Type == store.EventTypePersonal ||
-				(event.Type == store.EventTypeShift && event.RotationID == rotation.RotationID) {
+				(event.Type == store.EventTypeShift && event.RotationID == rotationID) {
 
 				delete(af.pool, user.MattermostUserID)
 				api.Logger.Debugf("Disqualified user %s: unavailable", api.MarkdownUserWithSkills(user))
 			}
 		}
 
-		user.weight = userWeight(rotation.RotationID, user, shiftNumber)
+		user.weight = userWeight(rotationID, user, shiftNumber)
 	}
 
 	// sort out the need requirements and constraints
-	for _, need := range rotation.Needs {
+	for _, need := range needs {
 		if need.Min > 0 {
 			af.requiredNeeds[&need] = usersQualifiedForNeed(af.pool, need)
 		}
@@ -253,11 +272,15 @@ func hottestRequiredNeed(requiredNeeds map[*store.Need]UserMap) (*store.Need, Us
 	}
 	i := 0
 	for need, pool := range requiredNeeds {
+		if len(pool) == 0 {
+			// not a real possibility, but if there is a need with no pool, declare it the hottest.
+			return need, pool
+		}
 		for _, user := range pool {
 			s.weights[i] += user.weight
 		}
 
-		// Normalize per remaining needed user, in reverse order, so 1/x
+		// Normalize per remaining needed user, in reverse order, so 1/x.
 		s.weights[i] = float64(need.Min) / s.weights[i]
 		s.needs[i] = need
 		i++
@@ -293,12 +316,12 @@ type autofillError struct {
 	shiftNumber     int
 }
 
-func (af *autofill) newError(need *store.Need, err error) autofillError {
-	unmet := []store.Need{}
+func (af *autofill) newError(need *store.Need, err error) *autofillError {
+	var unmet []store.Need
 	for need := range af.requiredNeeds {
 		unmet = append(unmet, *need)
 	}
-	return autofillError{
+	return &autofillError{
 		orig:            err,
 		causeUnmetNeeds: unmet,
 		causeUnmetNeed:  need,

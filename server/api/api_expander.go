@@ -23,15 +23,17 @@ func (api *api) ExpandRotation(rotation *Rotation) error {
 		return err
 	}
 
-	users, err := api.LoadStoredUsers(rotation.MattermostUserIDs)
-	if err != nil {
-		return err
+	if len(rotation.Users) == 0 {
+		users, err := api.LoadStoredUsers(rotation.MattermostUserIDs)
+		if err != nil {
+			return err
+		}
+		err = api.ExpandUserMap(users)
+		if err != nil {
+			return err
+		}
+		rotation.Users = users
 	}
-	err = api.ExpandUserMap(users)
-	if err != nil {
-		return err
-	}
-	rotation.Users = users
 
 	return nil
 }

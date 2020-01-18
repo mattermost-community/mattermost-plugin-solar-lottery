@@ -18,6 +18,7 @@ type Rotation struct {
 	Users     UserMap
 }
 
+// init acceps an api pointer to be a valid filter, it does not use it.
 func (rotation *Rotation) init(api *api) error {
 	start, err := time.Parse(DateFormat, rotation.Start)
 	if err != nil {
