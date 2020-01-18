@@ -35,6 +35,57 @@ type autofill struct {
 	constrainedNeeds []*store.Need
 }
 
+func (api *api) makeAutofill(rotation *Rotation, shiftNumber int, shift *Shift) (autofill, error) {
+	af := autofill{
+		api:           api,
+		size:          rotation.Size,
+		pool:          rotation.Users.Clone(false),
+		chosen:        rotation.ShiftUsers(shift),
+		shiftNumber:   shiftNumber,
+		requiredNeeds: map[*store.Need]UserMap{},
+	}
+
+	// remove any users already chosen from the pool
+	for id := range af.chosen {
+		_, ok := af.pool[id]
+		if ok {
+			delete(af.pool, id)
+		}
+	}
+
+	// remove any unavailable users from the pool, update weights
+	for _, user := range af.pool {
+		overlappingEvents, err := user.overlapEvents(shift.StartTime, shift.EndTime, false)
+		if err != nil {
+			return autofill{}, autofillError{orig: err}
+		}
+		for _, event := range overlappingEvents {
+			// Unavailable events apply to all rotations, Shift events apply
+			//  only to the rotation from which they come.
+			if event.Type == store.EventTypePersonal ||
+				(event.Type == store.EventTypeShift && event.RotationID == rotation.RotationID) {
+
+				delete(af.pool, user.MattermostUserID)
+				api.Logger.Debugf("Disqualified user %s: unavailable", api.MarkdownUserWithSkills(user))
+			}
+		}
+
+		user.weight = userWeight(rotation.RotationID, user, shiftNumber)
+	}
+
+	// sort out the need requirements and constraints
+	for _, need := range rotation.Needs {
+		if need.Min > 0 {
+			af.requiredNeeds[&need] = usersQualifiedForNeed(af.pool, need)
+		}
+		if need.Max >= 0 {
+			af.constrainedNeeds = append(af.constrainedNeeds, &need)
+		}
+	}
+
+	return af, nil
+}
+
 func (api *api) autofillShift(rotation *Rotation, shiftNumber int, shift *Shift) error {
 	if len(shift.MattermostUserIDs) > 0 {
 		api.Logger.Debugf("Shift %v already has users %v: %v",
@@ -80,14 +131,14 @@ func (af *autofill) fill() (UserMap, error) {
 }
 
 func (af *autofill) fillOne() error {
-	need, pool := af.hottestRequiredNeed()
+	need, pool := hottestRequiredNeed(af.requiredNeeds)
 	if pool == nil {
 		pool = af.pool
 	}
 
 	var user *User
 	for {
-		user = af.pickUser(pool)
+		user = pickUser(pool)
 		if user == nil {
 			if need != nil {
 				return af.newError(need, ErrInsufficientForNeeds)
@@ -155,7 +206,7 @@ func (af *autofill) acceptUser(user *User) error {
 	return nil
 }
 
-func (af *autofill) pickUser(from UserMap) *User {
+func pickUser(from UserMap) *User {
 	if len(from) == 0 {
 		return nil
 	}
@@ -191,81 +242,31 @@ func userWeight(rotationID string, user *User, shiftNumber int) float64 {
 	return math.Pow(2.0, float64(shiftNumber-last))
 }
 
-func (af *autofill) hottestRequiredNeed() (*store.Need, UserMap) {
-	if len(af.requiredNeeds) == 0 {
+func hottestRequiredNeed(requiredNeeds map[*store.Need]UserMap) (*store.Need, UserMap) {
+	if len(requiredNeeds) == 0 {
 		return nil, nil
 	}
 
 	s := &weightedNeedSorter{
-		weights: make([]float64, len(af.requiredNeeds)),
-		needs:   make([]*store.Need, len(af.requiredNeeds)),
+		weights: make([]float64, len(requiredNeeds)),
+		needs:   make([]*store.Need, len(requiredNeeds)),
 	}
 	i := 0
-	for need, pool := range af.requiredNeeds {
+	for need, pool := range requiredNeeds {
 		for _, user := range pool {
 			s.weights[i] += user.weight
 		}
 
-		// Normalize per remaining needed user
-		s.weights[i] = s.weights[i] / float64(need.Min)
+		// Normalize per remaining needed user, in reverse order, so 1/x
+		s.weights[i] = float64(need.Min) / s.weights[i]
+		s.needs[i] = need
 		i++
 	}
 
 	sort.Sort(s)
 	need := s.needs[0]
-	pool := af.requiredNeeds[need]
+	pool := requiredNeeds[need]
 	return need, pool
-}
-
-func (api *api) makeAutofill(rotation *Rotation, shiftNumber int, shift *Shift) (autofill, error) {
-	af := autofill{
-		api:           api,
-		size:          rotation.Size,
-		pool:          rotation.Users.Clone(false),
-		chosen:        rotation.ShiftUsers(shift),
-		shiftNumber:   shiftNumber,
-		requiredNeeds: map[*store.Need]UserMap{},
-	}
-
-	// remove any users already chosen from the pool
-	for id := range af.chosen {
-		_, ok := af.pool[id]
-		if ok {
-			delete(af.pool, id)
-		}
-	}
-
-	// remove any unavailable users from the pool, update weights
-	for _, user := range af.pool {
-		overlappingEvents, err := user.overlapEvents(shift.StartTime, shift.EndTime, false)
-		if err != nil {
-			return autofill{}, autofillError{orig: err}
-		}
-		for _, event := range overlappingEvents {
-			// Unavailable events apply to all rotations, Shift events apply
-			//  only to the rotation from which they come.
-			if event.Type == store.EventTypePersonal ||
-				(event.Type == store.EventTypeShift && event.RotationID == rotation.RotationID) {
-
-				delete(af.pool, user.MattermostUserID)
-				api.Logger.Debugf("Disqualified user %s: unavailable", api.MarkdownUserWithSkills(user))
-			}
-		}
-
-		user.weight = userWeight(rotation.RotationID, user, shiftNumber)
-	}
-
-	// sort out the need requirements and constraints
-	for _, need := range rotation.Needs {
-		if need.Min > 0 {
-			af.requiredNeeds[&need] = usersQualifiedForNeed(af.pool, need)
-		}
-		if need.Max >= 0 {
-			af.constrainedNeeds = append(af.constrainedNeeds, &need)
-		}
-	}
-
-	return af, nil
 }
 
 func (af *autofill) markdown(rotation *Rotation, shiftNumber int) string {
