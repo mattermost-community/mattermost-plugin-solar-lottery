@@ -66,7 +66,7 @@ GUESS:
 				return nil, err
 			}
 
-			for _, need := range aerr.causeUnmetNeeds {
+			for _, need := range aerr.unmetNeeds {
 				f.NeedErrCounts[need.String()]++
 			}
 

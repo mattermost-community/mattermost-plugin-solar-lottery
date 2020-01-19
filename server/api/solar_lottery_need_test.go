@@ -39,47 +39,62 @@ func TestHottestRequiredNeed(t *testing.T) {
 
 	for _, tc := range []struct {
 		name          string
-		requiredNeeds map[*store.Need]UserMap
-		expectedNeed  store.Need
+		requiredNeeds []*store.Need
+		needPools     map[string]UserMap
+		expectedNeed  *store.Need
 		expectedPool  UserMap
 	}{
 		{
 			name: "happy 2",
-			requiredNeeds: map[*store.Need]UserMap{
-				&testNeedServer_L1_Min3: usersServer1,
-				&testNeedWebapp_L2_Min1: usersWebapp2,
+			requiredNeeds: []*store.Need{
+				testNeedServer_L1_Min3(),
+				testNeedWebapp_L2_Min1(),
 			},
-			expectedNeed: testNeedServer_L1_Min3,
+			needPools: map[string]UserMap{
+				testNeedServer_L1_Min3().SkillLevel(): usersServer1,
+				testNeedWebapp_L2_Min1().SkillLevel(): usersWebapp2,
+			},
+			expectedNeed: testNeedServer_L1_Min3(),
 			expectedPool: usersServer1,
 		},
 		{
 			name: "happy 3",
-			requiredNeeds: map[*store.Need]UserMap{
-				&testNeedServer_L1_Min3: usersServer1,
-				&testNeedServer_L2_Min2: usersServer2,
-				&testNeedWebapp_L2_Min1: usersWebapp2,
+			requiredNeeds: []*store.Need{
+				testNeedServer_L1_Min3(),
+				testNeedServer_L2_Min2(),
+				testNeedWebapp_L2_Min1(),
+			},
+			needPools: map[string]UserMap{
+				testNeedServer_L1_Min3().SkillLevel(): usersServer1,
+				testNeedServer_L2_Min2().SkillLevel(): usersServer2,
+				testNeedWebapp_L2_Min1().SkillLevel(): usersWebapp2,
 			},
 
 			// testNeedServer_L2_Min2 is selected since it has the lowest weight/headcount
-			expectedNeed: testNeedServer_L2_Min2,
+			expectedNeed: testNeedServer_L2_Min2(),
 			expectedPool: usersServer2,
 		},
 		{
 			name: "happy 3 with constraint",
-			requiredNeeds: map[*store.Need]UserMap{
-				&testNeedServer_L1_Min3:            usersServer1,
-				&testNeedServer_L2_Min2:            usersServer2,
-				testNeedWebapp_L2_Min1.WithMaxP(1): usersWebapp2,
+			requiredNeeds: []*store.Need{
+				testNeedServer_L1_Min3(),
+				testNeedServer_L2_Min2(),
+				testNeedWebapp_L2_Min1().WithMax(1),
+			},
+			needPools: map[string]UserMap{
+				testNeedServer_L1_Min3().SkillLevel(): usersServer1,
+				testNeedServer_L2_Min2().SkillLevel(): usersServer2,
+				testNeedWebapp_L2_Min1().SkillLevel(): usersWebapp2,
 			},
 
 			// testNeedServer_L2_Min2 is selected since it has the lowest weight/headcount
-			expectedNeed: testNeedWebapp_L2_Min1.WithMax(1),
+			expectedNeed: testNeedWebapp_L2_Min1().WithMax(1),
 			expectedPool: usersWebapp2,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			need, pool := hottestRequiredNeed(tc.requiredNeeds)
-			require.Equal(t, tc.expectedNeed, *need)
+			need, pool := hottestRequiredNeed(tc.requiredNeeds, tc.needPools)
+			require.Equal(t, tc.expectedNeed, need)
 			require.Equal(t, tc.expectedPool, pool)
 		})
 	}
@@ -118,7 +133,7 @@ func TestQualifiedForNeed(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			result := qualifiedForNeed(tc.user, *tc.need)
+			result := qualifiedForNeed(tc.user, tc.need)
 			require.Equal(t, tc.expected, result)
 		})
 	}
@@ -168,7 +183,7 @@ func TestUsersQualifiedForNeed(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			qualified := usersQualifiedForNeed(tc.users, *tc.need)
+			qualified := usersQualifiedForNeed(tc.users, tc.need)
 			require.Equal(t, tc.expectedQualified, qualified)
 		})
 	}
@@ -176,9 +191,9 @@ func TestUsersQualifiedForNeed(t *testing.T) {
 func TestUnmetNeeds(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
-		needs         []store.Need
+		needs         []*store.Need
 		users         UserMap
-		expectedUnmet []store.Need
+		expectedUnmet []*store.Need
 	}{
 		{
 			name:          "empty 1",
@@ -188,24 +203,24 @@ func TestUnmetNeeds(t *testing.T) {
 		},
 		{
 			name:          "empty 2",
-			needs:         []store.Need{},
+			needs:         []*store.Need{},
 			users:         UserMap{},
 			expectedUnmet: nil,
 		},
 		{
 			name: "happy 1",
-			needs: []store.Need{
-				*store.NewNeed(testSkillServer, 1, 2),
-				*store.NewNeed(testSkillWebapp, 1, 2),
-				*store.NewNeed("uncovered", 1, 2),
+			needs: []*store.Need{
+				store.NewNeed(testSkillServer, 1, 2),
+				store.NewNeed(testSkillWebapp, 1, 2),
+				store.NewNeed("uncovered", 1, 2),
 			},
 			users: UserMap{
 				testUserGuru.MattermostUserID:    testUserGuru,
 				testUserMobile1.MattermostUserID: testUserMobile1,
 				testUserWebapp1.MattermostUserID: testUserWebapp1,
 			},
-			expectedUnmet: []store.Need{
-				*store.NewNeed("uncovered", 1, 2),
+			expectedUnmet: []*store.Need{
+				store.NewNeed("uncovered", 1, 2),
 			},
 		},
 	} {

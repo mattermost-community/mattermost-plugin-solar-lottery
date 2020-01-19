@@ -16,9 +16,10 @@ var testLastServed2 = store.IntMap{testRotationID: 2}
 var testUserGuru = newUser(&store.User{
 	MattermostUserID: "test-user-guru",
 	SkillLevels: store.IntMap{
-		testSkillWebapp: 4,
-		testSkillServer: 4,
-		"plugins":       4,
+		testSkillWebapp:  4,
+		testSkillMobile:  4,
+		testSkillServer:  4,
+		testSkillPlugins: 4,
 	},
 	LastServed: testLastServed0,
 })
@@ -26,9 +27,9 @@ var testUserGuru = newUser(&store.User{
 var testUserServer1 = newUser(&store.User{
 	MattermostUserID: "test-user-server1",
 	SkillLevels: store.IntMap{
-		testSkillWebapp: 1,
-		testSkillServer: 3,
-		"plugins":       1,
+		testSkillWebapp:  1,
+		testSkillServer:  3,
+		testSkillPlugins: 1,
 	},
 	LastServed: testLastServed0,
 })
@@ -36,9 +37,9 @@ var testUserServer1 = newUser(&store.User{
 var testUserServer2 = newUser(&store.User{
 	MattermostUserID: "test-user-server2",
 	SkillLevels: store.IntMap{
-		testSkillWebapp: 2,
-		testSkillServer: 3,
-		"plugins":       1,
+		testSkillWebapp:  2,
+		testSkillServer:  3,
+		testSkillPlugins: 1,
 	},
 	LastServed: testLastServed0,
 })
@@ -46,9 +47,9 @@ var testUserServer2 = newUser(&store.User{
 var testUserServer3 = newUser(&store.User{
 	MattermostUserID: "test-user-server3",
 	SkillLevels: store.IntMap{
-		testSkillWebapp: 1,
-		testSkillServer: 3,
-		"plugins":       1,
+		testSkillWebapp:  1,
+		testSkillServer:  3,
+		testSkillPlugins: 1,
 	},
 	LastServed: testLastServed0,
 })

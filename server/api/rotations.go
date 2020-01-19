@@ -39,7 +39,7 @@ func (rotation *Rotation) Clone(deep bool) *Rotation {
 	return &newRotation
 }
 
-func (rotation *Rotation) ChangeNeed(skill string, level Level, newNeed store.Need) {
+func (rotation *Rotation) ChangeNeed(skill string, level Level, newNeed *store.Need) {
 	for i, need := range rotation.Needs {
 		if need.Skill == skill && need.Level == int(level) {
 			rotation.Needs[i] = newNeed
@@ -52,7 +52,7 @@ func (rotation *Rotation) ChangeNeed(skill string, level Level, newNeed store.Ne
 func (rotation *Rotation) DeleteNeed(skill string, level Level) error {
 	for i, need := range rotation.Needs {
 		if need.Skill == skill && need.Level == int(level) {
-			newNeeds := append([]store.Need{}, rotation.Needs[:i]...)
+			newNeeds := append([]*store.Need{}, rotation.Needs[:i]...)
 			if i+1 < len(rotation.Needs) {
 				newNeeds = append(newNeeds, rotation.Needs[i+1:]...)
 			}

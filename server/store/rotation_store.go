@@ -5,6 +5,7 @@ package store
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
@@ -30,10 +31,10 @@ type Rotation struct {
 	Start  string
 
 	// Optional attributes
-	Size              int    `json:",omitempty"`
-	Grace             int    `json:",omitempty"`
-	MattermostUserIDs IDMap  `json:",omitempty"`
-	Needs             []Need `json:",omitempty"`
+	Size              int     `json:",omitempty"`
+	Grace             int     `json:",omitempty"`
+	MattermostUserIDs IDMap   `json:",omitempty"`
+	Needs             []*Need `json:",omitempty"`
 
 	Autopilot RotationAutopilot `json:",omitempty"`
 }
@@ -63,23 +64,24 @@ func NewNeed(skill string, level int, min int) *Need {
 	}
 }
 
-func (need Need) WithMax(max int) Need {
-	return *need.WithMaxP(max)
-}
-
-func (need Need) WithMaxP(max int) *Need {
+func (need Need) WithMax(max int) *Need {
 	need.Max = max
 	return &need
 }
+
 func (need Need) String() string {
 	return fmt.Sprintf("%s-%v-%v(%v)", need.Skill, need.Level, need.Min, need.Max)
+}
+
+func (need Need) SkillLevel() string {
+	return need.Skill + "-" + strconv.Itoa(need.Level)
 }
 
 func NewRotation(name string) *Rotation {
 	return &Rotation{
 		Name:              name,
 		MattermostUserIDs: IDMap{},
-		Needs:             []Need{},
+		Needs:             []*Need{},
 	}
 }
 
@@ -87,7 +89,7 @@ func (rotation *Rotation) Clone(deep bool) *Rotation {
 	newRotation := *rotation
 	if deep {
 		newRotation.MattermostUserIDs = rotation.MattermostUserIDs.Clone()
-		newRotation.Needs = append([]Need{}, rotation.Needs...)
+		newRotation.Needs = append([]*Need{}, rotation.Needs...)
 	}
 	return &newRotation
 }

@@ -35,10 +35,10 @@ func (api *api) IsShiftReady(rotation *Rotation, shiftNumber int) (shift *Shift,
 	}
 
 	whyNot = autofillError{
-		causeUnmetNeeds: unmetNeeds,
-		causeCapacity:   unmetCapacity,
-		orig:            errors.New("not ready"),
-		shiftNumber:     shiftNumber,
+		unmetNeeds:    unmetNeeds,
+		unmetCapacity: unmetCapacity,
+		orig:          errors.New("not ready"),
+		shiftNumber:   shiftNumber,
 	}.Error()
 
 	return shift, false, whyNot, nil

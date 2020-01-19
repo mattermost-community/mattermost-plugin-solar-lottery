@@ -13,9 +13,9 @@ import (
 type Markdowner interface {
 	MarkdownEvent(event Event) string
 	MarkdownIndent(in, prefix string) string
-	MarkdownNeed(need store.Need) string
-	MarkdownNeeds(needs []store.Need) string
-	MarkdownNeedsBullets(needs map[string]store.Need, indent string) string
+	MarkdownNeed(need *store.Need) string
+	MarkdownNeeds(needs []*store.Need) string
+	MarkdownNeedsBullets(needs map[string]*store.Need, indent string) string
 	MarkdownRotation(rotation *Rotation) string
 	MarkdownRotationBullets(*Rotation) string
 	MarkdownShift(rotation *Rotation, shiftNumber int) string
@@ -134,11 +134,11 @@ func markdownSkillLevel(skillName string, level Level) string {
 	return fmt.Sprintf("%s%s", Level(level).String(), skillName)
 }
 
-func (api *api) MarkdownNeed(need store.Need) string {
+func (api *api) MarkdownNeed(need *store.Need) string {
 	return markdownNeed(need)
 }
 
-func markdownNeed(need store.Need) string {
+func markdownNeed(need *store.Need) string {
 	if need.Max == -1 {
 		return fmt.Sprintf("**%v** %s", need.Min, markdownSkillLevel(need.Skill, Level(need.Level)))
 	} else {
@@ -146,7 +146,7 @@ func markdownNeed(need store.Need) string {
 	}
 }
 
-func (api *api) MarkdownNeeds(needs []store.Need) string {
+func (api *api) MarkdownNeeds(needs []*store.Need) string {
 	out := []string{}
 	for _, need := range needs {
 		out = append(out, api.MarkdownNeed(need))
@@ -154,7 +154,7 @@ func (api *api) MarkdownNeeds(needs []store.Need) string {
 	return strings.Join(out, ", ")
 }
 
-func (api *api) MarkdownNeedsBullets(needs map[string]store.Need, indent string) string {
+func (api *api) MarkdownNeedsBullets(needs map[string]*store.Need, indent string) string {
 	out := ""
 	for _, need := range needs {
 		out += indent + "- " + api.MarkdownNeed(need) + "\n"

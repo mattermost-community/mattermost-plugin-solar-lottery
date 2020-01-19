@@ -85,10 +85,10 @@ func TestPrepareShiftHappy(t *testing.T) {
 	rotation.Start = "2020-01-16"
 	rotation.Period = EveryMonth
 	rotation.Size = 3
-	rotation.Needs = []store.Need{
-		testNeedServer_L1_Min1,
-		testNeedWebapp_L2_Min1,
-		testNeedMobile_L1_Min1,
+	rotation.Needs = []*store.Need{
+		testNeedServer_L1_Min1(),
+		testNeedWebapp_L2_Min1(),
+		testNeedMobile_L1_Min1(),
 	}
 	rotation.init(nil)
 	rotation = rotation.withUsers(testAllUsers)
@@ -109,8 +109,8 @@ func TestPrepareShiftEvenDistribution(t *testing.T) {
 	rotation.Start = "2020-01-16"
 	rotation.Period = EveryMonth
 	rotation.Size = 1
-	rotation.Needs = []store.Need{
-		testNeedWebapp_L1_Min1,
+	rotation.Needs = []*store.Need{
+		testNeedWebapp_L1_Min1(),
 	}
 	rotation.init(nil)
 	rotation = rotation.withUsers(testAllUsers)

@@ -29,9 +29,10 @@ type autofill struct {
 	pool   UserMap
 	chosen UserMap
 
-	// requiredNeeds contains the map of all needs that are still required, to
-	// the pool of available, qualified, not yet chosen users for each need.
-	requiredNeeds map[*store.Need]UserMap
+	requiredNeeds []*store.Need
+
+	// needPools uses skill-level for the key
+	needPools map[string]UserMap
 
 	constrainedNeeds []*store.Need
 }
@@ -49,7 +50,7 @@ func (api *api) makeAutofill(rotation *Rotation, shiftNumber int, shift *Shift) 
 	)
 }
 
-func (api *api) makeAutofillImpl(rotationID string, size int, needs []store.Need,
+func (api *api) makeAutofillImpl(rotationID string, size int, needs []*store.Need,
 	pool UserMap, chosen UserMap, shiftNumber int, shiftStart, shiftEnd time.Time) (autofill, error) {
 	if chosen == nil {
 		chosen = UserMap{}
@@ -59,17 +60,9 @@ func (api *api) makeAutofillImpl(rotationID string, size int, needs []store.Need
 		api:           api,
 		size:          size,
 		pool:          pool,
-		chosen:        chosen,
 		shiftNumber:   shiftNumber,
-		requiredNeeds: map[*store.Need]UserMap{},
-	}
-
-	// remove any users already chosen from the pool
-	for id := range af.chosen {
-		_, ok := af.pool[id]
-		if ok {
-			delete(af.pool, id)
-		}
+		requiredNeeds: []*store.Need{},
+		needPools:     map[string]UserMap{},
 	}
 
 	// remove any unavailable users from the pool, update weights
@@ -80,7 +73,7 @@ func (api *api) makeAutofillImpl(rotationID string, size int, needs []store.Need
 		}
 		for _, event := range overlappingEvents {
 			// Unavailable events apply to all rotations, Shift events apply
-			//  only to the rotation from which they come.
+			// only to the rotation from which they come.
 			if event.Type == store.EventTypePersonal ||
 				(event.Type == store.EventTypeShift && event.RotationID == rotationID) {
 
@@ -95,11 +88,16 @@ func (api *api) makeAutofillImpl(rotationID string, size int, needs []store.Need
 	// sort out the need requirements and constraints
 	for _, need := range needs {
 		if need.Min > 0 {
-			af.requiredNeeds[&need] = usersQualifiedForNeed(af.pool, need)
+			af.requiredNeeds = append(af.requiredNeeds, need)
+			af.needPools[need.SkillLevel()] = usersQualifiedForNeed(af.pool, need)
 		}
 		if need.Max >= 0 {
-			af.constrainedNeeds = append(af.constrainedNeeds, &need)
+			af.constrainedNeeds = append(af.constrainedNeeds, need)
 		}
+	}
+
+	for _, u := range chosen {
+		af.acceptUser(u)
 	}
 
 	return af, nil
@@ -150,11 +148,10 @@ func (af *autofill) fill() (UserMap, error) {
 }
 
 func (af *autofill) fillOne() error {
-	need, pool := hottestRequiredNeed(af.requiredNeeds)
+	need, pool := hottestRequiredNeed(af.requiredNeeds, af.needPools)
 	if pool == nil {
 		pool = af.pool
 	}
-
 	var user *User
 	for {
 		user = pickUser(pool)
@@ -170,7 +167,8 @@ func (af *autofill) fillOne() error {
 			break
 		}
 
-		af.dismissUser(user)
+		// Dismiss
+		af.removeUser(user)
 	}
 
 	return af.acceptUser(user)
@@ -178,35 +176,35 @@ func (af *autofill) fillOne() error {
 
 func (af *autofill) meetsConstraints(user *User) bool {
 	for _, need := range af.constrainedNeeds {
-		if qualifiedForNeed(user, *need) && need.Max-1 < 0 {
+		if qualifiedForNeed(user, need) && need.Max-1 < 0 {
 			return false
 		}
 	}
 	return true
 }
 
-func (af *autofill) dismissUser(user *User) {
+func (af *autofill) removeUser(user *User) {
 	delete(af.pool, user.MattermostUserID)
-	for _, pool := range af.requiredNeeds {
+	for _, pool := range af.needPools {
 		delete(pool, user.MattermostUserID)
 	}
 }
 
 func (af *autofill) acceptUser(user *User) error {
-	// remove the user from all pools whether it is accepted or not.
-	af.dismissUser(user)
+	af.removeUser(user)
 
 	// update the constraints
 	for _, need := range af.constrainedNeeds {
-		if qualifiedForNeed(user, *need) {
+		if qualifiedForNeed(user, need) {
 			need.Max--
 		}
 	}
 
 	// update the requirements
-	updatedRequiredNeeds := map[*store.Need]UserMap{}
-	for need, pool := range af.requiredNeeds {
-		if qualifiedForNeed(user, *need) {
+	var updatedRequiredNeeds []*store.Need
+	for _, need := range af.requiredNeeds {
+		pool := af.needPools[need.SkillLevel()]
+		if qualifiedForNeed(user, need) {
 			need.Min--
 			if need.Min == 0 {
 				// filled to requirement, do not include in the updated map
@@ -215,12 +213,15 @@ func (af *autofill) acceptUser(user *User) error {
 			if len(pool) == 0 {
 				return af.newError(need, ErrInsufficientForNeeds)
 			}
-			// the user is already removed from the pool
-			updatedRequiredNeeds[need] = pool
 		}
+		// the user is already removed from all needs' pools
+		updatedRequiredNeeds = append(updatedRequiredNeeds, need)
 	}
 	af.requiredNeeds = updatedRequiredNeeds
 
+	if af.chosen == nil {
+		af.chosen = UserMap{}
+	}
 	af.chosen[user.MattermostUserID] = user
 	return nil
 }
@@ -261,7 +262,7 @@ func userWeight(rotationID string, user *User, shiftNumber int) float64 {
 	return math.Pow(2.0, float64(shiftNumber-last))
 }
 
-func hottestRequiredNeed(requiredNeeds map[*store.Need]UserMap) (*store.Need, UserMap) {
+func hottestRequiredNeed(requiredNeeds []*store.Need, needPools map[string]UserMap) (*store.Need, UserMap) {
 	if len(requiredNeeds) == 0 {
 		return nil, nil
 	}
@@ -271,7 +272,8 @@ func hottestRequiredNeed(requiredNeeds map[*store.Need]UserMap) (*store.Need, Us
 		needs:   make([]*store.Need, len(requiredNeeds)),
 	}
 	i := 0
-	for need, pool := range requiredNeeds {
+	for _, need := range requiredNeeds {
+		pool := needPools[need.SkillLevel()]
 		if len(pool) == 0 {
 			// not a real possibility, but if there is a need with no pool, declare it the hottest.
 			return need, pool
@@ -288,7 +290,7 @@ func hottestRequiredNeed(requiredNeeds map[*store.Need]UserMap) (*store.Need, Us
 
 	sort.Sort(s)
 	need := s.needs[0]
-	pool := requiredNeeds[need]
+	pool := needPools[need.SkillLevel()]
 	return need, pool
 }
 
@@ -309,37 +311,37 @@ func (af *autofill) markdown(rotation *Rotation, shiftNumber int) string {
 }
 
 type autofillError struct {
-	orig            error
-	causeUnmetNeeds []store.Need
-	causeUnmetNeed  *store.Need
-	causeCapacity   int
-	shiftNumber     int
+	orig          error
+	unmetNeeds    []*store.Need
+	unmetNeed     *store.Need
+	unmetCapacity int
+	shiftNumber   int
 }
 
 func (af *autofill) newError(need *store.Need, err error) *autofillError {
-	var unmet []store.Need
-	for need := range af.requiredNeeds {
-		unmet = append(unmet, *need)
+	var unmet []*store.Need
+	for _, need := range af.requiredNeeds {
+		unmet = append(unmet, need)
 	}
 	return &autofillError{
-		orig:            err,
-		causeUnmetNeeds: unmet,
-		causeUnmetNeed:  need,
-		causeCapacity:   af.size - len(af.chosen),
-		shiftNumber:     af.shiftNumber,
+		orig:          err,
+		unmetNeeds:    unmet,
+		unmetNeed:     need,
+		unmetCapacity: af.size - len(af.chosen),
+		shiftNumber:   af.shiftNumber,
 	}
 }
 
 func (e autofillError) Error() string {
 	message := ""
-	if e.causeCapacity > 0 {
-		message = fmt.Sprintf("failed filling to capacity, missing %v", e.causeCapacity)
+	if e.unmetCapacity > 0 {
+		message = fmt.Sprintf("failed filling to capacity, missing %v", e.unmetCapacity)
 	}
-	if e.causeUnmetNeed != nil {
+	if e.unmetNeed != nil {
 		if message != "" {
 			message += ", "
 		}
-		message += fmt.Sprintf("failed filling need %s", markdownNeed(*e.causeUnmetNeed))
+		message += fmt.Sprintf("failed filling need %s", markdownNeed(e.unmetNeed))
 	}
 	if e.orig != nil {
 		return errors.WithMessage(e.orig, message).Error()
@@ -348,12 +350,12 @@ func (e autofillError) Error() string {
 	}
 }
 
-func qualifiedForNeed(user *User, need store.Need) bool {
+func qualifiedForNeed(user *User, need *store.Need) bool {
 	skillLevel, _ := user.SkillLevels[need.Skill]
 	return skillLevel >= need.Level
 }
 
-func usersQualifiedForNeed(users UserMap, need store.Need) UserMap {
+func usersQualifiedForNeed(users UserMap, need *store.Need) UserMap {
 	qualified := UserMap{}
 	for id, user := range users {
 		if qualifiedForNeed(user, need) {
@@ -405,8 +407,8 @@ func (s *weightedUserSorter) Swap(i, j int) {
 	s.ids[i], s.ids[j] = s.ids[j], s.ids[i]
 }
 
-func unmetNeeds(needs []store.Need, users UserMap) []store.Need {
-	work := append([]store.Need{}, needs...)
+func unmetNeeds(needs []*store.Need, users UserMap) []*store.Need {
+	work := append([]*store.Need{}, needs...)
 	for i, need := range work {
 		for _, user := range users {
 			if qualifiedForNeed(user, need) {
@@ -416,7 +418,7 @@ func unmetNeeds(needs []store.Need, users UserMap) []store.Need {
 		}
 	}
 
-	var unmet []store.Need
+	var unmet []*store.Need
 	for _, need := range work {
 		if need.Min > 0 {
 			unmet = append(unmet, need)
