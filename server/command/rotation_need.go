@@ -64,12 +64,7 @@ func (c *Command) rotationNeed(parameters []string) (string, error) {
 				errors.Errorf("requires `%s` to be specified.", flagMin)
 		}
 		updatef = func(rotation *api.Rotation) error {
-			rotation.ChangeNeed(skill, level, store.Need{
-				Skill: skill,
-				Level: int(level),
-				Min:   min,
-				Max:   max,
-			})
+			rotation.ChangeNeed(skill, level, store.NewNeed(skill, int(level), min).WithMax(max))
 			return nil
 		}
 	}
@@ -79,5 +74,5 @@ func (c *Command) rotationNeed(parameters []string) (string, error) {
 		return "", err
 	}
 
-	return "Updated rotation needs:\n" + c.API.MarkdownRotationBullets(rotation), nil
+	return "Updated rotation needs:\n" + rotation.MarkdownBullets(), nil
 }

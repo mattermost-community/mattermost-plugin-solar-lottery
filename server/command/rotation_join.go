@@ -40,8 +40,8 @@ func (c *Command) joinRotation(parameters []string) (string, error) {
 	}
 	added, err := c.API.JoinRotation(users, rotation, starting)
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed, %s might have been updated", c.API.MarkdownUsers(added))
+		return "", errors.WithMessagef(err, "failed, %s might have been updated", added.Markdown())
 	}
 
-	return fmt.Sprintf("%s joined rotation %s", c.API.MarkdownUsers(added), rotation.Name), nil
+	return fmt.Sprintf("%s joined rotation %s", added.Markdown(), rotation.Name), nil
 }

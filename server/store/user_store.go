@@ -1,4 +1,4 @@
-// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2019-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
 package store
@@ -40,8 +40,8 @@ type User struct {
 }
 
 const (
-	EventTypeShift       = "shift"
-	EventTypeUnavailable = "unavavailable"
+	EventTypeShift    = "shift"
+	EventTypePersonal = "personal"
 )
 
 type Event struct {

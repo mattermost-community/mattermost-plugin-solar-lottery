@@ -20,6 +20,7 @@ import (
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api/solarlottery"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/command"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/http"
@@ -105,9 +106,6 @@ func (p *Plugin) OnConfigurationChange() error {
 		c.PluginURLPath = pluginURLPath
 	})
 
-	// if p.notificationHandler != nil {
-	// 	p.notificationHandler.Configure(p.newAPIConfig())
-	// }
 	return nil
 }
 
@@ -139,7 +137,6 @@ func (p *Plugin) ServeHTTP(pc *plugin.Context, w gohttp.ResponseWriter, req *goh
 	mattermostUserID := req.Header.Get("Mattermost-User-ID")
 	ctx := req.Context()
 	ctx = api.Context(ctx, api.New(apiconf, mattermostUserID))
-	// ctx = api.Context(ctx, api.New(apiconf, mattermostUserID), p.notificationHandler)
 	ctx = config.Context(ctx, apiconf.Config)
 
 	p.httpHandler.ServeHTTP(w, req.WithContext(ctx))
@@ -167,6 +164,10 @@ func (p *Plugin) newAPIConfig() api.Config {
 	return api.Config{
 		Config: conf,
 		Dependencies: &api.Dependencies{
+			Autofillers: map[string]api.Autofiller{
+				"":                solarlottery.New(bot), // default
+				solarlottery.Type: solarlottery.New(bot),
+			},
 			RotationStore: store,
 			SkillsStore:   store,
 			UserStore:     store,

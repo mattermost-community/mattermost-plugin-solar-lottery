@@ -10,9 +10,6 @@ import (
 )
 
 func (api *api) Guess(rotation *Rotation, startingShiftNumber int, numShifts int) ([]*Shift, error) {
-	// Clone the rotation right away so we don't change the source.
-	rotation = rotation.Clone(true)
-
 	err := api.Filter(
 		withActingUserExpanded,
 		withRotationExpanded(rotation),
@@ -27,8 +24,9 @@ func (api *api) Guess(rotation *Rotation, startingShiftNumber int, numShifts int
 		"ShiftNumber":    startingShiftNumber,
 		"RotationID":     rotation.RotationID,
 	})
+	rotation = rotation.Clone(true)
 
-	logger.Debugf("...running guess for\n%s", api.MarkdownRotationBullets(rotation))
+	logger.Debugf("...running guess for\n%s", rotation.MarkdownBullets())
 	var shifts []*Shift
 	for shiftNumber := startingShiftNumber; shiftNumber < startingShiftNumber+numShifts; shiftNumber++ {
 		var shift *Shift
@@ -42,7 +40,17 @@ func (api *api) Guess(rotation *Rotation, startingShiftNumber int, numShifts int
 		}
 
 		if shift.Status == store.ShiftStatusOpen {
-			err = api.autofillShift(rotation, shiftNumber, shift)
+			autofiller := api.Dependencies.Autofillers[rotation.Type]
+			if autofiller == nil {
+				return nil, errors.Errorf("unsupported rotation type %s", rotation.Type)
+			}
+			var added UserMap
+			added, err = autofiller.FillShift(rotation, shiftNumber, shift, logger)
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = api.joinShift(rotation, shiftNumber, shift, added, false)
 			if err != nil {
 				return nil, err
 			}
@@ -53,41 +61,6 @@ func (api *api) Guess(rotation *Rotation, startingShiftNumber int, numShifts int
 		shifts = append(shifts, shift)
 	}
 
-	logger.Debugf("Ran guess for %s", MarkdownRotation(rotation))
+	logger.Debugf("Ran guess for %s", rotation.Markdown())
 	return shifts, nil
-}
-
-// Returns an un-expanded shift - will be populated with Users from rotation
-func (api *api) getShiftForGuess(rotation *Rotation, shiftNumber int) (*Shift, bool, error) {
-	start, end, err := rotation.ShiftDatesForNumber(shiftNumber)
-	if err != nil {
-		return nil, false, err
-	}
-
-	var shift *Shift
-	created := false
-	storedShift, err := api.ShiftStore.LoadShift(rotation.RotationID, shiftNumber)
-	switch err {
-	case nil:
-		shift = &Shift{
-			Shift: storedShift,
-		}
-
-	case store.ErrNotFound:
-		shift, err = rotation.makeShift(shiftNumber)
-		if err != nil {
-			return nil, false, err
-		}
-		created = true
-
-	default:
-		return nil, false, err
-	}
-
-	if shift.Start != start.Format(DateFormat) || shift.End != end.Format(DateFormat) {
-		return nil, false, errors.Errorf("loaded shift has wrong dates %v-%v, expected %v-%v",
-			shift.Start, shift.End, start, end)
-	}
-
-	return shift, created, nil
 }

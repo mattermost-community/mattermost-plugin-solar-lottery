@@ -20,8 +20,8 @@ func (c *Command) fillShift(parameters []string) (string, error) {
 			}
 			if ready {
 				return fmt.Sprintf("%s is ready, no fill required.\nUsers: %s.",
-					api.MarkdownShift(rotation, shiftNumber),
-					c.API.MarkdownUsersWithSkills(rotation.ShiftUsers(shift))), nil
+					rotation.ShiftRef(shiftNumber),
+					rotation.ShiftUsers(shift).MarkdownWithSkills()), nil
 			}
 
 			shift, users, err := c.API.FillShift(rotation, shiftNumber)
@@ -29,6 +29,6 @@ func (c *Command) fillShift(parameters []string) (string, error) {
 				return "", err
 			}
 			return fmt.Sprintf("%s is filled, added: %s.",
-				api.MarkdownShift(rotation, shiftNumber), c.API.MarkdownUsersWithSkills(users)), nil
+				rotation.ShiftRef(shiftNumber), users.MarkdownWithSkills()), nil
 		})
 }

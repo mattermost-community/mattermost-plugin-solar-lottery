@@ -4,13 +4,13 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
-
-var ErrSkillAlreadyExists = errors.New("skill already exists")
 
 func (api *api) ListSkills() (store.IDMap, error) {
 	err := api.Filter(
@@ -38,7 +38,7 @@ func (api *api) AddSkill(skillName string) error {
 	})
 
 	if api.knownSkills[skillName] != "" {
-		return ErrSkillAlreadyExists
+		return ErrAlreadyExists
 
 	}
 	api.knownSkills[skillName] = store.NotEmpty
@@ -48,7 +48,7 @@ func (api *api) AddSkill(skillName string) error {
 		return err
 	}
 
-	logger.Infof("%s added skill %s.", api.MarkdownUser(api.actingUser), skillName)
+	logger.Infof("%s added skill %s.", api.actingUser.Markdown(), skillName)
 	return nil
 }
 
@@ -80,38 +80,10 @@ func (api *api) DeleteSkill(skillName string) error {
 	if err != nil {
 		return err
 	}
-	logger.Infof("%s deleted skill %s.", api.MarkdownUser(api.actingUser), skillName)
+	logger.Infof("%s deleted skill %s.", api.actingUser.Markdown(), skillName)
 	return nil
 }
 
-func withKnownSkills(api *api) error {
-	if api.knownSkills != nil {
-		return nil
-	}
-
-	skills, err := api.SkillsStore.LoadKnownSkills()
-	if err == store.ErrNotFound {
-		api.knownSkills = store.IDMap{}
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	api.knownSkills = skills
-	return nil
-}
-
-func withValidSkillName(skillName string) func(api *api) error {
-	return func(api *api) error {
-		err := api.Filter(withKnownSkills)
-		if err != nil {
-			return err
-		}
-		for s := range api.knownSkills {
-			if s == skillName {
-				return nil
-			}
-		}
-		return errors.Errorf("skill %s is not found", skillName)
-	}
+func MarkdownSkillLevel(skillName string, level Level) string {
+	return fmt.Sprintf("%s%s", Level(level).String(), skillName)
 }

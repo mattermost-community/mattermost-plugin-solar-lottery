@@ -4,6 +4,7 @@
 package api
 
 import (
+	"strings"
 	"time"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -19,12 +20,11 @@ type API interface {
 
 	Expander
 	Forecaster
-	Markdowner
+	Autopilot
 
 	Rotations
 	Shifts
 	Skills
-	UserActions
 	Users
 }
 
@@ -37,6 +37,9 @@ type Rotations interface {
 	MakeRotation(rotationName string) (*Rotation, error)
 	ResolveRotationName(namePattern string) ([]string, error)
 	UpdateRotation(*Rotation, func(*Rotation) error) error
+}
+
+type Autopilot interface {
 	AutopilotRotation(rotation *Rotation, now time.Time) error
 }
 
@@ -54,16 +57,14 @@ type Users interface {
 	GetActingUser() (*User, error)
 	LoadMattermostUsers(mattermostUsernames string) (UserMap, error)
 	LoadStoredUsers(mattermostUserIDs store.IDMap) (UserMap, error)
-}
 
-type UserActions interface {
-	Qualify(mattermostUsernames, skillName string, level Level) error
-	JoinRotation(mattermostUsernames string, rotation *Rotation, starting time.Time) (added UserMap, err error)
-	LeaveRotation(mattermostUsernames string, rotation *Rotation) (deleted UserMap, err error)
-	Disqualify(mattermostUsernames, skillName string) error
-	JoinShift(mattermostUsernames string, rotation *Rotation, shiftNumber int) (*Shift, UserMap, error)
 	AddEvent(mattermostUsernames string, event Event) error
 	DeleteEvents(mattermostUsernames string, startDate, endDate string) error
+	Disqualify(mattermostUsernames, skillName string) error
+	JoinRotation(mattermostUsernames string, rotation *Rotation, starting time.Time) (added UserMap, err error)
+	JoinShift(mattermostUsernames string, rotation *Rotation, shiftNumber int) (*Shift, UserMap, error)
+	LeaveRotation(mattermostUsernames string, rotation *Rotation) (deleted UserMap, err error)
+	Qualify(mattermostUsernames, skillName string, level Level) error
 }
 
 type Forecaster interface {
@@ -94,6 +95,7 @@ type PluginAPI interface {
 
 // Dependencies contains all API dependencies
 type Dependencies struct {
+	Autofillers map[string]Autofiller
 	PluginAPI
 	Logger        bot.Logger
 	Poster        bot.Poster
@@ -124,9 +126,6 @@ type api struct {
 	// use withKnownRotations or withRotation(rotationID) to initialize, not expanded by default.
 	knownRotations store.IDMap
 
-	// use withRotation(rotationID) to initialize, not expanded by default.
-	// rotation *Rotation
-
 	// use withMattermostUsers(usernames) or withUsers(mattermostUserIDs) to initialize, not expanded by default.
 	users UserMap
 }
@@ -141,14 +140,10 @@ func New(apiConfig Config, mattermostUserID string) API {
 	}
 }
 
-type filterf func(*api) error
-
-func (api *api) Filter(filters ...filterf) error {
-	for _, filter := range filters {
-		err := filter(api)
-		if err != nil {
-			return err
-		}
+func (api *api) MarkdownIndent(in, prefix string) string {
+	lines := strings.Split(in, "\n")
+	for i, l := range lines {
+		lines[i] = prefix + l
 	}
-	return nil
+	return strings.Join(lines, "\n")
 }

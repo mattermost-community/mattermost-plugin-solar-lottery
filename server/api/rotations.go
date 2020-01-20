@@ -14,7 +14,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
-var ErrRotationAlreadyExists = errors.New("rotation already exists")
+var ErrMultipleResults = errors.New("multiple resolts found")
 
 func (api *api) AddRotation(rotation *Rotation) error {
 	err := api.Filter(
@@ -32,7 +32,7 @@ func (api *api) AddRotation(rotation *Rotation) error {
 	})
 	_, ok := api.knownRotations[rotation.RotationID]
 	if ok {
-		return ErrRotationAlreadyExists
+		return ErrAlreadyExists
 	}
 
 	api.knownRotations[rotation.RotationID] = rotation.Name
@@ -44,7 +44,7 @@ func (api *api) AddRotation(rotation *Rotation) error {
 	if err != nil {
 		return err
 	}
-	logger.Infof("New rotation %s added", MarkdownRotation(rotation))
+	logger.Infof("New rotation %s added", rotation.Markdown())
 	return nil
 }
 
@@ -77,27 +77,11 @@ func (api *api) ResolveRotationName(namePattern string) ([]string, error) {
 			ids = append(ids, id)
 		}
 	}
+
+	if len(ids) == 0 {
+		return nil, store.ErrNotFound
+	}
 	return ids, nil
-}
-
-var ErrMultipleResults = errors.New("multiple resolts found")
-
-func withKnownRotations(api *api) error {
-	if api.knownRotations != nil {
-		return nil
-	}
-
-	rr, err := api.RotationStore.LoadKnownRotations()
-	if err != nil {
-		if err == store.ErrNotFound {
-			rr = store.IDMap{}
-		} else {
-			return err
-		}
-	}
-
-	api.knownRotations = rr
-	return nil
 }
 
 func (api *api) ArchiveRotation(rotation *Rotation) error {
@@ -125,7 +109,7 @@ func (api *api) ArchiveRotation(rotation *Rotation) error {
 		return errors.WithMessagef(err, "failed to store rotation %s", rotation.RotationID)
 	}
 
-	logger.Infof("%s archived rotation %s.", api.MarkdownUser(api.actingUser), MarkdownRotation(rotation))
+	logger.Infof("%s archived rotation %s.", api.actingUser.Markdown(), rotation.Markdown())
 	return nil
 }
 
@@ -152,30 +136,8 @@ func (api *api) DebugDeleteRotation(rotationID string) error {
 		return errors.WithMessagef(err, "failed to store rotation %s", rotationID)
 	}
 
-	logger.Infof("%s deleted rotation %s.", api.MarkdownUser(api.actingUser), rotationID)
+	logger.Infof("%s deleted rotation %s.", api.actingUser.Markdown(), rotationID)
 	return nil
-}
-
-func (api *api) MakeRotation(rotationName string) (*Rotation, error) {
-	id := ""
-	for i := 0; i < 5; i++ {
-		tryId := rotationName + "-" + model.NewId()[:7]
-		if len(api.knownRotations) == 0 || api.knownRotations[tryId] == "" {
-			id = tryId
-			break
-		}
-	}
-	if id == "" {
-		return nil, errors.New("Failed to generate unique rotation ID")
-	}
-
-	return &Rotation{
-		Rotation: &store.Rotation{
-			RotationID: id,
-			Name:       rotationName,
-		},
-		Users: UserMap{},
-	}, nil
 }
 
 func (api *api) LoadRotation(rotationID string) (*Rotation, error) {
@@ -201,4 +163,52 @@ func (api *api) LoadRotation(rotationID string) (*Rotation, error) {
 	}
 
 	return rotation, nil
+}
+
+func (api *api) MakeRotation(rotationName string) (*Rotation, error) {
+	id := ""
+	for i := 0; i < 5; i++ {
+		tryId := rotationName + "-" + model.NewId()[:7]
+		if len(api.knownRotations) == 0 || api.knownRotations[tryId] == "" {
+			id = tryId
+			break
+		}
+	}
+	if id == "" {
+		return nil, errors.New("Failed to generate unique rotation ID")
+	}
+
+	rotation := &Rotation{
+		Rotation: store.NewRotation(rotationName),
+	}
+	rotation.RotationID = id
+	return rotation, nil
+}
+
+func (api *api) UpdateRotation(rotation *Rotation, updatef func(*Rotation) error) error {
+	err := api.Filter(
+		withActingUserExpanded,
+		withRotationExpanded(rotation),
+	)
+	if err != nil {
+		return err
+	}
+	logger := api.Logger.Timed().With(bot.LogContext{
+		"Location":       "api.UpdateRotation",
+		"ActingUsername": api.actingUser.MattermostUsername(),
+		"RotationID":     rotation.RotationID,
+	})
+
+	err = updatef(rotation)
+	if err != nil {
+		return err
+	}
+
+	err = api.RotationStore.StoreRotation(rotation.Rotation)
+	if err != nil {
+		return err
+	}
+
+	logger.Infof("%s updated rotation %s.", api.actingUser.Markdown(), rotation.Markdown())
+	return nil
 }

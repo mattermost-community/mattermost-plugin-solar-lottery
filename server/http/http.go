@@ -27,9 +27,6 @@ func NewHandler() *Handler {
 	apiRouter := h.Router.PathPrefix(config.PathAPI).Subrouter()
 	apiRouter.HandleFunc("/authorized", h.apiGetAuthorized).Methods("GET")
 
-	actionRouter := h.Router.PathPrefix(config.PathPostAction).Subrouter()
-	actionRouter.HandleFunc(config.PathRespond, h.actionRespond).Methods("POST")
-
 	h.Router.Handle("{anything:.*}", http.NotFoundHandler())
 	return h
 }

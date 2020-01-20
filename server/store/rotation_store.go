@@ -1,10 +1,9 @@
-// Copyright (c) 2017-present Mattermost, Inc. All Rights Reserved.
+// Copyright (c) 2019-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
 package store
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
@@ -28,12 +27,13 @@ type Rotation struct {
 	Name   string
 	Period string
 	Start  string
+	Type   string
 
 	// Optional attributes
-	Size              int    `json:",omitempty"`
-	Grace             int    `json:",omitempty"`
-	MattermostUserIDs IDMap  `json:",omitempty"`
-	Needs             []Need `json:",omitempty"`
+	Size              int   `json:",omitempty"`
+	Grace             int   `json:",omitempty"`
+	MattermostUserIDs IDMap `json:",omitempty"`
+	Needs             Needs `json:",omitempty"`
 
 	Autopilot RotationAutopilot `json:",omitempty"`
 }
@@ -47,31 +47,11 @@ type RotationAutopilot struct {
 	NotifyPrior time.Duration `json:",omitempty"`
 }
 
-type Need struct {
-	Min   int
-	Max   int
-	Skill string
-	Level int
-}
-
-func NewNeed(skill string, level int, min int) Need {
-	return Need{
-		Min:   min,
-		Max:   -1,
-		Skill: skill,
-		Level: level,
-	}
-}
-
-func (need Need) String() string {
-	return fmt.Sprintf("%s-%v-%v(%v)", need.Skill, need.Level, need.Min, need.Max)
-}
-
 func NewRotation(name string) *Rotation {
 	return &Rotation{
 		Name:              name,
 		MattermostUserIDs: IDMap{},
-		Needs:             []Need{},
+		Needs:             Needs{},
 	}
 }
 
@@ -79,7 +59,7 @@ func (rotation *Rotation) Clone(deep bool) *Rotation {
 	newRotation := *rotation
 	if deep {
 		newRotation.MattermostUserIDs = rotation.MattermostUserIDs.Clone()
-		newRotation.Needs = append([]Need{}, rotation.Needs...)
+		newRotation.Needs = append(Needs{}, rotation.Needs...)
 	}
 	return &newRotation
 }

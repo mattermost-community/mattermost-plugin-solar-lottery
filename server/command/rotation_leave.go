@@ -30,8 +30,8 @@ func (c *Command) leaveRotation(parameters []string) (string, error) {
 
 	deleted, err := c.API.LeaveRotation(users, rotation)
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed, %s might have been updated", c.API.MarkdownUsers(deleted))
+		return "", errors.WithMessagef(err, "failed, %s might have been updated", deleted.Markdown())
 	}
 
-	return fmt.Sprintf("%s left rotation %s", c.API.MarkdownUsers(deleted), rotation.Name), nil
+	return fmt.Sprintf("%s left rotation %s", deleted.Markdown(), rotation.Name), nil
 }
