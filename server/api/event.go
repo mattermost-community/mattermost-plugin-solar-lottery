@@ -4,12 +4,14 @@
 package api
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
 type Event struct {
@@ -45,6 +47,74 @@ func NewPersonalEvent(startTime, endTime time.Time) Event {
 		StartTime: startTime,
 		EndTime:   endTime,
 	}
+}
+
+func (event Event) Markdown() string {
+	return fmt.Sprintf("%s: %s to %s",
+		event.Type, event.Start, event.End)
+}
+
+func (api *api) AddEvent(mattermostUsernames string, event Event) error {
+	err := api.Filter(
+		withActingUserExpanded,
+		withMattermostUsersExpanded(mattermostUsernames),
+	)
+	if err != nil {
+		return err
+	}
+	logger := api.Logger.Timed().With(bot.LogContext{
+		"Location":            "api.AddSkillToUsers",
+		"ActingUsername":      api.actingUser.MattermostUsername(),
+		"MattermostUsernames": mattermostUsernames,
+		"Event":               event,
+	})
+
+	err = api.addEventToUsers(api.users, event, true)
+	if err != nil {
+		return err
+	}
+
+	logger.Infof("%s added event %s to %s.",
+		api.actingUser.Markdown(), event.Markdown(), api.users.MarkdownWithSkills())
+	return nil
+}
+
+func (api *api) DeleteEvents(mattermostUsernames string, startDate, endDate string) error {
+	err := api.Filter(
+		withActingUserExpanded,
+		withMattermostUsersExpanded(mattermostUsernames),
+	)
+	if err != nil {
+		return err
+	}
+	logger := api.Logger.Timed().With(bot.LogContext{
+		"Location":            "api.AddSkillToUsers",
+		"ActingUsername":      api.actingUser.MattermostUsername(),
+		"MattermostUsernames": mattermostUsernames,
+		"StartDate":           startDate,
+		"EndDate":             endDate,
+	})
+
+	for _, user := range api.users {
+		intervalStart, intervalEnd, err := ParseDatePair(startDate, endDate)
+		if err != nil {
+			return err
+		}
+
+		_, err = user.OverlapEvents(intervalStart, intervalEnd, true)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to remove events from %s to %s", startDate, endDate)
+		}
+
+		_, err = api.storeUserWelcomeNew(user)
+		if err != nil {
+			return errors.WithMessagef(err, "failed to update user %s", user.Markdown())
+		}
+	}
+
+	logger.Infof("%s deleted events from %s to %s from users %s.",
+		api.actingUser.Markdown(), startDate, endDate, api.users.MarkdownWithSkills())
+	return nil
 }
 
 func ParseDatePair(start, end string) (time.Time, time.Time, error) {

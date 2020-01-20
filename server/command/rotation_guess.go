@@ -32,10 +32,10 @@ func (c *Command) guessRotation(parameters []string) (string, error) {
 		return "", err
 	}
 
-	out := fmt.Sprintf("Rotation %s %v shifts, starting %v:\n", c.API.MarkdownRotation(rotation), numShifts, start)
-	for shiftNumber, shift := range shifts {
+	out := fmt.Sprintf("Rotation %s %v shifts, starting %v:\n", rotation.Markdown(), numShifts, start)
+	for _, shift := range shifts {
 		if shift != nil {
-			out += c.API.MarkdownShiftBullets(rotation, shiftNumber, shift)
+			out += shift.MarkdownBullets(rotation)
 		}
 	}
 	return out, nil

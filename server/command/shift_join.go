@@ -21,6 +21,6 @@ func (c *Command) joinShift(parameters []string) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			return fmt.Sprintf("%s joined %s", c.API.MarkdownUsersWithSkills(joined), c.API.MarkdownShift(rotation, shiftNumber)), nil
+			return fmt.Sprintf("%s joined %s", joined.MarkdownWithSkills(), rotation.ShiftRef(shiftNumber)), nil
 		})
 }

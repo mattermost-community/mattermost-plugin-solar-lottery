@@ -6,12 +6,10 @@ package api
 import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
+	"github.com/pkg/errors"
 )
 
 func (api *api) Guess(rotation *Rotation, startingShiftNumber int, numShifts int) ([]*Shift, error) {
-	// Clone the rotation right away so we don't change the source.
-	rotation = rotation.Clone(true)
-
 	err := api.Filter(
 		withActingUserExpanded,
 		withRotationExpanded(rotation),
@@ -26,8 +24,9 @@ func (api *api) Guess(rotation *Rotation, startingShiftNumber int, numShifts int
 		"ShiftNumber":    startingShiftNumber,
 		"RotationID":     rotation.RotationID,
 	})
+	rotation = rotation.Clone(true)
 
-	logger.Debugf("...running guess for\n%s", api.MarkdownRotationBullets(rotation))
+	logger.Debugf("...running guess for\n%s", rotation.MarkdownBullets())
 	var shifts []*Shift
 	for shiftNumber := startingShiftNumber; shiftNumber < startingShiftNumber+numShifts; shiftNumber++ {
 		var shift *Shift
@@ -41,7 +40,17 @@ func (api *api) Guess(rotation *Rotation, startingShiftNumber int, numShifts int
 		}
 
 		if shift.Status == store.ShiftStatusOpen {
-			err = api.autofillShift(rotation, shiftNumber, shift)
+			autofiller := api.Dependencies.Autofillers[rotation.Type]
+			if autofiller == nil {
+				return nil, errors.Errorf("unsupported rotation type %s", rotation.Type)
+			}
+			var added UserMap
+			added, err = autofiller.FillShift(rotation, shiftNumber, shift, logger)
+			if err != nil {
+				return nil, err
+			}
+
+			_, err = api.joinShift(rotation, shiftNumber, shift, added, false)
 			if err != nil {
 				return nil, err
 			}
@@ -52,6 +61,6 @@ func (api *api) Guess(rotation *Rotation, startingShiftNumber int, numShifts int
 		shifts = append(shifts, shift)
 	}
 
-	logger.Debugf("Ran guess for %s", api.MarkdownRotation(rotation))
+	logger.Debugf("Ran guess for %s", rotation.Markdown())
 	return shifts, nil
 }

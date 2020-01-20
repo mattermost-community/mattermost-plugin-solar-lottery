@@ -4,13 +4,13 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
-
-var ErrSkillAlreadyExists = errors.New("skill already exists")
 
 func (api *api) ListSkills() (store.IDMap, error) {
 	err := api.Filter(
@@ -38,7 +38,7 @@ func (api *api) AddSkill(skillName string) error {
 	})
 
 	if api.knownSkills[skillName] != "" {
-		return ErrSkillAlreadyExists
+		return ErrAlreadyExists
 
 	}
 	api.knownSkills[skillName] = store.NotEmpty
@@ -48,7 +48,7 @@ func (api *api) AddSkill(skillName string) error {
 		return err
 	}
 
-	logger.Infof("%s added skill %s.", api.MarkdownUser(api.actingUser), skillName)
+	logger.Infof("%s added skill %s.", api.actingUser.Markdown(), skillName)
 	return nil
 }
 
@@ -80,6 +80,10 @@ func (api *api) DeleteSkill(skillName string) error {
 	if err != nil {
 		return err
 	}
-	logger.Infof("%s deleted skill %s.", api.MarkdownUser(api.actingUser), skillName)
+	logger.Infof("%s deleted skill %s.", api.actingUser.Markdown(), skillName)
 	return nil
+}
+
+func MarkdownSkillLevel(skillName string, level Level) string {
+	return fmt.Sprintf("%s%s", Level(level).String(), skillName)
 }

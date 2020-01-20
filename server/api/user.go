@@ -4,6 +4,8 @@
 package api
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -17,16 +19,74 @@ type User struct {
 
 	// nil is assumed to be valid
 	MattermostUser *model.User
-
-	// weight is used internally, by autofill functions. When set, it is the
-	// user's weight against all available users in the rotation.
-	weight float64
 }
 
 func (user *User) Clone() *User {
 	clone := *user
 	clone.User = user.User.Clone()
 	return &clone
+}
+
+func (api *api) ExpandUser(user *User) error {
+	if user.MattermostUser != nil {
+		return nil
+	}
+	mattermostUser, err := api.PluginAPI.GetMattermostUser(user.MattermostUserID)
+	if err != nil {
+		return err
+	}
+	user.MattermostUser = mattermostUser
+	return nil
+}
+
+func (user *User) WithLastServed(rotationID string, shiftNumber int) *User {
+	newUser := user.Clone()
+	newUser.LastServed[rotationID] = shiftNumber
+	return newUser
+}
+
+func (user *User) WithSkills(skillsLevels store.IntMap) *User {
+	newUser := user.Clone()
+	if newUser.SkillLevels != nil {
+		newUser.SkillLevels = store.IntMap{}
+	}
+	for s, l := range skillsLevels {
+		newUser.SkillLevels[s] = l
+	}
+	return newUser
+}
+
+func (user *User) String() string {
+	if user.MattermostUser != nil {
+		return fmt.Sprintf("@%s", user.MattermostUser.Username)
+	} else {
+		return fmt.Sprintf("%q", user.MattermostUserID)
+	}
+}
+
+func (user *User) Markdown() string {
+	if user.MattermostUser != nil {
+		return fmt.Sprintf("@%s", user.MattermostUser.Username)
+	} else {
+		return fmt.Sprintf("userID `%s`", user.MattermostUserID)
+	}
+}
+
+func (user *User) MarkdownWithSkills() string {
+	return fmt.Sprintf("%s %s", user.Markdown(), user.MarkdownSkills())
+}
+
+func (user *User) MarkdownSkills() string {
+	skills := []string{}
+	for s, l := range user.SkillLevels {
+		skills = append(skills, MarkdownSkillLevel(s, Level(l)))
+	}
+
+	if len(skills) == 0 {
+		return "(kook)"
+	}
+	ss := strings.Join(skills, ", ")
+	return fmt.Sprintf("(%s)", ss)
 }
 
 func (user User) MattermostUsername() string {
@@ -46,7 +106,7 @@ func (user *User) AddEvent(event Event) {
 	eventsBy(byStartDate).Sort(user.Events)
 }
 
-func (user *User) overlapEvents(intervalStart, intervalEnd time.Time, remove bool) ([]store.Event, error) {
+func (user *User) OverlapEvents(intervalStart, intervalEnd time.Time, remove bool) ([]store.Event, error) {
 	var found, updated []store.Event
 	for _, event := range user.Events {
 		s, e, err := ParseDatePair(event.Start, event.End)
@@ -112,14 +172,14 @@ func (api *api) storeUserWelcomeNew(orig *User) (*User, error) {
 func (api *api) updateUserSkill(user *User, skillName string, level Level) (*User, error) {
 	if user.SkillLevels[skillName] == int(level) {
 		// nothing to do
-		api.Logger.Debugf("nothing to do for user %s, already has skill %s (%v)", api.MarkdownUser(user), skillName, level)
+		api.Logger.Debugf("nothing to do for user %s, already has skill %s (%v)", user.Markdown(), skillName, level)
 		return user, nil
 	}
 
 	if level == 0 {
 		_, ok := user.SkillLevels[skillName]
 		if !ok {
-			return nil, errors.Errorf("%s does not have skill %s", api.MarkdownUser(user), skillName)
+			return nil, errors.Errorf("%s does not have skill %s", user.Markdown(), skillName)
 		}
 		delete(user.SkillLevels, skillName)
 	} else {
@@ -130,42 +190,7 @@ func (api *api) updateUserSkill(user *User, skillName string, level Level) (*Use
 	if err != nil {
 		return nil, err
 	}
-	api.Logger.Debugf("%s (%v) skill updated user %s", skillName, level, api.MarkdownUser(user))
+	api.Logger.Debugf("%s (%v) skill updated user %s", skillName, level, user.Markdown())
 	return user, nil
 }
 
-type UserMap map[string]*User
-
-func (m UserMap) Clone(deep bool) UserMap {
-	users := UserMap{}
-	for id, user := range m {
-		if deep {
-			users[id] = user.Clone()
-		} else {
-			users[id] = user
-		}
-	}
-	return users
-}
-
-func (m UserMap) IDMap() store.IDMap {
-	ids := store.IDMap{}
-	for id := range m {
-		ids[id] = store.NotEmpty
-	}
-	return ids
-}
-
-func (api *api) addEventToUsers(users UserMap, event Event, persist bool) error {
-	for _, user := range users {
-		user.AddEvent(event)
-
-		if persist {
-			_, err := api.storeUserWelcomeNew(user)
-			if err != nil {
-				return errors.WithMessagef(err, "failed to update user %s", api.MarkdownUser(user))
-			}
-		}
-	}
-	return nil
-}

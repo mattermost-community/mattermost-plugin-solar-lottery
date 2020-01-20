@@ -4,165 +4,211 @@
 package api
 
 import (
-	"time"
+	"regexp"
 
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-server/v5/model"
+
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
-type Rotation struct {
-	*store.Rotation
+var ErrMultipleResults = errors.New("multiple resolts found")
 
-	StartTime time.Time
-	Users     UserMap
-}
-
-// init acceps an api pointer to be a valid filter, it does not use it.
-func (rotation *Rotation) init(api *api) error {
-	start, err := time.Parse(DateFormat, rotation.Start)
+func (api *api) AddRotation(rotation *Rotation) error {
+	err := api.Filter(
+		withActingUserExpanded,
+		withKnownRotations,
+		rotation.init,
+	)
 	if err != nil {
 		return err
 	}
-	rotation.StartTime = start
-
-	if rotation.Users == nil {
-		rotation.Users = UserMap{}
+	logger := api.Logger.Timed().With(bot.LogContext{
+		"Location":       "api.AddRotation",
+		"ActingUsername": api.actingUser.MattermostUsername(),
+		"RotationID":     rotation.RotationID,
+	})
+	_, ok := api.knownRotations[rotation.RotationID]
+	if ok {
+		return ErrAlreadyExists
 	}
+
+	api.knownRotations[rotation.RotationID] = rotation.Name
+	err = api.RotationStore.StoreKnownRotations(api.knownRotations)
+	if err != nil {
+		return err
+	}
+	err = api.RotationStore.StoreRotation(rotation.Rotation)
+	if err != nil {
+		return err
+	}
+	logger.Infof("New rotation %s added", rotation.Markdown())
 	return nil
 }
 
-func (rotation *Rotation) Clone(deep bool) *Rotation {
-	newRotation := *rotation
-	newRotation.Rotation = rotation.Rotation.Clone(deep)
-	newRotation.Users = rotation.Users.Clone(deep)
-	return &newRotation
+func (api *api) ArchiveRotation(rotation *Rotation) error {
+	err := api.Filter(
+		withActingUserExpanded,
+	)
+	if err != nil {
+		return err
+	}
+	logger := api.Logger.Timed().With(bot.LogContext{
+		"Location":       "api.ArchiveRotation",
+		"ActingUsername": api.actingUser.MattermostUsername(),
+		"RotationID":     rotation.RotationID,
+	})
+
+	rotation.Rotation.IsArchived = true
+
+	err = api.RotationStore.StoreRotation(rotation.Rotation)
+	if err != nil {
+		return err
+	}
+	delete(api.knownRotations, rotation.RotationID)
+	err = api.RotationStore.StoreKnownRotations(api.knownRotations)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to store rotation %s", rotation.RotationID)
+	}
+
+	logger.Infof("%s archived rotation %s.", api.actingUser.Markdown(), rotation.Markdown())
+	return nil
 }
 
-func (rotation *Rotation) ChangeNeed(skill string, level Level, newNeed *store.Need) {
-	for i, need := range rotation.Needs {
-		if need.Skill == skill && need.Level == int(level) {
-			rotation.Needs[i] = newNeed
-			return
+func (api *api) DebugDeleteRotation(rotationID string) error {
+	err := api.Filter(
+		withActingUserExpanded,
+	)
+	if err != nil {
+		return err
+	}
+	logger := api.Logger.Timed().With(bot.LogContext{
+		"Location":       "api.DebugDeleteRotation",
+		"ActingUsername": api.actingUser.MattermostUsername(),
+		"RotationID":     rotationID,
+	})
+
+	err = api.RotationStore.DeleteRotation(rotationID)
+	if err != nil {
+		return err
+	}
+	delete(api.knownRotations, rotationID)
+	err = api.RotationStore.StoreKnownRotations(api.knownRotations)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to store rotation %s", rotationID)
+	}
+
+	logger.Infof("%s deleted rotation %s.", api.actingUser.Markdown(), rotationID)
+	return nil
+}
+
+func (api *api) LoadKnownRotations() (store.IDMap, error) {
+	err := api.Filter(
+		withActingUser,
+		withKnownRotations,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return api.knownRotations, nil
+}
+
+func (api *api) LoadRotation(rotationID string) (*Rotation, error) {
+	err := api.Filter(
+		withKnownRotations,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	_, ok := api.knownRotations[rotationID]
+	if !ok {
+		return nil, errors.Errorf("rotationID %s not found", rotationID)
+	}
+
+	storedRotation, err := api.RotationStore.LoadRotation(rotationID)
+	rotation := &Rotation{
+		Rotation: storedRotation,
+	}
+	err = rotation.init(api)
+	if err != nil {
+		return nil, err
+	}
+
+	return rotation, nil
+}
+
+func (api *api) MakeRotation(rotationName string) (*Rotation, error) {
+	id := ""
+	for i := 0; i < 5; i++ {
+		tryId := rotationName + "-" + model.NewId()[:7]
+		if len(api.knownRotations) == 0 || api.knownRotations[tryId] == "" {
+			id = tryId
+			break
 		}
 	}
-	rotation.Needs = append(rotation.Needs, newNeed)
+	if id == "" {
+		return nil, errors.New("Failed to generate unique rotation ID")
+	}
+
+	rotation := &Rotation{
+		Rotation: store.NewRotation(rotationName),
+	}
+	rotation.RotationID = id
+	return rotation, nil
 }
 
-func (rotation *Rotation) DeleteNeed(skill string, level Level) error {
-	for i, need := range rotation.Needs {
-		if need.Skill == skill && need.Level == int(level) {
-			newNeeds := append([]*store.Need{}, rotation.Needs[:i]...)
-			if i+1 < len(rotation.Needs) {
-				newNeeds = append(newNeeds, rotation.Needs[i+1:]...)
-			}
-			rotation.Needs = newNeeds
-			return nil
+func (api *api) ResolveRotationName(namePattern string) ([]string, error) {
+	err := api.Filter(
+		withKnownRotations,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := []string{}
+	re, err := regexp.Compile(`.*` + namePattern + `.*`)
+	if err != nil {
+		return nil, err
+	}
+	for id, name := range api.knownRotations {
+		if re.MatchString(name) {
+			ids = append(ids, id)
 		}
 	}
-	return errors.Errorf("%s is not found in rotation %s", markdownSkillLevel(skill, level), markdownRotation(rotation))
+
+	if len(ids) == 0 {
+		return nil, store.ErrNotFound
+	}
+	return ids, nil
 }
 
-func (rotation *Rotation) ShiftNumberForTime(t time.Time) (int, error) {
-	if t.Before(rotation.StartTime) {
-		return -1, nil
-	}
-
-	switch rotation.Period {
-	case EveryWeek:
-		return int(t.Sub(rotation.StartTime) / WeekDuration), nil
-	case EveryTwoWeeks:
-		return int(t.Sub(rotation.StartTime) / (2 * WeekDuration)), nil
-	case EveryMonth:
-		y, m, d := rotation.StartTime.Date()
-		ty, tm, td := t.Date()
-		n := (ty*12 + int(tm)) - (y*12 + int(m))
-		if n <= 0 {
-			return -1, nil
-		}
-		if td < d {
-			n--
-		}
-		return n, nil
-	default:
-		return -1, errors.Errorf("Invalid rotation period value %q", rotation.Period)
-	}
-}
-
-func (rotation *Rotation) ShiftsForDates(startDate, endDate string) (first, numShifts int, err error) {
-	start, err := time.Parse(DateFormat, startDate)
+func (api *api) UpdateRotation(rotation *Rotation, updatef func(*Rotation) error) error {
+	err := api.Filter(
+		withActingUserExpanded,
+		withRotationExpanded(rotation),
+	)
 	if err != nil {
-		return 0, 0, err
+		return err
 	}
-	startShiftNumber, err := rotation.ShiftNumberForTime(start)
+	logger := api.Logger.Timed().With(bot.LogContext{
+		"Location":       "api.UpdateRotation",
+		"ActingUsername": api.actingUser.MattermostUsername(),
+		"RotationID":     rotation.RotationID,
+	})
+
+	err = updatef(rotation)
 	if err != nil {
-		return 0, 0, err
+		return err
 	}
-	end, err := time.Parse(DateFormat, endDate)
+
+	err = api.RotationStore.StoreRotation(rotation.Rotation)
 	if err != nil {
-		return 0, 0, err
-	}
-	endShiftNumber, err := rotation.ShiftNumberForTime(end)
-	if err != nil {
-		return 0, 0, err
-	}
-	if endShiftNumber == -1 || startShiftNumber == -1 || endShiftNumber > startShiftNumber {
-		return 0, 0, errors.Errorf("invalid date range: from %s to %s", startDate, endDate)
+		return err
 	}
 
-	return startShiftNumber, endShiftNumber - startShiftNumber + 1, nil
-}
-
-func (rotation *Rotation) ShiftDatesForNumber(shiftNumber int) (time.Time, time.Time, error) {
-	var begin, end time.Time
-	switch rotation.Period {
-	case EveryWeek:
-		begin = rotation.StartTime.Add(time.Duration(shiftNumber) * WeekDuration)
-		end = begin.Add(WeekDuration)
-
-	case EveryTwoWeeks:
-		begin = rotation.StartTime.Add(time.Duration(shiftNumber) * 2 * WeekDuration)
-		end = begin.Add(2 * WeekDuration)
-
-	case EveryMonth:
-		y, month, d := rotation.StartTime.Date()
-		m := int(month-1) + shiftNumber
-		year := y + m/12
-		month = time.Month((m % 12) + 1)
-		begin = time.Date(year, month, d, 0, 0, 0, 0, rotation.StartTime.Location())
-		m++
-		year = y + m/12
-		month = time.Month((m % 12) + 1)
-		end = time.Date(year, month, d, 0, 0, 0, 0, rotation.StartTime.Location())
-
-	default:
-		return time.Time{}, time.Time{}, errors.Errorf("Invalid rotation period value %q", rotation.Period)
-	}
-	return begin, end, nil
-}
-
-func (rotation *Rotation) markShiftUsersEvents(shiftNumber int, shift *Shift) {
-	for mattermostUserID := range shift.MattermostUserIDs {
-		u := rotation.Users[mattermostUserID]
-		u.AddEvent(NewShiftEvent(rotation, shiftNumber, shift))
-	}
-}
-
-func (rotation *Rotation) markShiftUsersServed(shiftNumber int, shift *Shift) {
-	for mattermostUserID := range shift.MattermostUserIDs {
-		u := rotation.Users[mattermostUserID]
-		u.LastServed[rotation.RotationID] = shiftNumber
-	}
-}
-
-func (rotation *Rotation) markShiftUserServed(user *User, shiftNumber int, shift *Shift) {
-	user.LastServed[rotation.RotationID] = shiftNumber
-}
-
-func (rotation *Rotation) ShiftUsers(shift *Shift) UserMap {
-	users := UserMap{}
-	for mattermostUserID := range shift.MattermostUserIDs {
-		users[mattermostUserID] = rotation.Users[mattermostUserID]
-	}
-	return users
+	logger.Infof("%s updated rotation %s.", api.actingUser.Markdown(), rotation.Markdown())
+	return nil
 }

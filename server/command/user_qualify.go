@@ -25,5 +25,5 @@ func (c *Command) qualifyUsers(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("Qualified %s as %s", usernames, c.API.MarkdownSkillLevel(skillName, level)), nil
+	return fmt.Sprintf("Qualified %s as %s", usernames, api.MarkdownSkillLevel(skillName, level)), nil
 }

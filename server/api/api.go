@@ -4,6 +4,7 @@
 package api
 
 import (
+	"strings"
 	"time"
 
 	"github.com/mattermost/mattermost-server/v5/model"
@@ -19,7 +20,6 @@ type API interface {
 
 	Expander
 	Forecaster
-	Markdowner
 	Autopilot
 
 	Rotations
@@ -95,6 +95,7 @@ type PluginAPI interface {
 
 // Dependencies contains all API dependencies
 type Dependencies struct {
+	Autofillers map[string]Autofiller
 	PluginAPI
 	Logger        bot.Logger
 	Poster        bot.Poster
@@ -139,14 +140,10 @@ func New(apiConfig Config, mattermostUserID string) API {
 	}
 }
 
-type filterf func(*api) error
-
-func (api *api) Filter(filters ...filterf) error {
-	for _, filter := range filters {
-		err := filter(api)
-		if err != nil {
-			return err
-		}
+func (api *api) MarkdownIndent(in, prefix string) string {
+	lines := strings.Split(in, "\n")
+	for i, l := range lines {
+		lines[i] = prefix + l
 	}
-	return nil
+	return strings.Join(lines, "\n")
 }

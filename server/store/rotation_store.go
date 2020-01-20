@@ -4,8 +4,6 @@
 package store
 
 import (
-	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
@@ -29,12 +27,13 @@ type Rotation struct {
 	Name   string
 	Period string
 	Start  string
+	Type   string
 
 	// Optional attributes
-	Size              int     `json:",omitempty"`
-	Grace             int     `json:",omitempty"`
-	MattermostUserIDs IDMap   `json:",omitempty"`
-	Needs             []*Need `json:",omitempty"`
+	Size              int   `json:",omitempty"`
+	Grace             int   `json:",omitempty"`
+	MattermostUserIDs IDMap `json:",omitempty"`
+	Needs             Needs `json:",omitempty"`
 
 	Autopilot RotationAutopilot `json:",omitempty"`
 }
@@ -46,35 +45,6 @@ type RotationAutopilot struct {
 	FillPrior   time.Duration `json:",omitempty"`
 	Notify      bool          `json:",omitempty"`
 	NotifyPrior time.Duration `json:",omitempty"`
-}
-
-type Need struct {
-	Min   int
-	Max   int
-	Skill string
-	Level int
-}
-
-func NewNeed(skill string, level int, min int) *Need {
-	return &Need{
-		Min:   min,
-		Max:   -1,
-		Skill: skill,
-		Level: level,
-	}
-}
-
-func (need Need) WithMax(max int) *Need {
-	need.Max = max
-	return &need
-}
-
-func (need Need) String() string {
-	return fmt.Sprintf("%s-%v-%v(%v)", need.Skill, need.Level, need.Min, need.Max)
-}
-
-func (need Need) SkillLevel() string {
-	return need.Skill + "-" + strconv.Itoa(need.Level)
 }
 
 func NewRotation(name string) *Rotation {

@@ -9,7 +9,7 @@ import "fmt"
 
 func (api *api) dmUser(user *User, message string) {
 	api.Poster.DM(user.MattermostUserID, message)
-	api.Debugf("DM bot to %s:\n%s", api.MarkdownUser(user), message)
+	api.Debugf("DM bot to %s:\n%s", user.Markdown(), message)
 }
 
 func (api *api) messageWelcomeNewUser(user *User) {
@@ -25,7 +25,7 @@ func (api *api) messageWelcomeNewUser(user *User) {
 	api.dmUser(user,
 		fmt.Sprintf("### Welcome to Solar Lottery!\n"+
 			"%s added you to the Solar Lottery team rotation scheduler. Please use `/%s info` for more information.",
-			api.MarkdownUser(actingUser),
+			actingUser.Markdown(),
 			config.CommandTrigger))
 }
 
@@ -34,18 +34,18 @@ func (api *api) messageWelcomeToRotation(user *User, rotation *Rotation) {
 		fmt.Sprintf("### Welcome to %s!\n"+
 			"%s added you to %s. Please use `/%s info` for more information.\n"+
 			"%s",
-			api.MarkdownRotation(rotation),
-			api.MarkdownUser(api.actingUser),
-			api.MarkdownRotation(rotation),
+			rotation.Markdown(),
+			api.actingUser.Markdown(),
+			rotation.Markdown(),
 			config.CommandTrigger,
-			api.MarkdownRotationBullets(rotation)))
+			rotation.MarkdownBullets()))
 }
 
 func (api *api) messageLeftRotation(user *User, rotation *Rotation) {
 	api.dmUser(user,
 		fmt.Sprintf("%s removed you from %s.",
-			api.MarkdownUser(api.actingUser),
-			api.MarkdownRotation(rotation)))
+			api.actingUser.Markdown(),
+			rotation.Markdown()))
 }
 
 func (api *api) messageAddedSkill(user *User, skillName string, level int) {
@@ -54,86 +54,86 @@ func (api *api) messageAddedSkill(user *User, skillName string, level int) {
 		api.dmUser(user,
 			fmt.Sprintf("%s added skill %s, level %s to your profile.\n"+
 				"Your current skills are: %s.\n",
-				api.MarkdownUser(api.actingUser),
+				api.actingUser.Markdown(),
 				skillName,
 				Level(level),
-				api.MarkdownUserSkills(user)))
+				user.MarkdownSkills()))
 	} else {
 		api.dmUser(user,
 			fmt.Sprintf("%s deleted skill %v from your profile.\n"+
 				"Your current skills are: %s.\n",
-				api.MarkdownUser(api.actingUser),
+				api.actingUser.Markdown(),
 				skillName,
-				api.MarkdownUserSkills(user)))
+				user.MarkdownSkills()))
 	}
 }
 
-func (api *api) messageShiftOpened(rotation *Rotation, shiftNumber int, shift *Shift) {
+func (api *api) messageShiftOpened(rotation *Rotation, shift *Shift) {
 	api.ExpandRotation(rotation)
 
 	for _, user := range rotation.Users {
 		api.dmUser(user,
 			fmt.Sprintf("%s opened %s.\n"+
 				"Use `/%s shift join -r %s -s %v` if you would like to participate.\n",
-				api.MarkdownUser(api.actingUser),
-				api.MarkdownShift(rotation, shiftNumber),
+				api.actingUser.Markdown(),
+				shift.Markdown(),
 				config.CommandTrigger,
 				rotation.Name,
-				shiftNumber))
+				shift.ShiftNumber))
 	}
 }
 
-func (api *api) messageShiftStarted(rotation *Rotation, shiftNumber int, shift *Shift) {
+func (api *api) messageShiftStarted(rotation *Rotation, shift *Shift) {
 	api.ExpandRotation(rotation)
 
 	for _, user := range rotation.ShiftUsers(shift) {
 		api.dmUser(user,
 			fmt.Sprintf("###### Your %s started!\n"+
 				"%s started %s.\n\nTODO runbook URL/channel",
-				api.MarkdownShift(rotation, shiftNumber),
-				api.MarkdownUser(api.actingUser),
-				api.MarkdownShift(rotation, shiftNumber)))
+				shift.Markdown(),
+				api.actingUser.Markdown(),
+				shift.Markdown()))
 	}
 }
 
-func (api *api) messageShiftWillStart(rotation *Rotation, shiftNumber int, shift *Shift) {
+func (api *api) messageShiftWillStart(rotation *Rotation, shift *Shift) {
 	api.ExpandRotation(rotation)
 
 	for _, user := range rotation.ShiftUsers(shift) {
 
 		api.dmUser(user,
 			fmt.Sprintf("Your %s will start on %s\n\nTODO runbook URL/channel",
-				api.MarkdownShift(rotation, shiftNumber),
+				shift.Markdown(),
 				shift.Start))
 	}
 }
 
-func (api *api) messageShiftFinished(rotation *Rotation, shiftNumber int, shift *Shift) {
+func (api *api) messageShiftFinished(rotation *Rotation, shift *Shift) {
 	api.ExpandRotation(rotation)
 
 	for _, user := range rotation.ShiftUsers(shift) {
 		api.dmUser(user,
 			fmt.Sprintf("###### Done with %s!\n"+
 				"%s finished %s. Details:\n%s",
-				api.MarkdownShift(rotation, shiftNumber),
-				api.MarkdownUser(api.actingUser),
-				api.MarkdownShift(rotation, shiftNumber),
-				api.MarkdownShiftBullets(rotation, shiftNumber, shift)))
+				shift.Markdown(),
+				api.actingUser.Markdown(),
+				shift.Markdown(),
+				shift.MarkdownBullets(rotation)))
 	}
 }
 
-func (api *api) messageShiftWillFinish(rotation *Rotation, shiftNumber int, shift *Shift) {
+func (api *api) messageShiftWillFinish(rotation *Rotation, shift *Shift) {
 	api.ExpandRotation(rotation)
 
 	for _, user := range rotation.ShiftUsers(shift) {
 		api.dmUser(user,
 			fmt.Sprintf("Your %s will finish on %s\n\nTODO runbook URL/channel",
-				api.MarkdownShift(rotation, shiftNumber),
+				shift.Markdown(),
 				shift.End))
 	}
 }
 
-func (api *api) messageShiftJoined(joined UserMap, rotation *Rotation, shiftNumber int, shift *Shift) {
+func (api *api) messageShiftJoined(joined UserMap, rotation *Rotation, shift *Shift) {
 	api.ExpandRotation(rotation)
 
 	// Notify the previous shift users that new volunteers have been added
@@ -143,15 +143,15 @@ func (api *api) messageShiftJoined(joined UserMap, rotation *Rotation, shiftNumb
 		}
 		api.dmUser(user,
 			fmt.Sprintf("%s added users %s to your %s",
-				api.MarkdownUser(api.actingUser),
-				api.MarkdownUsers(joined),
-				api.MarkdownShift(rotation, shiftNumber)))
+				api.actingUser.Markdown(),
+				joined.Markdown(),
+				shift.Markdown()))
 	}
 
 	for _, user := range joined {
 		api.dmUser(user,
 			fmt.Sprintf("%s joined you into %s",
-				api.MarkdownUser(api.actingUser),
-				api.MarkdownShift(rotation, shiftNumber)))
+				api.actingUser.Markdown(),
+				shift.Markdown()))
 	}
 }

@@ -74,5 +74,5 @@ func (c *Command) rotationNeed(parameters []string) (string, error) {
 		return "", err
 	}
 
-	return "Updated rotation needs:\n" + c.API.MarkdownRotationBullets(rotation), nil
+	return "Updated rotation needs:\n" + rotation.MarkdownBullets(), nil
 }

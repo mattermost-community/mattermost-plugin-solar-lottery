@@ -45,5 +45,5 @@ func (c *Command) userUnavailable(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("Added %s to %s", c.API.MarkdownEvent(event), usernames), nil
+	return fmt.Sprintf("Added %s to %s", event.Markdown(), usernames), nil
 }

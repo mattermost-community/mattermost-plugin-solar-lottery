@@ -1,15 +1,17 @@
 // Copyright (c) 2019-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
-package api
+package solarlottery
 
 import (
 	"fmt"
 	"sort"
 	"testing"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/stretchr/testify/require"
+
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api/test"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
 func TestUserWeight(t *testing.T) {
@@ -49,15 +51,12 @@ func TestUserWeight(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("%v_%v", tc.lastServed, tc.shiftNumber), func(t *testing.T) {
-			user := User{
-				User: &store.User{
-					LastServed: store.IntMap{
-						"test": tc.lastServed,
-					},
-				},
-			}
+			af, err := makeTestAutofill(t, 10, nil, nil, nil, tc.shiftNumber)
+			require.NoError(t, err)
 
-			weight := userWeight("test", &user, tc.shiftNumber)
+			user := test.User("test").WithLastServed(test.RotationID, tc.lastServed)
+
+			weight := af.userWeight(user)
 			require.Equal(t, tc.expectedWeight, weight)
 		})
 	}
@@ -96,20 +95,20 @@ func TestWeightedUserSorter(t *testing.T) {
 func TestWeightedNeedSorter(t *testing.T) {
 	for _, tc := range []struct {
 		name            string
-		needs           []*store.Need
+		needs           store.Needs
 		weights         []float64
-		expectedNeeds   []*store.Need
+		expectedNeeds   store.Needs
 		expectedWeights []float64
 	}{
 		{
 			name: "simple",
-			needs: []*store.Need{
+			needs: store.Needs{
 				&store.Need{Skill: "skill1", Level: 1, Min: 1, Max: -1},
 				&store.Need{Skill: "skill2", Level: 2, Min: 2, Max: -1},
 				&store.Need{Skill: "skill3", Level: 3, Min: 3, Max: -1},
 			},
 			weights: []float64{5, 1, 2e10},
-			expectedNeeds: []*store.Need{
+			expectedNeeds: store.Needs{
 				&store.Need{Skill: "skill3", Level: 3, Min: 3, Max: -1},
 				&store.Need{Skill: "skill1", Level: 1, Min: 1, Max: -1},
 				&store.Need{Skill: "skill2", Level: 2, Min: 2, Max: -1},
@@ -118,13 +117,13 @@ func TestWeightedNeedSorter(t *testing.T) {
 		},
 		{
 			name: "with max 1",
-			needs: []*store.Need{
+			needs: store.Needs{
 				&store.Need{Skill: "skill1", Level: 1, Min: 1, Max: -1},
 				&store.Need{Skill: "skill2", Level: 2, Min: 2, Max: 1},
 				&store.Need{Skill: "skill3", Level: 3, Min: 3, Max: -1},
 			},
 			weights: []float64{5, 1, 2e10},
-			expectedNeeds: []*store.Need{
+			expectedNeeds: store.Needs{
 				&store.Need{Skill: "skill2", Level: 2, Min: 2, Max: 1},
 				&store.Need{Skill: "skill3", Level: 3, Min: 3, Max: -1},
 				&store.Need{Skill: "skill1", Level: 1, Min: 1, Max: -1},

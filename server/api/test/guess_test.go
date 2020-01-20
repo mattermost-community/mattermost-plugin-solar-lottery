@@ -1,7 +1,7 @@
 // Copyright (c) 2019-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
-package api
+package test
 
 import (
 	"testing"
@@ -12,14 +12,16 @@ import (
 
 	"github.com/mattermost/mattermost-server/v5/model"
 
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api/mock_api"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api/solarlottery"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store/mock_store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
-func setupAPIForGuess(t testing.TB, ctrl *gomock.Controller, rotation *Rotation, usersDataSource UserMap) *api {
+func setupAPIForGuess(t testing.TB, ctrl *gomock.Controller, rotation *api.Rotation, usersDataSource api.UserMap) api.API {
 	shiftStore := mock_store.NewMockShiftStore(ctrl)
 	shiftStore.EXPECT().LoadShift(
 		gomock.Eq(rotation.RotationID),
@@ -55,15 +57,21 @@ func setupAPIForGuess(t testing.TB, ctrl *gomock.Controller, rotation *Rotation,
 			}, nil
 		})
 
-	apiConfig := Config{
-		Dependencies: &Dependencies{
+	// Uncomment to display logs while debugging tests
+	// logger := &bot.TestLogger{TB: t}
+	logger := &bot.NilLogger{}
+
+	apiConfig := api.Config{
+		Dependencies: &api.Dependencies{
+			Autofillers: map[string]api.Autofiller{
+				"":                solarlottery.New(logger), // default
+				solarlottery.Type: solarlottery.New(logger),
+			},
 			UserStore:     userStore,
 			ShiftStore:    shiftStore,
 			RotationStore: rotationStore,
 			PluginAPI:     pluginAPI,
-			// Uncomment to display logs while debugging tests
-			// Logger: &bot.TestLogger{TB: t},
-			Logger: &bot.NilLogger{},
+			Logger:        logger,
 		},
 		Config: &config.Config{},
 	}
@@ -73,27 +81,26 @@ func setupAPIForGuess(t testing.TB, ctrl *gomock.Controller, rotation *Rotation,
 		actingMattermostUserID = id
 		break
 	}
-	api := New(apiConfig, actingMattermostUserID).(*api)
-	return api
+
+	return api.New(apiConfig, actingMattermostUserID)
 }
 
 func TestPrepareShiftHappy(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	rotation := testRotation.Clone(true)
-	rotation.Start = "2020-01-16"
-	rotation.Period = EveryMonth
+	rotation := GetTestRotation()
+	rotation.Period = api.EveryMonth
 	rotation.Size = 3
-	rotation.Needs = []*store.Need{
-		testNeedServer_L1_Min1(),
-		testNeedWebapp_L2_Min1(),
-		testNeedMobile_L1_Min1(),
+	rotation.Needs = store.Needs{
+		NeedServer_L1_Min1(),
+		NeedWebapp_L2_Min1(),
+		NeedMobile_L1_Min1(),
 	}
-	rotation.init(nil)
-	rotation = rotation.withUsers(testAllUsers)
+	rotation = rotation.WithUsers(AllUsers())
+	rotation = rotation.WithStart("2020-01-16")
 
-	api := setupAPIForGuess(t, ctrl, rotation, testAllUsers.Clone(true))
+	api := setupAPIForGuess(t, ctrl, rotation, AllUsers())
 	shifts, err := api.Guess(rotation, 0, 1)
 
 	require.Nil(t, err)
@@ -105,23 +112,22 @@ func TestPrepareShiftEvenDistribution(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	rotation := testRotation.Clone(true)
-	rotation.Start = "2020-01-16"
-	rotation.Period = EveryMonth
+	rotation := GetTestRotation()
+	rotation.Period = api.EveryMonth
 	rotation.Size = 1
-	rotation.Needs = []*store.Need{
-		testNeedWebapp_L1_Min1(),
+	rotation.Needs = store.Needs{
+		NeedWebapp_L1_Min1(),
 	}
-	rotation.init(nil)
-	rotation = rotation.withUsers(testAllUsers)
+	rotation = rotation.WithUsers(AllUsers())
+	rotation = rotation.WithStart("2020-01-16")
 
-	api := setupAPIForGuess(t, ctrl, rotation, testAllUsers.Clone(true))
+	api := setupAPIForGuess(t, ctrl, rotation, AllUsers())
 
 	sampleSize := 200
 	counters := store.IntMap{}
-	shifts, err := api.Guess(rotation, 3, len(testAllUsers)*sampleSize)
+	shifts, err := api.Guess(rotation, 3, len(AllUsers())*sampleSize)
 	require.Nil(t, err)
-	require.Len(t, shifts, len(testAllUsers)*sampleSize)
+	require.Len(t, shifts, len(AllUsers())*sampleSize)
 
 	for _, shift := range shifts {
 		assert.NotNil(t, shift)

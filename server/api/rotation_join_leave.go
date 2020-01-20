@@ -34,7 +34,7 @@ func (api *api) JoinRotation(mattermostUsernames string, rotation *Rotation, sta
 	for _, user := range api.users {
 		if len(rotation.MattermostUserIDs[user.MattermostUserID]) != 0 {
 			logger.Debugf("%s is already in rotation %s.",
-				api.MarkdownUsersWithSkills(added), api.MarkdownRotation(rotation))
+				added.MarkdownWithSkills(), rotation.Markdown())
 			continue
 		}
 
@@ -61,6 +61,51 @@ func (api *api) JoinRotation(mattermostUsernames string, rotation *Rotation, sta
 		return added, errors.WithMessagef(err, "failed to store rotation %s", rotation.RotationID)
 	}
 	logger.Infof("%s added %s to %s.",
-		api.MarkdownUser(api.actingUser), api.MarkdownUsersWithSkills(added), api.MarkdownRotation(rotation))
+		api.actingUser.Markdown(), added.MarkdownWithSkills(), rotation.Markdown())
 	return added, nil
+}
+
+func (api *api) LeaveRotation(mattermostUsernames string, rotation *Rotation) (UserMap, error) {
+	err := api.Filter(
+		withActingUserExpanded,
+		withMattermostUsersExpanded(mattermostUsernames),
+	)
+	if err != nil {
+		return nil, err
+	}
+	logger := api.Logger.Timed().With(bot.LogContext{
+		"Location":            "api.DeleteUsersFromRotation",
+		"ActingUsername":      api.actingUser.MattermostUsername(),
+		"MattermostUsernames": mattermostUsernames,
+		"RotationID":          rotation.RotationID,
+	})
+
+	deleted := UserMap{}
+	for _, user := range api.users {
+		_, ok := rotation.MattermostUserIDs[user.MattermostUserID]
+		if !ok {
+			logger.Debugf("%s is not found in rotation %s", user.Markdown(), rotation.Markdown())
+			continue
+		}
+
+		delete(user.LastServed, rotation.RotationID)
+		_, err = api.storeUserWelcomeNew(user)
+		if err != nil {
+			return deleted, err
+		}
+		delete(rotation.MattermostUserIDs, user.MattermostUserID)
+		if len(rotation.Users) > 0 {
+			delete(rotation.Users, user.MattermostUserID)
+		}
+		api.messageLeftRotation(user, rotation)
+		deleted[user.MattermostUserID] = user
+	}
+
+	err = api.RotationStore.StoreRotation(rotation.Rotation)
+	if err != nil {
+		return deleted, err
+	}
+
+	logger.Infof("%s removed from %s.", deleted.Markdown(), rotation.Markdown())
+	return deleted, nil
 }

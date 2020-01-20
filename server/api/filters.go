@@ -9,6 +9,18 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
+type filterf func(*api) error
+
+func (api *api) Filter(filters ...filterf) error {
+	for _, filter := range filters {
+		err := filter(api)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func withRotation(rotationID string) func(api *api) error {
 	return func(api *api) error {
 		return nil
@@ -24,7 +36,7 @@ func withRotationExpanded(rotation *Rotation) func(api *api) error {
 func withRotationIsNotArchived(rotation *Rotation) func(api *api) error {
 	return func(api *api) error {
 		if rotation.IsArchived {
-			return errors.Errorf("rotation %s is archived", api.MarkdownRotation(rotation))
+			return errors.Errorf("rotation %s is archived", rotation.Markdown())
 		}
 		return nil
 	}
