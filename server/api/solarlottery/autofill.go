@@ -4,6 +4,7 @@
 package solarlottery
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"sort"
@@ -86,6 +87,7 @@ func makeAutofill(rotationID string, size int, needs store.Needs,
 }
 
 func (af *autofill) fill() (api.UserMap, error) {
+	af.Debugf(af.markdown())
 	for len(af.chosen) < af.size {
 		err := af.fillOne()
 		if err != nil {
@@ -249,7 +251,7 @@ func (af *autofill) hottestRequiredNeed(requiredNeeds store.Needs, needPools map
 	return need, pool
 }
 
-func (af *autofill) markdown(rotation *api.Rotation, shiftNumber int) string {
+func (af *autofill) markdown() string {
 	ws := weightedUserSorter{}
 	total := float64(0)
 	for id, user := range af.pool {
@@ -260,10 +262,10 @@ func (af *autofill) markdown(rotation *api.Rotation, shiftNumber int) string {
 	}
 	sort.Sort(&ws)
 	out := ""
-	// out += fmt.Sprintf("filling %s, choosing from:\n", af.shift.Markdown())
-	// for i, id := range ws.ids {
-	// 	out += fmt.Sprintf("- **%.3f**: %s\n", ws.weights[i]/total, af.api.MarkdownUserWithSkills(af.pool[id]))
-	// }
+	out += fmt.Sprintf("filling shift %v, choosing from:\n", af.shiftNumber)
+	for i, id := range ws.ids {
+		out += fmt.Sprintf("- **%.3f**: %s\n", ws.weights[i]/total, af.pool[id].MarkdownWithSkills())
+	}
 	return out
 }
 
