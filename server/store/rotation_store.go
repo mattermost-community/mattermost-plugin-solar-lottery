@@ -51,7 +51,7 @@ func NewRotation(name string) *Rotation {
 	return &Rotation{
 		Name:              name,
 		MattermostUserIDs: IDMap{},
-		Needs:             []*Need{},
+		Needs:             Needs{},
 	}
 }
 
@@ -59,7 +59,7 @@ func (rotation *Rotation) Clone(deep bool) *Rotation {
 	newRotation := *rotation
 	if deep {
 		newRotation.MattermostUserIDs = rotation.MattermostUserIDs.Clone()
-		newRotation.Needs = append([]*Need{}, rotation.Needs...)
+		newRotation.Needs = append(Needs{}, rotation.Needs...)
 	}
 	return &newRotation
 }
