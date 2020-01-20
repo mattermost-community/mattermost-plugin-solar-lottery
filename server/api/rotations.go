@@ -48,6 +48,42 @@ func (api *api) AddRotation(rotation *Rotation) error {
 	return nil
 }
 
+func (api *api) LoadKnownRotations() (store.IDMap, error) {
+	err := api.Filter(
+		withActingUser,
+		withKnownRotations,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return api.knownRotations, nil
+}
+
+func (api *api) ResolveRotationName(namePattern string) ([]string, error) {
+	err := api.Filter(
+		withKnownRotations,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := []string{}
+	re, err := regexp.Compile(`.*` + namePattern + `.*`)
+	if err != nil {
+		return nil, err
+	}
+	for id, name := range api.knownRotations {
+		if re.MatchString(name) {
+			ids = append(ids, id)
+		}
+	}
+
+	if len(ids) == 0 {
+		return nil, store.ErrNotFound
+	}
+	return ids, nil
+}
+
 func (api *api) ArchiveRotation(rotation *Rotation) error {
 	err := api.Filter(
 		withActingUserExpanded,
@@ -104,17 +140,6 @@ func (api *api) DebugDeleteRotation(rotationID string) error {
 	return nil
 }
 
-func (api *api) LoadKnownRotations() (store.IDMap, error) {
-	err := api.Filter(
-		withActingUser,
-		withKnownRotations,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return api.knownRotations, nil
-}
-
 func (api *api) LoadRotation(rotationID string) (*Rotation, error) {
 	err := api.Filter(
 		withKnownRotations,
@@ -158,31 +183,6 @@ func (api *api) MakeRotation(rotationName string) (*Rotation, error) {
 	}
 	rotation.RotationID = id
 	return rotation, nil
-}
-
-func (api *api) ResolveRotationName(namePattern string) ([]string, error) {
-	err := api.Filter(
-		withKnownRotations,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := []string{}
-	re, err := regexp.Compile(`.*` + namePattern + `.*`)
-	if err != nil {
-		return nil, err
-	}
-	for id, name := range api.knownRotations {
-		if re.MatchString(name) {
-			ids = append(ids, id)
-		}
-	}
-
-	if len(ids) == 0 {
-		return nil, store.ErrNotFound
-	}
-	return ids, nil
 }
 
 func (api *api) UpdateRotation(rotation *Rotation, updatef func(*Rotation) error) error {

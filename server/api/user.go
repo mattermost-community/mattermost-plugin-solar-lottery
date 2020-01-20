@@ -193,4 +193,3 @@ func (api *api) updateUserSkill(user *User, skillName string, level Level) (*Use
 	api.Logger.Debugf("%s (%v) skill updated user %s", skillName, level, user.Markdown())
 	return user, nil
 }
-
