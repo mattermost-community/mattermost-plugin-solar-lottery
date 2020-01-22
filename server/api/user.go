@@ -151,7 +151,7 @@ func (api *api) loadOrMakeStoredUser(mattermostUserID string) (*User, bool, erro
 	return &User{User: storedUser}, false, nil
 }
 
-// storeUserNotify checks if the user being stored is new, and welcomes the user.
+// storeUserWelcomeNew checks if the user being stored is new, and welcomes the user.
 // note that it can be used inside of filters, so it must not use filters itself,
 //  nor assume that any runtime values have been filled.
 func (api *api) storeUserWelcomeNew(orig *User) (*User, error) {
