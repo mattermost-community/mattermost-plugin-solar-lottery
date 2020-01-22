@@ -15,7 +15,7 @@ func (c *Command) qualifyUsers(parameters []string) (string, error) {
 	var level api.Level
 	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
 	withSkillFlags(fs, &skillName, &level)
-	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to show")
+	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to qualify")
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err
