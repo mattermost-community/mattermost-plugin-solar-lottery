@@ -169,17 +169,17 @@ func (api *api) storeUserWelcomeNew(orig *User) (*User, error) {
 	return user, nil
 }
 
-func (api *api) updateUserSkill(user *User, skillName string, level Level) (*User, error) {
+func (api *api) updateUserSkill(user *User, skillName string, level Level) error {
 	if user.SkillLevels[skillName] == int(level) {
 		// nothing to do
 		api.Logger.Debugf("nothing to do for user %s, already has skill %s (%v)", user.Markdown(), skillName, level)
-		return user, nil
+		return nil
 	}
 
 	if level == 0 {
 		_, ok := user.SkillLevels[skillName]
 		if !ok {
-			return nil, errors.Errorf("%s does not have skill %s", user.Markdown(), skillName)
+			return errors.Errorf("%s does not have skill %s", user.Markdown(), skillName)
 		}
 		delete(user.SkillLevels, skillName)
 	} else {
@@ -188,8 +188,8 @@ func (api *api) updateUserSkill(user *User, skillName string, level Level) (*Use
 
 	user, err := api.storeUserWelcomeNew(user)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	api.Logger.Debugf("%s (%v) skill updated user %s", skillName, level, user.Markdown())
-	return user, nil
+	return nil
 }

@@ -87,7 +87,7 @@ func (api *api) Qualify(mattermostUsernames, skillName string, level Level) erro
 	}
 
 	for _, user := range api.users {
-		_, err = api.updateUserSkill(user, skillName, level)
+		err = api.updateUserSkill(user, skillName, level)
 		if err != nil {
 			return err
 		}
@@ -115,7 +115,7 @@ func (api *api) Disqualify(mattermostUsernames, skillName string) error {
 	})
 
 	for _, user := range api.users {
-		_, err = api.updateUserSkill(user, skillName, 0)
+		err = api.updateUserSkill(user, skillName, 0)
 		if err != nil {
 			return err
 		}
