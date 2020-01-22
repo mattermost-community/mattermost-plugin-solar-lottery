@@ -15,7 +15,7 @@ func (c *Command) joinRotation(parameters []string) (string, error) {
 	var rotationID, rotationName, start string
 	users := ""
 	fs := newRotationFlagSet(&rotationID, &rotationName)
-	fs.StringVarP(&users, flagUsers, flagPUsers, "", "add nother users to rotation.")
+	fs.StringVarP(&users, flagUsers, flagPUsers, "", "add other users to rotation.")
 	fs.StringVarP(&start, flagStart, flagPStart, "", fmt.Sprintf("date for user to start, e.g. %s.", api.DateFormat))
 	err := fs.Parse(parameters)
 	if err != nil {
