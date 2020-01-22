@@ -4,8 +4,9 @@
 package command
 
 import (
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
 	"github.com/spf13/pflag"
+
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
 )
 
 func (c *Command) showUser(parameters []string) (string, error) {

@@ -4,9 +4,10 @@
 package command
 
 import (
+	"github.com/spf13/pflag"
+
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
-	"github.com/spf13/pflag"
 )
 
 func (c *Command) showShift(parameters []string) (string, error) {

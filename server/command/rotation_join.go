@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 )
 
 func (c *Command) joinRotation(parameters []string) (string, error) {

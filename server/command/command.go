@@ -148,7 +148,7 @@ func (c *Command) validate() (string, []string, error) {
 	}
 	split := strings.Fields(c.Args.Command)
 	if len(split) < 2 {
-		return "", nil, errors.New("io subcommand specify, nothing to do")
+		return "", nil, errors.New("no subcommand specified, nothing to do")
 	}
 	command := split[0]
 	if command != "/"+config.CommandTrigger {

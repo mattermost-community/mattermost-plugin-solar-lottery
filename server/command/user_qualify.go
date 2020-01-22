@@ -6,8 +6,10 @@ package command
 import (
 	"fmt"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
+
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 )
 
 func (c *Command) qualifyUsers(parameters []string) (string, error) {
@@ -19,6 +21,10 @@ func (c *Command) qualifyUsers(parameters []string) (string, error) {
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err
+	}
+
+	if skillName == "" || level == 0 {
+		return c.flagUsage(fs), errors.New("must provide --level and --skill values")
 	}
 
 	err = c.API.Qualify(usernames, skillName, level)

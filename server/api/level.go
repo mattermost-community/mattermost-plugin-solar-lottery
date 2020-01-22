@@ -41,7 +41,7 @@ func (level Level) String() string {
 	case Expert:
 		return LevelExpertSymbol
 	}
-	return "none"
+	return "⛔"
 }
 
 func (level *Level) Type() string {

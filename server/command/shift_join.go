@@ -6,8 +6,9 @@ package command
 import (
 	"fmt"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 	"github.com/spf13/pflag"
+
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 )
 
 func (c *Command) joinShift(parameters []string) (string, error) {
