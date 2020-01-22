@@ -16,7 +16,7 @@ func (c *Command) userUnavailable(parameters []string) (string, error) {
 	var usernames, start, end string
 	var clear bool
 	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
-	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to show")
+	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to set unavailability")
 	fs.StringVarP(&start, flagStart, flagPStart, "", "start of the unavailability")
 	fs.StringVarP(&end, flagEnd, flagPEnd, "", "end of unavailability (last day)")
 	fs.BoolVar(&clear, flagClear, false, "clear all overlapping events")
