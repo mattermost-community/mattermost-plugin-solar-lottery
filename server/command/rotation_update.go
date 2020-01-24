@@ -6,7 +6,7 @@ package command
 import (
 	"github.com/spf13/pflag"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
 )
 
 func withRotationUpdateFlags(fs *pflag.FlagSet, size *int, grace *int) {
@@ -28,12 +28,12 @@ func (c *Command) updateRotation(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	rotation, err := c.API.LoadRotation(rotationID)
+	rotation, err := c.SL.LoadRotation(rotationID)
 	if err != nil {
 		return "", err
 	}
 
-	err = c.API.UpdateRotation(rotation, func(rotation *api.Rotation) error {
+	err = c.SL.UpdateRotation(rotation, func(rotation *sl.Rotation) error {
 		if grace != 0 {
 			rotation.Grace = grace
 		}

@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
 )
 
 func (c *Command) userUnavailable(parameters []string) (string, error) {
@@ -25,23 +25,23 @@ func (c *Command) userUnavailable(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	startTime, endTime, err := api.ParseDatePair(start, end)
+	startTime, endTime, err := sl.ParseDatePair(start, end)
 	if err != nil {
 		return "", err
 	}
 	endTime = endTime.Add(time.Hour * 24) // start of next day
-	end = endTime.Format(api.DateFormat)
+	end = endTime.Format(sl.DateFormat)
 
 	if clear {
-		err = c.API.DeleteEvents(usernames, start, end)
+		err = c.SL.DeleteEvents(usernames, start, end)
 		if err != nil {
 			return "", err
 		}
 		return fmt.Sprintf("cleared %s to %s from %s", start, end, usernames), nil
 	}
 
-	event := api.NewPersonalEvent(startTime, endTime)
-	err = c.API.AddEvent(usernames, event)
+	event := sl.NewPersonalEvent(startTime, endTime)
+	err = c.SL.AddEvent(usernames, event)
 	if err != nil {
 		return "", err
 	}

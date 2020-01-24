@@ -97,7 +97,7 @@ golint:
 mock:
 ifneq ($(HAS_SERVER),)
 	go install github.com/golang/mock/mockgen
-	mockgen -destination server/api/mock_api/mock_plugin_api.go github.com/mattermost/mattermost-plugin-solar-lottery/server/api PluginAPI
+	mockgen -destination server/solarlottery/mock_solarlottery/mock_plugin_api.go github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery PluginAPI
 	mockgen -destination server/utils/bot/mock_bot/mock_poster.go github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot Poster
 	mockgen -destination server/utils/bot/mock_bot/mock_admin.go github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot Admin
 	mockgen -destination server/store/mock_store/mock_user_store.go github.com/mattermost/mattermost-plugin-solar-lottery/server/store UserStore
@@ -109,7 +109,7 @@ endif
 ## Generates mock golang interfaces for testing
 clean_mock:
 ifneq ($(HAS_SERVER),)
-	rm -rf ./server/api/mock_api
+	rm -rf ./server/solarlottery/mock_solarlottery
 	rm -rf ./server/utils/bot/mock_bot
 	rm -rf ./server/store/mock_store
 endif

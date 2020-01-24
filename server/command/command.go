@@ -14,8 +14,8 @@ import (
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
 )
 
@@ -92,7 +92,7 @@ type Command struct {
 	Args      *model.CommandArgs
 	ChannelID string
 	Config    *config.Config
-	API       api.API
+	SL        solarlottery.SolarLottery
 
 	subcommand string
 }
@@ -193,5 +193,5 @@ func (c *Command) subUsage(subcommands map[string]func([]string) (string, error)
 }
 
 func (c *Command) debugClean(parameters []string) (string, error) {
-	return "Cleaned the KV store", c.API.Clean()
+	return "Cleaned the KV store", c.SL.Clean()
 }

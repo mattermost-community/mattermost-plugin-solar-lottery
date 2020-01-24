@@ -65,3 +65,11 @@ func CodeBlock(in string) string {
 func JSONBlock(ref interface{}) string {
 	return fmt.Sprintf("\n```json\n%s\n```\n", JSON(ref))
 }
+
+func Indent(in, prefix string) string {
+	lines := strings.Split(in, "\n")
+	for i, l := range lines {
+		lines[i] = prefix + l
+	}
+	return strings.Join(lines, "\n")
+}

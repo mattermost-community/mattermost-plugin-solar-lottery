@@ -19,12 +19,12 @@ func (c *Command) archiveRotation(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	rotation, err := c.API.LoadRotation(rotationID)
+	rotation, err := c.SL.LoadRotation(rotationID)
 	if err != nil {
 		return "", err
 	}
 
-	err = c.API.ArchiveRotation(rotation)
+	err = c.SL.ArchiveRotation(rotation)
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed to archive %s", rotation.Name)
 	}
@@ -45,7 +45,7 @@ func (c *Command) debugDeleteRotation(parameters []string) (string, error) {
 		return "", err
 	}
 
-	err = c.API.DebugDeleteRotation(rotationID)
+	err = c.SL.DebugDeleteRotation(rotationID)
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed to delete %s", rotationID)
 	}

@@ -9,7 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
 )
 
 func (c *Command) joinRotation(parameters []string) (string, error) {
@@ -17,7 +17,7 @@ func (c *Command) joinRotation(parameters []string) (string, error) {
 	users := ""
 	fs := newRotationFlagSet(&rotationID, &rotationName)
 	fs.StringVarP(&users, flagUsers, flagPUsers, "", "add other users to rotation.")
-	fs.StringVarP(&start, flagStart, flagPStart, "", fmt.Sprintf("date for user to start, e.g. %s.", api.DateFormat))
+	fs.StringVarP(&start, flagStart, flagPStart, "", fmt.Sprintf("date for user to start, e.g. %s.", sl.DateFormat))
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err
@@ -27,19 +27,19 @@ func (c *Command) joinRotation(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	rotation, err := c.API.LoadRotation(rotationID)
+	rotation, err := c.SL.LoadRotation(rotationID)
 	if err != nil {
 		return "", err
 	}
 
 	starting := time.Now()
 	if start != "" {
-		starting, err = time.Parse(api.DateFormat, start)
+		starting, err = time.Parse(sl.DateFormat, start)
 		if err != nil {
 			return c.flagUsage(fs), err
 		}
 	}
-	added, err := c.API.JoinRotation(users, rotation, starting)
+	added, err := c.SL.JoinRotation(users, rotation, starting)
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed, %s might have been updated", added.Markdown())
 	}

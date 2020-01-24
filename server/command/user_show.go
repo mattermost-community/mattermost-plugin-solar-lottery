@@ -18,7 +18,7 @@ func (c *Command) showUser(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	users, err := c.API.LoadMattermostUsers(usernames)
+	users, err := c.SL.LoadMattermostUsers(usernames)
 	if err != nil {
 		return "", err
 	}

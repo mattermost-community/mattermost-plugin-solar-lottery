@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
 )
 
@@ -30,7 +30,7 @@ func (c *Command) addSkill(parameters []string) (string, error) {
 	if err != nil {
 		return c.flagUsage(fs), err
 	}
-	err = c.API.AddSkill(skillName)
+	err = c.SL.AddSkill(skillName)
 	if err != nil {
 		return "", err
 	}
@@ -45,7 +45,7 @@ func (c *Command) deleteSkill(parameters []string) (string, error) {
 	if err != nil {
 		return c.flagUsage(fs), err
 	}
-	err = c.API.DeleteSkill(skillName)
+	err = c.SL.DeleteSkill(skillName)
 	if err != nil {
 		return "", err
 	}
@@ -53,14 +53,14 @@ func (c *Command) deleteSkill(parameters []string) (string, error) {
 }
 
 func (c *Command) listSkills(parameters []string) (string, error) {
-	skills, err := c.API.ListSkills()
+	skills, err := c.SL.ListSkills()
 	if err != nil {
 		return "", err
 	}
 	return "Known skills: " + utils.JSONBlock(skills), nil
 }
 
-func withSkillFlags(fs *pflag.FlagSet, skillName *string, level *api.Level) {
+func withSkillFlags(fs *pflag.FlagSet, skillName *string, level *sl.Level) {
 	fs.StringVarP(skillName, flagSkill, flagPSkill, "", "Skill name")
 	if level != nil {
 		fs.VarP(level, flagLevel, flagPLevel, "Skill level")

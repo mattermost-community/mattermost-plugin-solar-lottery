@@ -15,11 +15,11 @@ func (c *Command) showRotation(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	rotation, err := c.API.LoadRotation(rotationID)
+	rotation, err := c.SL.LoadRotation(rotationID)
 	if err != nil {
 		return "", err
 	}
-	err = c.API.ExpandRotation(rotation)
+	err = c.SL.ExpandRotation(rotation)
 	if err != nil {
 		return "", err
 	}

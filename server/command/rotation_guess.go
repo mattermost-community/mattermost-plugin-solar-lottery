@@ -22,12 +22,12 @@ func (c *Command) guessRotation(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	rotation, err := c.API.LoadRotation(rotationID)
+	rotation, err := c.SL.LoadRotation(rotationID)
 	if err != nil {
 		return "", err
 	}
 
-	shifts, err := c.API.Guess(rotation, start, numShifts)
+	shifts, err := c.SL.Guess(rotation, start, numShifts)
 	if err != nil {
 		return "", err
 	}

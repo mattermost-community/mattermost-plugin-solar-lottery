@@ -45,7 +45,7 @@ func (c *Command) parseRotationFlags(id, name string) (rotationID string, err er
 
 	}
 	//  name != "":
-	rotationIDs, err := c.API.ResolveRotationName(name)
+	rotationIDs, err := c.SL.ResolveRotationName(name)
 	if err != nil {
 		return "", err
 	}

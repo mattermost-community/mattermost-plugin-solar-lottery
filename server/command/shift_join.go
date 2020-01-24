@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
 )
 
 func (c *Command) joinShift(parameters []string) (string, error) {
@@ -17,8 +17,8 @@ func (c *Command) joinShift(parameters []string) (string, error) {
 		func(fs *pflag.FlagSet) {
 			fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to join the shift.")
 		},
-		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
-			_, joined, err := c.API.JoinShift(usernames, rotation, shiftNumber)
+		func(fs *pflag.FlagSet, rotation *sl.Rotation, shiftNumber int) (string, error) {
+			_, joined, err := c.SL.JoinShift(usernames, rotation, shiftNumber)
 			if err != nil {
 				return "", err
 			}

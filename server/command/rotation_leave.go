@@ -23,12 +23,12 @@ func (c *Command) leaveRotation(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	rotation, err := c.API.LoadRotation(rotationID)
+	rotation, err := c.SL.LoadRotation(rotationID)
 	if err != nil {
 		return "", err
 	}
 
-	deleted, err := c.API.LeaveRotation(users, rotation)
+	deleted, err := c.SL.LeaveRotation(users, rotation)
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed, %s might have been updated", deleted.Markdown())
 	}

@@ -7,11 +7,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
-func withRotationNeedFlags(fs *pflag.FlagSet, skill *string, level *api.Level, min, max *int, deleteNeed *bool) {
+func withRotationNeedFlags(fs *pflag.FlagSet, skill *string, level *sl.Level, min, max *int, deleteNeed *bool) {
 	fs.StringVarP(skill, flagSkill, flagPSkill, "", "the needed skill.")
 	fs.VarP(level, flagLevel, flagPLevel, "the needed skill level.")
 	fs.IntVar(min, flagMin, 0, "minimum number of users with at least this skill level, must be set, -1 not to enforce.")
@@ -21,7 +21,7 @@ func withRotationNeedFlags(fs *pflag.FlagSet, skill *string, level *api.Level, m
 
 func (c *Command) rotationNeed(parameters []string) (string, error) {
 	var rotationID, rotationName, skill string
-	var level api.Level
+	var level sl.Level
 	var deleteNeed bool
 	var min, max int
 	fs := newRotationFlagSet(&rotationID, &rotationName)
@@ -49,13 +49,13 @@ func (c *Command) rotationNeed(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	rotation, err := c.API.LoadRotation(rotationID)
+	rotation, err := c.SL.LoadRotation(rotationID)
 	if err != nil {
 		return "", err
 	}
 
 	// default to delete need
-	updatef := func(rotation *api.Rotation) error {
+	updatef := func(rotation *sl.Rotation) error {
 		return rotation.DeleteNeed(skill, level)
 	}
 	if !deleteNeed {
@@ -63,13 +63,13 @@ func (c *Command) rotationNeed(parameters []string) (string, error) {
 			return c.flagUsage(fs),
 				errors.Errorf("requires `%s` to be specified.", flagMin)
 		}
-		updatef = func(rotation *api.Rotation) error {
+		updatef = func(rotation *sl.Rotation) error {
 			rotation.ChangeNeed(skill, level, store.NewNeed(skill, int(level), min).WithMax(max))
 			return nil
 		}
 	}
 
-	err = c.API.UpdateRotation(rotation, updatef)
+	err = c.SL.UpdateRotation(rotation, updatef)
 	if err != nil {
 		return "", err
 	}

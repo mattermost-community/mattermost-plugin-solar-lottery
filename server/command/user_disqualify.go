@@ -19,7 +19,7 @@ func (c *Command) disqualifyUsers(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	err = c.API.Disqualify(usernames, skillName)
+	err = c.SL.Disqualify(usernames, skillName)
 	if err != nil {
 		return "", err
 	}

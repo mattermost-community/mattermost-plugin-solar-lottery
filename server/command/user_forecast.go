@@ -25,12 +25,12 @@ func (c *Command) userForecast(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	rotation, err := c.API.LoadRotation(rotationID)
+	rotation, err := c.SL.LoadRotation(rotationID)
 	if err != nil {
 		return "", err
 	}
 
-	forecast, err := c.API.ForecastUser(username, rotation, numShifts, sampleSize, time.Now())
+	forecast, err := c.SL.ForecastUser(username, rotation, numShifts, sampleSize, time.Now())
 	if err != nil {
 		return "", err
 	}

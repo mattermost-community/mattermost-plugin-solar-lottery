@@ -23,12 +23,12 @@ func (c *Command) forecastRotation(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	rotation, err := c.API.LoadRotation(rotationID)
+	rotation, err := c.SL.LoadRotation(rotationID)
 	if err != nil {
 		return "", err
 	}
 
-	forecast, err := c.API.ForecastRotation(rotation, start, numShifts, sampleSize)
+	forecast, err := c.SL.ForecastRotation(rotation, start, numShifts, sampleSize)
 	if err != nil {
 		return "", err
 	}

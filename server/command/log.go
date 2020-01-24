@@ -20,7 +20,7 @@ func (c *Command) log(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	c.API.UpdateStoredConfig(func(conf *config.Config) {
+	c.SL.UpdateStoredConfig(func(conf *config.Config) {
 		conf.StoredConfig.BotConfig.AdminLogLevel = level
 		conf.StoredConfig.BotConfig.AdminLogVerbose = verbose
 	})

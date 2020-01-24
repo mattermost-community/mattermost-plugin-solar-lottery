@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
 )
 
@@ -29,7 +29,7 @@ func (c *Command) shift(parameters []string) (string, error) {
 
 func (c *Command) doShift(parameters []string,
 	initF func(fs *pflag.FlagSet),
-	doF func(*pflag.FlagSet, *api.Rotation, int) (string, error)) (string, error) {
+	doF func(*pflag.FlagSet, *sl.Rotation, int) (string, error)) (string, error) {
 	var rotationID, rotationName string
 	var shiftNumber int
 	fs := newRotationFlagSet(&rotationID, &rotationName)
@@ -46,7 +46,7 @@ func (c *Command) doShift(parameters []string,
 	if err != nil {
 		return "", err
 	}
-	rotation, err := c.API.LoadRotation(rotationID)
+	rotation, err := c.SL.LoadRotation(rotationID)
 	if err != nil {
 		return "", err
 	}
@@ -56,8 +56,8 @@ func (c *Command) doShift(parameters []string,
 
 func (c *Command) openShift(parameters []string) (string, error) {
 	return c.doShift(parameters, nil,
-		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
-			shift, err := c.API.OpenShift(rotation, shiftNumber)
+		func(fs *pflag.FlagSet, rotation *sl.Rotation, shiftNumber int) (string, error) {
+			shift, err := c.SL.OpenShift(rotation, shiftNumber)
 			if err != nil {
 				return "", err
 			}
@@ -68,8 +68,8 @@ func (c *Command) openShift(parameters []string) (string, error) {
 func (c *Command) startShift(parameters []string) (string, error) {
 	return c.doShift(parameters,
 		nil,
-		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
-			_, err := c.API.StartShift(rotation, shiftNumber)
+		func(fs *pflag.FlagSet, rotation *sl.Rotation, shiftNumber int) (string, error) {
+			_, err := c.SL.StartShift(rotation, shiftNumber)
 			if err != nil {
 				return "", err
 			}
@@ -80,8 +80,8 @@ func (c *Command) startShift(parameters []string) (string, error) {
 func (c *Command) finishShift(parameters []string) (string, error) {
 	return c.doShift(parameters,
 		nil,
-		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
-			_, err := c.API.FinishShift(rotation, shiftNumber)
+		func(fs *pflag.FlagSet, rotation *sl.Rotation, shiftNumber int) (string, error) {
+			_, err := c.SL.FinishShift(rotation, shiftNumber)
 			if err != nil {
 				return "", err
 			}
@@ -91,8 +91,8 @@ func (c *Command) finishShift(parameters []string) (string, error) {
 
 func (c *Command) debugDeleteShift(parameters []string) (string, error) {
 	return c.doShift(parameters, nil,
-		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
-			err := c.API.DebugDeleteShift(rotation, shiftNumber)
+		func(fs *pflag.FlagSet, rotation *sl.Rotation, shiftNumber int) (string, error) {
+			err := c.SL.DebugDeleteShift(rotation, shiftNumber)
 			if err != nil {
 				return "", err
 			}

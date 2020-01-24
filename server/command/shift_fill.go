@@ -8,14 +8,14 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
 )
 
 func (c *Command) fillShift(parameters []string) (string, error) {
 	return c.doShift(parameters,
 		nil,
-		func(fs *pflag.FlagSet, rotation *api.Rotation, shiftNumber int) (string, error) {
-			shift, ready, _, err := c.API.IsShiftReady(rotation, shiftNumber)
+		func(fs *pflag.FlagSet, rotation *sl.Rotation, shiftNumber int) (string, error) {
+			shift, ready, _, err := c.SL.IsShiftReady(rotation, shiftNumber)
 			if err != nil {
 				return "", err
 			}
@@ -25,7 +25,7 @@ func (c *Command) fillShift(parameters []string) (string, error) {
 					rotation.ShiftUsers(shift).MarkdownWithSkills()), nil
 			}
 
-			shift, users, err := c.API.FillShift(rotation, shiftNumber)
+			shift, users, err := c.SL.FillShift(rotation, shiftNumber)
 			if err != nil {
 				return "", err
 			}

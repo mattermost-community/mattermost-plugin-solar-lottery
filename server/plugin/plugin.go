@@ -5,7 +5,7 @@ package plugin
 
 import (
 	"math/rand"
-	gohttp "net/http"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -20,10 +20,11 @@ import (
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api/solarlottery"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/command"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/http"
+	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery/autofill/queue"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery/autofill/solarlottery"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
@@ -33,8 +34,8 @@ type Plugin struct {
 	configLock *sync.RWMutex
 	config     *config.Config
 
-	httpHandler *http.Handler
-	// notificationHandler api.NotificationHandler
+	httpHandler *api.Handler
+	// notificationHandler sl.NotificationHandler
 
 	Templates map[string]*template.Template
 }
@@ -67,14 +68,10 @@ func (p *Plugin) OnActivate() error {
 		return err
 	}
 
-	p.httpHandler = http.NewHandler()
-	// p.notificationHandler = api.NewNotificationHandler(p.newAPIConfig())
-
+	p.httpHandler = api.NewHTTPHandler()
 	command.Register(p.API.RegisterCommand)
 
 	rand.Seed(time.Now().UnixNano())
-
-	p.API.LogInfo(p.config.PluginID + " activated")
 	return nil
 }
 
@@ -118,13 +115,13 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 		}, nil
 	}
 
-	apiconf := p.newAPIConfig()
+	slconf := p.newSolarLotteryConfig()
 	command := command.Command{
 		Context:   c,
 		Args:      args,
 		ChannelID: args.ChannelId,
-		Config:    apiconf.Config,
-		API:       api.New(apiconf, args.UserId),
+		Config:    slconf.Config,
+		SL:        sl.New(slconf, args.UserId),
 	}
 
 	out, _ := command.Handle()
@@ -132,11 +129,11 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	return &model.CommandResponse{}, nil
 }
 
-func (p *Plugin) ServeHTTP(pc *plugin.Context, w gohttp.ResponseWriter, req *gohttp.Request) {
-	apiconf := p.newAPIConfig()
+func (p *Plugin) ServeHTTP(pc *plugin.Context, w http.ResponseWriter, req *http.Request) {
+	apiconf := p.newSolarLotteryConfig()
 	mattermostUserID := req.Header.Get("Mattermost-User-ID")
 	ctx := req.Context()
-	ctx = api.Context(ctx, api.New(apiconf, mattermostUserID))
+	ctx = sl.Context(ctx, sl.New(apiconf, mattermostUserID))
 	ctx = config.Context(ctx, apiconf.Config)
 
 	p.httpHandler.ServeHTTP(w, req.WithContext(ctx))
@@ -156,17 +153,18 @@ func (p *Plugin) updateConfig(f func(*config.Config)) config.Config {
 	return *p.config
 }
 
-func (p *Plugin) newAPIConfig() api.Config {
+func (p *Plugin) newSolarLotteryConfig() sl.Config {
 	conf := p.getConfig()
 	bot := bot.NewBot(p.API, conf.BotUserID).WithConfig(conf.BotConfig)
 	store := store.NewPluginStore(p.API, bot)
 
-	return api.Config{
+	return sl.Config{
 		Config: conf,
-		Dependencies: &api.Dependencies{
-			Autofillers: map[string]api.Autofiller{
+		Dependencies: &sl.Dependencies{
+			Autofillers: map[string]sl.Autofiller{
 				"":                solarlottery.New(bot), // default
 				solarlottery.Type: solarlottery.New(bot),
+				queue.Type:        queue.New(bot),
 			},
 			RotationStore: store,
 			SkillsStore:   store,

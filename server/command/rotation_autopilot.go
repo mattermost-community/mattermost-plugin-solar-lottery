@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/api"
+	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
@@ -37,46 +37,46 @@ func (c *Command) autopilotRotation(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	rotation, err := c.API.LoadRotation(rotationID)
+	rotation, err := c.SL.LoadRotation(rotationID)
 	if err != nil {
 		return "", err
 	}
 
 	if debugRunTime != "" {
 		var now time.Time
-		now, err = time.Parse(api.DateFormat, debugRunTime)
+		now, err = time.Parse(sl.DateFormat, debugRunTime)
 		if err != nil {
 			return c.flagUsage(fs), err
 		}
 
-		err = c.API.AutopilotRotation(rotation, now)
+		err = c.SL.AutopilotRotation(rotation, now)
 		if err != nil {
 			return "", err
 		}
 		return "Ran autopilot for " + now.String(), nil
 	}
 
-	var updatef func(rotation *api.Rotation) error
+	var updatef func(rotation *sl.Rotation) error
 	if off {
-		updatef = func(rotation *api.Rotation) error {
+		updatef = func(rotation *sl.Rotation) error {
 			rotation.Autopilot = store.RotationAutopilot{}
 			return nil
 		}
 	} else {
-		updatef = func(rotation *api.Rotation) error {
+		updatef = func(rotation *sl.Rotation) error {
 			rotation.Autopilot = store.RotationAutopilot{
 				On:          true,
 				StartFinish: autostart,
 				Fill:        autofill,
-				FillPrior:   time.Duration(autofillPriorDays) * api.DayDuration,
+				FillPrior:   time.Duration(autofillPriorDays) * sl.DayDuration,
 				Notify:      notifyPriorDays != 0,
-				NotifyPrior: time.Duration(notifyPriorDays) * api.DayDuration,
+				NotifyPrior: time.Duration(notifyPriorDays) * sl.DayDuration,
 			}
 			return nil
 		}
 	}
 
-	err = c.API.UpdateRotation(rotation, updatef)
+	err = c.SL.UpdateRotation(rotation, updatef)
 	if err != nil {
 		return "", err
 	}
