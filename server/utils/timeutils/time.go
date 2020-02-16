@@ -1,7 +1,7 @@
 // Copyright (c) 2019-present Mattermost, Inc. All Rights Reserved.
 // See License for license information.
 
-package utils
+package timeutils
 
 import (
 	"encoding/json"
@@ -16,16 +16,6 @@ const (
 
 type Time struct {
 	time.Time
-}
-
-type Interval struct {
-	Start  Time
-	Finish Time
-}
-
-type RelInterval struct {
-	Start  time.Duration
-	Finish time.Duration
 }
 
 var _ json.Marshaler = (*Time)(nil)
