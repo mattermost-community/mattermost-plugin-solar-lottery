@@ -39,7 +39,7 @@ func solarLotteryForGuess(t testing.TB, ctrl *gomock.Controller, rotation *sl.Ro
 		})
 
 	rotationStore := mock_store.NewMockRotationStore(ctrl)
-	rotationStore.EXPECT().LoadKnownRotations().AnyTimes().Return(store.IDMap{rotation.Name: store.NotEmpty}, nil)
+	rotationStore.EXPECT().LoadActiveRotations().AnyTimes().Return(store.IDMap{rotation.Name: store.NotEmpty}, nil)
 	rotationStore.EXPECT().LoadRotation(rotation.RotationID).AnyTimes().Return(rotation.Rotation, nil)
 
 	pluginAPI := mock_solarlottery.NewMockPluginAPI(ctrl)

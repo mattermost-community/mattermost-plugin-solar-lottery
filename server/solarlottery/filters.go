@@ -97,12 +97,12 @@ func withValidSkillName(skillName string) func(sl *solarLottery) error {
 	}
 }
 
-func withKnownRotations(sl *solarLottery) error {
-	if sl.knownRotations != nil {
+func withActiveRotations(sl *solarLottery) error {
+	if sl.activeRotations != nil {
 		return nil
 	}
 
-	rr, err := sl.RotationStore.LoadKnownRotations()
+	rr, err := sl.RotationStore.LoadActiveRotations()
 	if err != nil {
 		if err == store.ErrNotFound {
 			rr = store.IDMap{}
@@ -111,7 +111,7 @@ func withKnownRotations(sl *solarLottery) error {
 		}
 	}
 
-	sl.knownRotations = rr
+	sl.activeRotations = rr
 	return nil
 }
 

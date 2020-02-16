@@ -13,7 +13,7 @@ func (c *Command) listRotations(parameters []string) (string, error) {
 	if len(parameters) > 0 {
 		return c.subUsage(nil), errors.New("unexpected parameters")
 	}
-	rotations, err := c.SL.LoadKnownRotations()
+	rotations, err := c.SL.LoadActiveRotations()
 	if err != nil {
 		return "", err
 	}

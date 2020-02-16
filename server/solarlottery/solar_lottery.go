@@ -73,8 +73,8 @@ type solarLottery struct {
 	// use withKnownSkills to initialize.
 	knownSkills store.IDMap
 
-	// use withKnownRotations or withRotation(rotationID) to initialize, not expanded by default.
-	knownRotations store.IDMap
+	// use withActiveRotations or withRotation(rotationID) to initialize, not expanded by default.
+	activeRotations store.IDMap
 
 	// use withMattermostUsers(usernames) or withUsers(mattermostUserIDs) to initialize, not expanded by default.
 	users UserMap

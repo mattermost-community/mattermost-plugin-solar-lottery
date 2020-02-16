@@ -47,19 +47,19 @@ func (mr *MockRotationStoreMockRecorder) DeleteRotation(arg0 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRotation", reflect.TypeOf((*MockRotationStore)(nil).DeleteRotation), arg0)
 }
 
-// LoadKnownRotations mocks base method
-func (m *MockRotationStore) LoadKnownRotations() (store.IDMap, error) {
+// LoadActiveRotations mocks base method
+func (m *MockRotationStore) LoadActiveRotations() (store.IDMap, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoadKnownRotations")
+	ret := m.ctrl.Call(m, "LoadActiveRotations")
 	ret0, _ := ret[0].(store.IDMap)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// LoadKnownRotations indicates an expected call of LoadKnownRotations
-func (mr *MockRotationStoreMockRecorder) LoadKnownRotations() *gomock.Call {
+// LoadActiveRotations indicates an expected call of LoadActiveRotations
+func (mr *MockRotationStoreMockRecorder) LoadActiveRotations() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadKnownRotations", reflect.TypeOf((*MockRotationStore)(nil).LoadKnownRotations))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadActiveRotations", reflect.TypeOf((*MockRotationStore)(nil).LoadActiveRotations))
 }
 
 // LoadRotation mocks base method
@@ -77,18 +77,18 @@ func (mr *MockRotationStoreMockRecorder) LoadRotation(arg0 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadRotation", reflect.TypeOf((*MockRotationStore)(nil).LoadRotation), arg0)
 }
 
-// StoreKnownRotations mocks base method
-func (m *MockRotationStore) StoreKnownRotations(arg0 store.IDMap) error {
+// StoreActiveRotations mocks base method
+func (m *MockRotationStore) StoreActiveRotations(arg0 store.IDMap) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StoreKnownRotations", arg0)
+	ret := m.ctrl.Call(m, "StoreActiveRotations", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// StoreKnownRotations indicates an expected call of StoreKnownRotations
-func (mr *MockRotationStoreMockRecorder) StoreKnownRotations(arg0 interface{}) *gomock.Call {
+// StoreActiveRotations indicates an expected call of StoreActiveRotations
+func (mr *MockRotationStoreMockRecorder) StoreActiveRotations(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreKnownRotations", reflect.TypeOf((*MockRotationStore)(nil).StoreKnownRotations), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreActiveRotations", reflect.TypeOf((*MockRotationStore)(nil).StoreActiveRotations), arg0)
 }
 
 // StoreRotation mocks base method

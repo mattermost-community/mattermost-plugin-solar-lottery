@@ -11,10 +11,10 @@ import (
 )
 
 type RotationStore interface {
-	LoadKnownRotations() (IDMap, error)
-	StoreKnownRotations(IDMap) error
+	LoadActiveRotations() (IDMap, error)
+	StoreActiveRotations(IDMap) error
 	LoadRotation(string) (*Rotation, error)
-	DeleteRotation(rotationID string) error
+	DeleteRotation(string) error
 	StoreRotation(*Rotation) error
 }
 
@@ -64,9 +64,9 @@ func (rotation *Rotation) Clone(deep bool) *Rotation {
 	return &newRotation
 }
 
-func (s *pluginStore) LoadKnownRotations() (IDMap, error) {
+func (s *pluginStore) LoadActiveRotations() (IDMap, error) {
 	rotations := IDMap{}
-	err := kvstore.LoadJSON(s.basicKV, KnownRotationsKey, &rotations)
+	err := kvstore.LoadJSON(s.basicKV, ActiveRotationsKey, &rotations)
 	if err != nil {
 		return nil, err
 	}
@@ -82,14 +82,14 @@ func (s *pluginStore) LoadRotation(rotationID string) (*Rotation, error) {
 	return rotation, nil
 }
 
-func (s *pluginStore) StoreKnownRotations(rotations IDMap) error {
-	err := kvstore.StoreJSON(s.basicKV, KnownRotationsKey, rotations)
+func (s *pluginStore) StoreActiveRotations(rotations IDMap) error {
+	err := kvstore.StoreJSON(s.basicKV, ActiveRotationsKey, rotations)
 	if err != nil {
 		return err
 	}
 	s.Logger.With(bot.LogContext{
 		"Rotations": rotations,
-	}).Debugf("store: Stored known rotations")
+	}).Debugf("store: Stored active rotations")
 	return nil
 }
 

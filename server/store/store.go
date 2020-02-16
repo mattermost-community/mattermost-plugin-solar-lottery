@@ -17,8 +17,8 @@ const (
 	RotationKeyPrefix = "rotation_"
 	ShiftKeyPrefix    = "shift_"
 
-	KnownSkillsKey    = "index_skills"
-	KnownRotationsKey = "index_rotations"
+	KnownSkillsKey     = "index_skills"
+	ActiveRotationsKey = "index_rotations"
 )
 
 const OAuth2KeyExpiration = 15 * time.Minute

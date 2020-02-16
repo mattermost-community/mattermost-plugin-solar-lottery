@@ -20,7 +20,7 @@ type Rotations interface {
 	AddRotation(*Rotation) error
 	ArchiveRotation(*Rotation) error
 	DebugDeleteRotation(string) error
-	LoadKnownRotations() (store.IDMap, error)
+	LoadActiveRotations() (store.IDMap, error)
 	LoadRotation(string) (*Rotation, error)
 	MakeRotation(rotationName string) (*Rotation, error)
 	ResolveRotationName(namePattern string) ([]string, error)
@@ -30,7 +30,7 @@ type Rotations interface {
 func (sl *solarLottery) AddRotation(rotation *Rotation) error {
 	err := sl.Filter(
 		withActingUserExpanded,
-		withKnownRotations,
+		withActiveRotations,
 		rotation.init,
 	)
 	if err != nil {
@@ -41,13 +41,13 @@ func (sl *solarLottery) AddRotation(rotation *Rotation) error {
 		"ActingUsername": sl.actingUser.MattermostUsername(),
 		"RotationID":     rotation.RotationID,
 	})
-	_, ok := sl.knownRotations[rotation.RotationID]
+	_, ok := sl.activeRotations[rotation.RotationID]
 	if ok {
 		return ErrAlreadyExists
 	}
 
-	sl.knownRotations[rotation.RotationID] = rotation.Name
-	err = sl.RotationStore.StoreKnownRotations(sl.knownRotations)
+	sl.activeRotations[rotation.RotationID] = rotation.Name
+	err = sl.RotationStore.StoreActiveRotations(sl.activeRotations)
 	if err != nil {
 		return err
 	}
@@ -59,20 +59,20 @@ func (sl *solarLottery) AddRotation(rotation *Rotation) error {
 	return nil
 }
 
-func (sl *solarLottery) LoadKnownRotations() (store.IDMap, error) {
+func (sl *solarLottery) LoadActiveRotations() (store.IDMap, error) {
 	err := sl.Filter(
 		withActingUser,
-		withKnownRotations,
+		withActiveRotations,
 	)
 	if err != nil {
 		return nil, err
 	}
-	return sl.knownRotations, nil
+	return sl.activeRotations, nil
 }
 
 func (sl *solarLottery) ResolveRotationName(namePattern string) ([]string, error) {
 	err := sl.Filter(
-		withKnownRotations,
+		withActiveRotations,
 	)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (sl *solarLottery) ResolveRotationName(namePattern string) ([]string, error
 	if err != nil {
 		return nil, err
 	}
-	for id, name := range sl.knownRotations {
+	for id, name := range sl.activeRotations {
 		if re.MatchString(name) {
 			ids = append(ids, id)
 		}
@@ -114,8 +114,8 @@ func (sl *solarLottery) ArchiveRotation(rotation *Rotation) error {
 	if err != nil {
 		return err
 	}
-	delete(sl.knownRotations, rotation.RotationID)
-	err = sl.RotationStore.StoreKnownRotations(sl.knownRotations)
+	delete(sl.activeRotations, rotation.RotationID)
+	err = sl.RotationStore.StoreActiveRotations(sl.activeRotations)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to store rotation %s", rotation.RotationID)
 	}
@@ -141,8 +141,8 @@ func (sl *solarLottery) DebugDeleteRotation(rotationID string) error {
 	if err != nil {
 		return err
 	}
-	delete(sl.knownRotations, rotationID)
-	err = sl.RotationStore.StoreKnownRotations(sl.knownRotations)
+	delete(sl.activeRotations, rotationID)
+	err = sl.RotationStore.StoreActiveRotations(sl.activeRotations)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to store rotation %s", rotationID)
 	}
@@ -153,13 +153,13 @@ func (sl *solarLottery) DebugDeleteRotation(rotationID string) error {
 
 func (sl *solarLottery) LoadRotation(rotationID string) (*Rotation, error) {
 	err := sl.Filter(
-		withKnownRotations,
+		withActiveRotations,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	_, ok := sl.knownRotations[rotationID]
+	_, ok := sl.activeRotations[rotationID]
 	if !ok {
 		return nil, errors.Errorf("rotationID %s not found", rotationID)
 	}
@@ -180,7 +180,7 @@ func (sl *solarLottery) MakeRotation(rotationName string) (*Rotation, error) {
 	id := ""
 	for i := 0; i < 5; i++ {
 		tryId := rotationName + "-" + model.NewId()[:7]
-		if len(sl.knownRotations) == 0 || sl.knownRotations[tryId] == "" {
+		if len(sl.activeRotations) == 0 || sl.activeRotations[tryId] == "" {
 			id = tryId
 			break
 		}
