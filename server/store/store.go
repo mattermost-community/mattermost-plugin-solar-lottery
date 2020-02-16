@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	UserKeyPrefix     = "user_"
-	RotationKeyPrefix = "rotation_"
-	ShiftKeyPrefix    = "shift_"
+	UserKeyPrefix      = "user_"
+	RotationKeyPrefix  = "rotation_"
+	RecurringKeyPrefix = "recurring_"
+	TaskKeyPrefix      = "task_"
 
 	KnownSkillsKey     = "index_skills"
 	ActiveRotationsKey = "index_rotations"
@@ -23,30 +24,31 @@ const (
 
 const OAuth2KeyExpiration = 15 * time.Minute
 
-var ErrNotFound = kvstore.ErrNotFound
-
 type Store interface {
-	UserStore
-	SkillsStore
+	RecurringStore
 	RotationStore
-	ShiftStore
+	SkillsStore
+	TaskStore
+	UserStore
 }
 
 type pluginStore struct {
-	basicKV    kvstore.KVStore
-	userKV     kvstore.KVStore
-	rotationKV kvstore.KVStore
-	shiftKV    kvstore.KVStore
-	Logger     bot.Logger
+	basicKV     kvstore.KVStore
+	recurringKV kvstore.KVStore
+	rotationKV  kvstore.KVStore
+	taskKV      kvstore.KVStore
+	userKV      kvstore.KVStore
+	Logger      bot.Logger
 }
 
 func NewPluginStore(api plugin.API, logger bot.Logger) Store {
 	basicKV := kvstore.NewPluginStore(api)
 	return &pluginStore{
-		basicKV:    basicKV,
-		userKV:     kvstore.NewHashedKeyStore(basicKV, UserKeyPrefix),
-		rotationKV: kvstore.NewHashedKeyStore(basicKV, RotationKeyPrefix),
-		shiftKV:    kvstore.NewHashedKeyStore(basicKV, ShiftKeyPrefix),
-		Logger:     logger,
+		basicKV:     basicKV,
+		recurringKV: kvstore.NewHashedKeyStore(basicKV, RecurringKeyPrefix),
+		rotationKV:  kvstore.NewHashedKeyStore(basicKV, RotationKeyPrefix),
+		taskKV:      kvstore.NewHashedKeyStore(basicKV, TaskKeyPrefix),
+		userKV:      kvstore.NewHashedKeyStore(basicKV, UserKeyPrefix),
+		Logger:      logger,
 	}
 }

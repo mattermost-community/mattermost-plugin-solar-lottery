@@ -4,8 +4,6 @@
 package store
 
 import (
-	"time"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
 )
@@ -16,52 +14,6 @@ type RotationStore interface {
 	LoadRotation(string) (*Rotation, error)
 	DeleteRotation(string) error
 	StoreRotation(*Rotation) error
-}
-
-type Rotation struct {
-	PluginVersion string
-	RotationID    string
-	IsArchived    bool
-
-	// Mandatory attributes
-	Name   string
-	Period string
-	Start  string
-	Type   string
-
-	// Optional attributes
-	Size              int   `json:",omitempty"`
-	Grace             int   `json:",omitempty"`
-	MattermostUserIDs IDMap `json:",omitempty"`
-	Needs             Needs `json:",omitempty"`
-
-	Autopilot RotationAutopilot `json:",omitempty"`
-}
-
-type RotationAutopilot struct {
-	On          bool          `json:",omitempty"`
-	StartFinish bool          `json:",omitempty"`
-	Fill        bool          `json:",omitempty"`
-	FillPrior   time.Duration `json:",omitempty"`
-	Notify      bool          `json:",omitempty"`
-	NotifyPrior time.Duration `json:",omitempty"`
-}
-
-func NewRotation(name string) *Rotation {
-	return &Rotation{
-		Name:              name,
-		MattermostUserIDs: IDMap{},
-		Needs:             Needs{},
-	}
-}
-
-func (rotation *Rotation) Clone(deep bool) *Rotation {
-	newRotation := *rotation
-	if deep {
-		newRotation.MattermostUserIDs = rotation.MattermostUserIDs.Clone()
-		newRotation.Needs = append(Needs{}, rotation.Needs...)
-	}
-	return &newRotation
 }
 
 func (s *pluginStore) LoadActiveRotations() (IDMap, error) {

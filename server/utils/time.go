@@ -18,7 +18,23 @@ type Time struct {
 	time.Time
 }
 
+type Interval struct {
+	Start  Time
+	Finish Time
+}
+
+type RelInterval struct {
+	Start  time.Duration
+	Finish time.Duration
+}
+
 var _ json.Marshaler = (*Time)(nil)
+
+func TimeNow() Time {
+	return Time{
+		Time: time.Now(),
+	}
+}
 
 // String is in UTC, use LocalString for local time
 func (t Time) String() string {
