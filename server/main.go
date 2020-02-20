@@ -13,8 +13,8 @@ var BuildDate string
 
 func main() {
 	mattermost.ClientMain(
-		solarlotteryplugin.NewWithConfig(
-			&config.Config{
+		solarlotteryplugin.New(
+			&config.BuildConfig{
 				PluginID:       manifest.ID,
 				PluginVersion:  manifest.Version,
 				BuildHash:      BuildHash,

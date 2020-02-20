@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
 const timed = "__since"
@@ -102,7 +102,7 @@ func (bot *bot) Warnf(format string, args ...interface{}) {
 
 func (bot *bot) logToAdmins(level, message string) {
 	if bot.AdminLogVerbose && len(bot.logContext) > 0 {
-		message += "\n" + utils.JSONBlock(bot.logContext)
+		message += "\n" + md.JSONBlock(bot.logContext)
 	}
 	bot.dmAdmins("(log " + level + ") " + message)
 }

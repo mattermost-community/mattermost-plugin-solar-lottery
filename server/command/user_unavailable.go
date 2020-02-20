@@ -5,45 +5,46 @@ package command
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/spf13/pflag"
 
-	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 func (c *Command) userUnavailable(parameters []string) (string, error) {
-	var usernames, start, end string
+	var start, finish types.Time
 	var clear bool
 	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
-	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to set unavailability")
-	fs.StringVarP(&start, flagStart, flagPStart, "", "start of the unavailability")
-	fs.StringVarP(&end, flagEnd, flagPEnd, "", "end of unavailability (last day)")
-	fs.BoolVar(&clear, flagClear, false, "clear all overlapping events")
+	fs.VarP(&start, flagStart, flagPStart, "start of the interval")
+	fs.VarP(&finish, flagEnd, flagPEnd, "end of the interval")
+	fs.BoolVar(&clear, flagClear, false, "mark as available by clearing all overlapping unavailability events")
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err
 	}
 
-	startTime, endTime, err := sl.ParseDatePair(start, end)
+	users, err := c.users(fs.Args())
 	if err != nil {
 		return "", err
 	}
-	endTime = endTime.Add(time.Hour * 24) // start of next day
-	end = endTime.Format(sl.DateFormat)
+	interval := types.Interval{
+		Start:  start,
+		Finish: finish,
+	}
 
 	if clear {
-		err = c.SL.DeleteEvents(usernames, start, end)
+		err = c.SL.ClearCalendar(users, interval)
 		if err != nil {
 			return "", err
 		}
-		return fmt.Sprintf("cleared %s to %s from %s", start, end, usernames), nil
+		return fmt.Sprintf("cleared %s to %s from %s", start, finish, users.Markdown()), nil
 	}
 
-	event := sl.NewPersonalEvent(startTime, endTime)
-	err = c.SL.AddUnavailable(usernames, event)
+	u := sl.NewUnavailable(sl.ReasonPersonal, interval)
+	err = c.SL.AddToCalendar(users, u)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("Added %s to %s", event.Markdown(), usernames), nil
+	return fmt.Sprintf("Added %s to %s", u.Markdown(), users.Markdown()), nil
 }

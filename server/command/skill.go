@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/pflag"
 
-	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
 func (c *Command) skill(parameters []string) (string, error) {
@@ -45,7 +45,7 @@ func (c *Command) deleteSkill(parameters []string) (string, error) {
 	if err != nil {
 		return c.flagUsage(fs), err
 	}
-	err = c.SL.DeleteSkill(skillName)
+	err = c.SL.DeleteKnownSkill(skillName)
 	if err != nil {
 		return "", err
 	}
@@ -53,11 +53,11 @@ func (c *Command) deleteSkill(parameters []string) (string, error) {
 }
 
 func (c *Command) listSkills(parameters []string) (string, error) {
-	skills, err := c.SL.ListSkills()
+	skills, err := c.SL.ListKnownSkills()
 	if err != nil {
 		return "", err
 	}
-	return "Known skills: " + utils.JSONBlock(skills), nil
+	return "Known skills: " + md.JSONBlock(skills.AsArray()), nil
 }
 
 func withSkillFlags(fs *pflag.FlagSet, skillName *string, level *sl.Level) {

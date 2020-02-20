@@ -8,47 +8,41 @@ import (
 )
 
 func (c *Command) archiveRotation(parameters []string) (string, error) {
-	var rotationID, rotationName string
-	fs := newRotationFlagSet(&rotationID, &rotationName)
+	fs := newRotationUsersFlagSet()
 	err := fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(fs.FlagSet), err
 	}
 
-	rotationID, err = c.parseRotationFlags(rotationID, rotationName)
-	if err != nil {
-		return "", err
-	}
-	rotation, err := c.SL.LoadRotation(rotationID)
+	r, _, err := c.rotationUsers(fs)
 	if err != nil {
 		return "", err
 	}
 
-	err = c.SL.ArchiveRotation(rotation)
+	err = c.SL.ArchiveRotation(r)
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed to archive %s", rotation.Name)
+		return "", errors.WithMessagef(err, "failed to archive %s", r.Name())
 	}
 
-	return "Deleted rotation " + rotation.Name, nil
+	return "Archived rotation " + r.Name(), nil
 }
 
 func (c *Command) debugDeleteRotation(parameters []string) (string, error) {
-	var rotationID, rotationName string
-	fs := newRotationFlagSet(&rotationID, &rotationName)
+	fs := newRotationUsersFlagSet()
 	err := fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(fs.FlagSet), err
 	}
 
-	rotationID, err = c.parseRotationFlags(rotationID, rotationName)
+	r, _, err := c.rotationUsers(fs)
 	if err != nil {
 		return "", err
 	}
 
-	err = c.SL.DebugDeleteRotation(rotationID)
+	err = c.SL.DebugDeleteRotation(r.RotationID)
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed to delete %s", rotationID)
+		return "", errors.WithMessagef(err, "failed to delete %s", r.Markdown())
 	}
 
-	return "Deleted rotation " + rotationID, nil
+	return "Deleted rotation " + r.Markdown(), nil
 }

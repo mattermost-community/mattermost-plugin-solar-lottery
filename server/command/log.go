@@ -5,8 +5,6 @@ package command
 
 import (
 	"github.com/spf13/pflag"
-
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 )
 
 func (c *Command) log(parameters []string) (string, error) {
@@ -20,9 +18,9 @@ func (c *Command) log(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	c.SL.UpdateStoredConfig(func(conf *config.Config) {
-		conf.StoredConfig.BotConfig.AdminLogLevel = level
-		conf.StoredConfig.BotConfig.AdminLogVerbose = verbose
-	})
+	sc := c.Config.StoredConfig
+	sc.AdminLogLevel = level
+	sc.AdminLogVerbose = verbose
+	c.ConfigStore.SaveConfig(sc)
 	return "Dispatched config update.", nil
 }

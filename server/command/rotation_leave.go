@@ -10,28 +10,18 @@ import (
 )
 
 func (c *Command) leaveRotation(parameters []string) (string, error) {
-	var rotationID, rotationName string
-	users := ""
-	fs := newRotationFlagSet(&rotationID, &rotationName)
-	fs.StringVarP(&users, flagUsers, flagPUsers, "", "remove other users from rotation.")
+	fs := newRotationUsersFlagSet()
 	err := fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(fs.FlagSet), err
 	}
 
-	rotationID, err = c.parseRotationFlags(rotationID, rotationName)
-	if err != nil {
-		return "", err
-	}
-	rotation, err := c.SL.LoadRotation(rotationID)
-	if err != nil {
-		return "", err
-	}
+	r, users, err := c.rotationUsers(fs)
 
-	deleted, err := c.SL.LeaveRotation(users, rotation)
+	deleted, err := c.SL.LeaveRotation(r, users)
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed, %s might have been updated", deleted.Markdown())
 	}
 
-	return fmt.Sprintf("%s left rotation %s", deleted.Markdown(), rotation.Name), nil
+	return fmt.Sprintf("%s removed from rotation %s", deleted.Markdown(), r.Markdown()), nil
 }

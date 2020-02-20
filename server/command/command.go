@@ -15,8 +15,9 @@ import (
 	"github.com/mattermost/mattermost-server/v5/plugin"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/constants"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
 const (
@@ -88,11 +89,12 @@ const (
 
 // Command handles commands
 type Command struct {
-	Context   *plugin.Context
-	Args      *model.CommandArgs
-	ChannelID string
-	Config    *config.Config
-	SL        solarlottery.SolarLottery
+	Config      *config.Config
+	SL          sl.SL
+	ConfigStore config.Store
+	Context     *plugin.Context
+	Args        *model.CommandArgs
+	ChannelID   string
 
 	subcommand string
 }
@@ -103,13 +105,13 @@ type RegisterFunc func(*model.Command) error
 // Register should be called by the plugin to register all necessary commands
 func Register(registerFunc RegisterFunc) {
 	_ = registerFunc(&model.Command{
-		Trigger:          config.CommandTrigger,
+		Trigger:          constants.CommandTrigger,
 		DisplayName:      "Solar Lottery",
 		Description:      "team rotation scheduler",
 		AutoComplete:     true,
 		AutoCompleteDesc: "Schedule team rotations",
 		AutoCompleteHint: fmt.Sprintf("Usage: `/%s info|rotation|shift|skill|user`.",
-			config.CommandTrigger),
+			constants.CommandTrigger),
 	})
 }
 
@@ -118,16 +120,16 @@ func (c *Command) Handle() (out string, err error) {
 	subcommands := map[string]func([]string) (string, error){
 		commandInfo:     c.info,
 		commandRotation: c.rotation,
-		commandShift:    c.shift,
-		commandSkill:    c.skill,
-		commandUser:     c.user,
-		commandLog:      c.log,
+		// commandShift:    c.shift,
+		commandSkill: c.skill,
+		commandUser:  c.user,
+		commandLog:   c.log,
 
 		"debug-clean": c.debugClean,
 	}
 
 	defer func() {
-		prefix := utils.CodeBlock(c.Args.Command) + "\n"
+		prefix := md.CodeBlock(c.Args.Command) + "\n"
 		if err != nil {
 			prefix += "Command failed. Error: **" + err.Error() + "**\n"
 		}
@@ -151,7 +153,7 @@ func (c *Command) validate() (string, []string, error) {
 		return "", nil, errors.New("no subcommand specified, nothing to do")
 	}
 	command := split[0]
-	if command != "/"+config.CommandTrigger {
+	if command != "/"+constants.CommandTrigger {
 		return "", nil, errors.Errorf("%q is not a supported command and should not have been invoked. Please contact your system administrator", command)
 	}
 
@@ -178,7 +180,7 @@ func (c *Command) flagUsage(fs *pflag.FlagSet) string {
 	if fs != nil {
 		usage += " [flags...]\n\nFlags:\n" + fs.FlagUsages()
 	}
-	return fmt.Sprintf("Usage:\n" + utils.CodeBlock(usage))
+	return fmt.Sprintf("Usage:\n" + md.CodeBlock(usage))
 }
 
 func (c *Command) subUsage(subcommands map[string]func([]string) (string, error)) string {

@@ -7,6 +7,8 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
 )
 
 func (c *Command) listRotations(parameters []string) (string, error) {
@@ -17,13 +19,13 @@ func (c *Command) listRotations(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if len(rotations) == 0 {
+	if rotations.Len() == 0 {
 		return "*none*", nil
 	}
 
 	out := ""
-	for id := range rotations {
-		out += fmt.Sprintf("- %s\n", id)
-	}
+	rotations.ForEach(func(id string) {
+		out += fmt.Sprintf("- %s\n", kvstore.NameFromID(id))
+	})
 	return out, nil
 }

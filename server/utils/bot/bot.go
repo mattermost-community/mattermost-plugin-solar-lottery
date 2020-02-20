@@ -27,7 +27,7 @@ type BotConfig struct {
 	AdminLogVerbose bool
 }
 
-func (c BotConfig) ToStorableConfig(configMap map[string]interface{}) map[string]interface{} {
+func (c BotConfig) ToStorable(configMap map[string]interface{}) map[string]interface{} {
 	if configMap == nil {
 		configMap = map[string]interface{}{}
 	}

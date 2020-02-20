@@ -9,27 +9,31 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 
-	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 )
 
 func (c *Command) qualifyUsers(parameters []string) (string, error) {
-	var usernames, skillName string
+	var skillName string
 	var level sl.Level
 	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
 	withSkillFlags(fs, &skillName, &level)
-	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to qualify")
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err
 	}
-
 	if skillName == "" || level == 0 {
 		return c.flagUsage(fs), errors.New("must provide --level and --skill values")
 	}
 
-	err = c.SL.Qualify(usernames, skillName, level)
+	users, err := c.users(fs.Args())
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("Qualified %s as %s", usernames, sl.MarkdownSkillLevel(skillName, level)), nil
+
+	err = c.SL.Qualify(users, skillName, level)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("Qualified %s as %s", users.Markdown(), sl.MarkdownSkillLevel(skillName, level)), nil
 }

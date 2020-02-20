@@ -4,24 +4,20 @@
 package command
 
 func (c *Command) showRotation(parameters []string) (string, error) {
-	var rotationID, rotationName string
-	fs := newRotationFlagSet(&rotationID, &rotationName)
+	fs := newRotationUsersFlagSet()
 	err := fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(fs.FlagSet), err
 	}
 
-	rotationID, err = c.parseRotationFlags(rotationID, rotationName)
+	r, _, err := c.rotationUsers(fs)
 	if err != nil {
 		return "", err
 	}
-	rotation, err := c.SL.LoadRotation(rotationID)
+
+	err = c.SL.ExpandRotation(r)
 	if err != nil {
 		return "", err
 	}
-	err = c.SL.ExpandRotation(rotation)
-	if err != nil {
-		return "", err
-	}
-	return rotation.MarkdownBullets(), nil
+	return r.MarkdownBullets(), nil
 }

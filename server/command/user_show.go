@@ -6,21 +6,20 @@ package command
 import (
 	"github.com/spf13/pflag"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
 func (c *Command) showUser(parameters []string) (string, error) {
-	usernames := ""
 	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
-	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to show")
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err
 	}
 
-	users, err := c.SL.LoadMattermostUsers(usernames)
+	users, err := c.users(fs.Args())
 	if err != nil {
 		return "", err
 	}
-	return utils.JSONBlock(users), nil
+
+	return md.JSONBlock(users), nil
 }

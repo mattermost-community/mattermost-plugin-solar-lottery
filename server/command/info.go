@@ -6,7 +6,7 @@ package command
 import (
 	"fmt"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/constants"
 )
 
 func (c *Command) info(parameters []string) (string, error) {
@@ -14,7 +14,7 @@ func (c *Command) info(parameters []string) (string, error) {
 		"[%s](https://github.com/mattermost/%s/commit/%s), built %s\n",
 		c.Config.PluginVersion,
 		c.Config.BuildHashShort,
-		config.Repository,
+		constants.Repository,
 		c.Config.BuildHash,
 		c.Config.BuildDate)
 
@@ -22,7 +22,7 @@ func (c *Command) info(parameters []string) (string, error) {
 - [x] info: display this.
 
 - [x] rotation
-	- [x] add
+	- [x] new
 	- [x] archive
 	- [ ] autopilot
 	- [x] debug-delete
@@ -33,10 +33,9 @@ func (c *Command) info(parameters []string) (string, error) {
 	- [x] list
 	- [x] need (add/delete)
 	- [x] show
-	- [x] update
 
 - [ ] shift
-	- [x] open
+	- [x] new
 	- [x] debug-delete
 	- [x] fill: evaluates shift readiness, autofills.
 	- [x] finish: finishes a shift.
@@ -47,7 +46,7 @@ func (c *Command) info(parameters []string) (string, error) {
 	- [x] start: starts a shift.
 
 - [x] skill
-	- [x] add
+	- [x] new
 	- [x] list
 	- [x] delete
 

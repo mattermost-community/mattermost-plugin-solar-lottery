@@ -10,18 +10,22 @@ import (
 )
 
 func (c *Command) disqualifyUsers(parameters []string) (string, error) {
-	var usernames, skillName string
+	var skillName string
 	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
 	withSkillFlags(fs, &skillName, nil)
-	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to disqualify from skill")
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err
 	}
 
-	err = c.SL.Disqualify(usernames, skillName)
+	users, err := c.users(fs.Args())
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("Disqualified %s from %s", usernames, skillName), nil
+
+	err = c.SL.Disqualify(users, skillName)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("Disqualified %s from %s", users.Markdown(), skillName), nil
 }
