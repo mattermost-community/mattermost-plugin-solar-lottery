@@ -14,15 +14,28 @@ const (
 	TimeFormat = "2006-01-02T15:04"
 )
 
+var locUTC *time.Location
+
+func init() {
+	locUTC, _ = time.LoadLocation("UTC")
+}
+
 type Time struct {
 	time.Time
 }
 
 var _ json.Marshaler = (*Time)(nil)
+var _ json.Unmarshaler = (*Time)(nil)
 
-func TimeNow() Time {
+func Now() Time {
 	return Time{
 		Time: time.Now(),
+	}
+}
+
+func NewTime(t time.Time) Time {
+	return Time{
+		Time: t,
 	}
 }
 
@@ -48,7 +61,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	parsedTime, err := time.Parse(time.RFC3339, s)
+	parsedTime, err := time.ParseInLocation(time.RFC3339, s, locUTC)
 	if err != nil {
 		return err
 	}

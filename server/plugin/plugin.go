@@ -25,7 +25,6 @@ import (
 	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery/autofill/queue"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery/autofill/solarlottery"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 

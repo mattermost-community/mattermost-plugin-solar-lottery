@@ -30,7 +30,7 @@ func (c *Command) addSkill(parameters []string) (string, error) {
 	if err != nil {
 		return c.flagUsage(fs), err
 	}
-	err = c.SL.AddSkill(skillName)
+	err = c.SL.AddKnownSkill(skillName)
 	if err != nil {
 		return "", err
 	}

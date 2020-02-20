@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/pflag"
 
 	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 )
 
 func withRotationNeedFlags(fs *pflag.FlagSet, skill *string, level *sl.Level, min, max *int, deleteNeed *bool) {
@@ -64,7 +63,7 @@ func (c *Command) rotationNeed(parameters []string) (string, error) {
 				errors.Errorf("requires `%s` to be specified.", flagMin)
 		}
 		updatef = func(rotation *sl.Rotation) error {
-			rotation.ChangeNeed(skill, level, store.NewNeed(skill, int(level), min).WithMax(max))
+			rotation.ChangeNeed(skill, level, NewNeed(skill, int(level), min).WithMax(max))
 			return nil
 		}
 	}

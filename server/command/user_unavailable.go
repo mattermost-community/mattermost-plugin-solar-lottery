@@ -41,7 +41,7 @@ func (c *Command) userUnavailable(parameters []string) (string, error) {
 	}
 
 	event := sl.NewPersonalEvent(startTime, endTime)
-	err = c.SL.AddEvent(usernames, event)
+	err = c.SL.AddUnavailable(usernames, event)
 	if err != nil {
 		return "", err
 	}

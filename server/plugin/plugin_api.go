@@ -10,7 +10,6 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
@@ -40,7 +39,7 @@ func (p *Plugin) GetMattermostUserByUsername(mattermostUsername string) (*model.
 		return nil, err
 	}
 	if u.DeleteAt != 0 {
-		return nil, store.ErrNotFound
+		return nil, ErrNotFound
 	}
 	return u, nil
 }
@@ -51,7 +50,7 @@ func (p *Plugin) GetMattermostUser(mattermostUserID string) (*model.User, error)
 		return nil, err
 	}
 	if mmuser.DeleteAt != 0 {
-		return nil, store.ErrNotFound
+		return nil, ErrNotFound
 	}
 	return mmuser, nil
 }
