@@ -78,12 +78,14 @@ func (s *service) Refresh() error {
 		newConfig = &Config{}
 	}
 	newConfig.StoredConfig = &stored
+	newConfig.BuildConfig = s.BuildConfig
 	newConfig.MattermostSiteURL = *mattermostSiteURL
 	newConfig.MattermostSiteHostname = mattermostURL.Hostname()
 	newConfig.PluginURL = pluginURL
 	newConfig.PluginURLPath = pluginURLPath
 	newConfig.BotUserID = s.store.GetBotUserID()
 
+	s.config = newConfig
 	return nil
 }
 

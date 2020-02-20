@@ -19,6 +19,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/constants"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
 	// "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery/autofill/queue"
 	// "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery/autofill/solarlottery"
 )
@@ -26,6 +28,7 @@ import (
 type Plugin struct {
 	plugin.MattermostPlugin
 
+	bot    bot.Bot
 	sl     sl.Service
 	api    *api.Service
 	config config.Service
@@ -49,6 +52,16 @@ func (p *Plugin) OnActivate() error {
 		return errors.Wrap(err, "failed to ensure bot account")
 	}
 	p.botUserID = botUserID
+	p.bot = bot.NewBot(p.API, botUserID)
+
+	p.sl = sl.Service{
+		PluginAPI: p,
+		Config:    p.config,
+		// Autofillers map[string]Autofiller
+		Logger: p.bot,
+		Poster: p.bot,
+		Store:  kvstore.New(kvstore.NewPluginStore(p.API)),
+	}
 
 	router := &mux.Router{}
 	p.api = api.NewService(p.config, router)
@@ -75,9 +88,9 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 
 	command := command.Command{
 		Context:   c,
+		Config:    p.config.Get(),
 		Args:      args,
 		ChannelID: args.ChannelId,
-		Config:    p.config.Get(),
 		SL:        p.sl.ActingAs(args.UserId),
 	}
 
