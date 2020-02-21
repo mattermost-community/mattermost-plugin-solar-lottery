@@ -163,8 +163,10 @@ func (c *Command) validate() (string, []string, error) {
 	return command, split[1:], nil
 }
 
-func (c *Command) handleCommand(subcommands map[string]func([]string) (string, error),
-	parameters []string) (string, error) {
+func (c *Command) handleCommand(
+	subcommands map[string]func([]string) (string, error),
+	parameters []string,
+) (string, error) {
 	if len(parameters) == 0 {
 		return c.subUsage(subcommands), errors.New("expected a (sub-)command")
 	}
@@ -221,7 +223,6 @@ func fRotation(fs *pflag.FlagSet) {
 
 func (c *Command) loadUsernames(args []string) (users sl.UserMap, err error) {
 	users = sl.UserMap{}
-
 	// if no args provided, return the acting user
 	if len(args) == 0 {
 		user, err := c.SL.GetActingUser()
