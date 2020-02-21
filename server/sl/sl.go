@@ -23,12 +23,15 @@ type SL interface {
 
 	PluginAPI
 	bot.Logger
+
+	Config() *config.Config
 }
 
 type sl struct {
 	*Service
-	*config.Config
 	bot.Logger
+
+	conf *config.Config
 
 	// set by Service.ActingAs.
 	actingMattermostUserID string
@@ -39,4 +42,8 @@ type sl struct {
 	// Common indices (set by withXXX).
 	knownSkills     *types.Set
 	activeRotations *types.Set
+}
+
+func (sl *sl) Config() *config.Config {
+	return sl.conf
 }

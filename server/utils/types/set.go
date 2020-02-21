@@ -3,7 +3,9 @@
 
 package types
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 var notEmpty = struct{}{}
 
@@ -12,10 +14,14 @@ type Set struct {
 	asMap   map[string]struct{}
 }
 
-func NewSet() *Set {
-	return &Set{
+func NewSet(vv ...string) *Set {
+	s := &Set{
 		asMap: map[string]struct{}{},
 	}
+	for _, v := range vv {
+		s.Add(v)
+	}
+	return s
 }
 
 func (s Set) Clone() *Set {
@@ -86,11 +92,10 @@ func (s *Set) Delete(v string) {
 	n := NewSet()
 	for _, vv := range s.asArray {
 		if vv != v {
-			n.Add(v)
+			n.Add(vv)
 		}
 	}
-	s.asArray = n.asArray
-	s.asMap = n.asMap
+	*s = *n
 }
 
 func (s *Set) MarshalJSON() ([]byte, error) {

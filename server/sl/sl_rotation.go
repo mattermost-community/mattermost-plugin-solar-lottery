@@ -150,10 +150,11 @@ func (sl *sl) DebugDeleteRotation(rotationID string) error {
 	if err != nil {
 		return err
 	}
+
 	sl.activeRotations.Delete(rotationID)
 	err = sl.Store.Index(KeyActiveRotations).Store(sl.activeRotations)
 	if err != nil {
-		return errors.WithMessagef(err, "failed to store rotation %s", rotationID)
+		return err
 	}
 
 	logger.Infof("%s deleted rotation %s.", sl.actingUser.Markdown(), rotationID)
@@ -182,22 +183,13 @@ func (sl *sl) LoadRotation(rotationID string) (*Rotation, error) {
 }
 
 func (sl *sl) MakeRotation(rotationName string) (*Rotation, error) {
-	// id := ""
-	// for i := 0; i < 5; i++ {
-	// 	tryId := rotationName + "-" + model.NewId()[:7]
-	// 	if len(sl.activeRotations) == 0 || sl.activeRotations[tryId] == "" {
-	// 		id = tryId
-	// 		break
-	// 	}
-	// }
-	// if id == "" {
-	// 	return nil, errors.New("Failed to generate unique rotation ID")
-	// }
-
-	// rotation := NewRotation(rotationName)
-	// rotation.RotationID = id
-	// return rotation, nil
-	return nil, nil
+	id, err := sl.Store.Entity(KeyRotation).NewID(rotationName)
+	if err != nil {
+		return nil, err
+	}
+	r := NewRotation()
+	r.RotationID = id
+	return r, nil
 }
 
 func (sl *sl) ExpandRotation(r *Rotation) error {

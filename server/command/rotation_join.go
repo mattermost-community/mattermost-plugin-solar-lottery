@@ -8,16 +8,18 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 func (c *Command) joinRotation(parameters []string) (string, error) {
 	var starting types.Time
-	fs := newRotationUsersFlagSet()
+	fs := newRotationFS()
+	jsonOut := fJSON(fs)
 	fs.Var(&starting, flagStart, fmt.Sprintf("time for user to start participating"))
 	err := fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs.FlagSet), err
+		return c.flagUsage(fs), err
 	}
 
 	r, users, err := c.rotationUsers(fs)
@@ -30,5 +32,8 @@ func (c *Command) joinRotation(parameters []string) (string, error) {
 		return "", errors.WithMessagef(err, "failed, %s might have been updated", added.Markdown())
 	}
 
+	if *jsonOut {
+		return md.JSONBlock(added), nil
+	}
 	return fmt.Sprintf("%s added to rotation %s", added.Markdown(), r.Markdown()), nil
 }

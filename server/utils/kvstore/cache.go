@@ -7,7 +7,7 @@ import (
 	"bytes"
 )
 
-type CacheKeyStore struct {
+type cacheKVStore struct {
 	upstream KVStore
 
 	// key value  of nil indicated deletion
@@ -17,18 +17,24 @@ type CacheKeyStore struct {
 	// expires   map[string]time.Time
 }
 
-var _ KVStore = (*CacheKeyStore)(nil)
+var _ KVStore = (*cacheKVStore)(nil)
 
-func NewCacheKeyStore(s KVStore) KVStore {
-	return &CacheKeyStore{
-		upstream: s,
+func NewCacheKVStore(s KVStore) KVStore {
+	return &cacheKVStore{
+		upstream:  s,
+		Data:      map[string][]byte{},
+		DirtyKeys: map[string]bool{},
 	}
 }
 
-func (s *CacheKeyStore) Flush() []error {
+func (s *cacheKVStore) Flush() []error {
+	if s.upstream == nil {
+		return nil
+	}
+
 	var errs []error
-	var err error
 	for key := range s.DirtyKeys {
+		var err error
 		data := s.Data[key]
 		if data == nil {
 			err = s.upstream.Delete(key)
@@ -42,7 +48,7 @@ func (s *CacheKeyStore) Flush() []error {
 	return errs
 }
 
-func (s *CacheKeyStore) Load(key string) ([]byte, error) {
+func (s *cacheKVStore) Load(key string) ([]byte, error) {
 	data, ok := s.Data[key]
 	if ok {
 		if data == nil {
@@ -51,6 +57,9 @@ func (s *CacheKeyStore) Load(key string) ([]byte, error) {
 		return data, nil
 	}
 
+	if s.upstream == nil {
+		return nil, ErrNotFound
+	}
 	data, err := s.upstream.Load(key)
 	if err != nil {
 		return nil, err
@@ -60,7 +69,7 @@ func (s *CacheKeyStore) Load(key string) ([]byte, error) {
 	return data, nil
 }
 
-func (s *CacheKeyStore) Store(key string, data []byte) error {
+func (s *cacheKVStore) Store(key string, data []byte) error {
 	prev, ok := s.Data[key]
 	if ok && bytes.Equal(data, prev) {
 		return nil
@@ -71,20 +80,24 @@ func (s *CacheKeyStore) Store(key string, data []byte) error {
 	return nil
 }
 
-func (s *CacheKeyStore) StoreTTL(key string, data []byte, ttlSeconds int64) error {
+func (s *cacheKVStore) StoreTTL(key string, data []byte, ttlSeconds int64) error {
 	// TODO Implement expiry
 	return s.Store(key, data)
 }
 
-func (s *CacheKeyStore) Delete(key string) error {
+func (s *cacheKVStore) Delete(key string) error {
 	return s.Store(key, nil)
 }
 
-func (s *CacheKeyStore) Keys() ([]string, error) {
+func (s *cacheKVStore) Keys() ([]string, error) {
+	var err error
 	// Get all keys from the upstream
-	keys, err := s.upstream.Keys()
-	if err != nil {
-		return nil, err
+	keys := []string{}
+	if s.upstream != nil {
+		keys, err = s.upstream.Keys()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Merge with any dirty keys we have

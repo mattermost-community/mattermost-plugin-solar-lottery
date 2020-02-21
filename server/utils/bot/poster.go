@@ -73,3 +73,11 @@ func (bot *bot) Ephemeral(userId, channelId, format string, args ...interface{})
 	}
 	_ = bot.pluginAPI.SendEphemeralPost(userId, post)
 }
+
+type NilPoster struct{}
+
+func (l *NilPoster) DM(userID, format string, args ...interface{}) error { return nil }
+func (l *NilPoster) DMWithAttachments(userID string, attachments ...*model.SlackAttachment) error {
+	return nil
+}
+func (l *NilPoster) Ephemeral(userID, channelID, format string, args ...interface{}) {}

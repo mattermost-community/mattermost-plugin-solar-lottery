@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func (c *Command) addRotation(parameters []string) (string, error) {
+func (c *Command) newRotation(parameters []string) (string, error) {
 	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
 	err := fs.Parse(parameters)
 	if err != nil {

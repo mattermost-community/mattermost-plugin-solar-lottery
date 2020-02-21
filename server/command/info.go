@@ -12,11 +12,11 @@ import (
 func (c *Command) info(parameters []string) (string, error) {
 	resp := fmt.Sprintf("Mattermost Solar Lottery plugin version: %s, "+
 		"[%s](https://github.com/mattermost/%s/commit/%s), built %s\n",
-		c.Config.PluginVersion,
-		c.Config.BuildHashShort,
+		c.SL.Config().PluginVersion,
+		c.SL.Config().BuildHashShort,
 		constants.Repository,
-		c.Config.BuildHash,
-		c.Config.BuildDate)
+		c.SL.Config().BuildHash,
+		c.SL.Config().BuildDate)
 
 	resp += `
 - [x] info: display this.

@@ -11,9 +11,10 @@ import (
 )
 
 type EntityStore interface {
-	Load(string, interface{}) error
-	Store(string, interface{}) error
 	Delete(string) error
+	Load(string, interface{}) error
+	NewID(name string) (string, error)
+	Store(string, interface{}) error
 }
 
 type entityStore struct {
@@ -40,13 +41,20 @@ func (s *entityStore) Delete(id string) error {
 
 var ErrTryAgain = errors.New("try again")
 
-func (e *entityStore) NewNameID(name string) (string, error) {
+func (e *entityStore) NewID(name string) (string, error) {
 	for i := 0; i < 5; i++ {
-		tryId := name
+		id := name
 		if i > 0 {
-			tryId += "-" + model.NewId()[:7]
+			id = name + "-" + model.NewId()[:7]
+		}
+
+		dummy := struct{}{}
+		err := e.Load(id, &dummy)
+		if err == ErrNotFound {
+			return id, nil
 		}
 	}
+
 	return "", ErrTryAgain
 }
 

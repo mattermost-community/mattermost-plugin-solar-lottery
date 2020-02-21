@@ -15,7 +15,7 @@ import (
 func (c *Command) rotation(parameters []string) (string, error) {
 	subcommands := map[string]func([]string) (string, error){
 		// commandAutopilot:   c.autopilotRotation,
-		commandAdd:         c.addRotation,
+		commandNew:         c.newRotation,
 		commandArchive:     c.archiveRotation,
 		commandDebugDelete: c.debugDeleteRotation,
 		// commandForecast:    c.forecastRotation,
@@ -30,25 +30,10 @@ func (c *Command) rotation(parameters []string) (string, error) {
 	return c.handleCommand(subcommands, parameters)
 }
 
-type rotationUsersFlagSet struct {
-	*pflag.FlagSet
-	ref string
-}
-
-func newRotationUsersFlagSet() *rotationUsersFlagSet {
-	rfs := &rotationUsersFlagSet{
-		FlagSet: pflag.NewFlagSet("", pflag.ContinueOnError),
-	}
-	rfs.StringVarP(&rfs.ref, flagRotation, flagPRotation, "", "rotation reference")
-	return rfs
-}
-
-func (c *Command) rotationUsers(fs *rotationUsersFlagSet) (*sl.Rotation, sl.UserMap, error) {
+func (c *Command) rotationUsers(fs *pflag.FlagSet) (*sl.Rotation, sl.UserMap, error) {
+	ref, _ := fs.GetString(flagRotation)
 	usernames := types.NewSet()
-	rid, err := c.SL.ResolveRotation(fs.ref)
-	if err != nil {
-		return nil, nil, err
-	}
+	rid := ref
 
 	for _, arg := range fs.Args() {
 		if strings.HasPrefix(arg, "@") {
@@ -61,8 +46,17 @@ func (c *Command) rotationUsers(fs *rotationUsersFlagSet) (*sl.Rotation, sl.User
 		}
 	}
 
+	var err error
 	var r *sl.Rotation
 	if rid != "" {
+		// explicit ref is used as is
+		if ref == "" {
+			rid, err = c.SL.ResolveRotation(rid)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+
 		r, err = c.SL.LoadRotation(rid)
 		if err != nil {
 			return nil, nil, err

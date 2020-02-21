@@ -18,7 +18,7 @@ func (c *Command) log(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	sc := c.Config.StoredConfig
+	sc := c.SL.Config().StoredConfig
 	sc.AdminLogLevel = level
 	sc.AdminLogVerbose = verbose
 	c.ConfigStore.SaveConfig(sc)

@@ -22,6 +22,7 @@ import (
 
 const (
 	commandAdd         = "add"
+	commandNew         = "new"
 	commandArchive     = "archive"
 	commandAutopilot   = "autopilot"
 	commandDebugDelete = "debug-delete"
@@ -77,7 +78,6 @@ const (
 	flagOff        = "off"
 	flagPeriod     = "period"
 	flagRotation   = "rotation"
-	flagRotationID = "rotation-id"
 	flagSampleSize = "sample"
 	flagShift      = "shift"
 	flagSize       = "size"
@@ -89,7 +89,7 @@ const (
 
 // Command handles commands
 type Command struct {
-	Config      *config.Config
+	// Config      *config.Config
 	SL          sl.SL
 	ConfigStore config.Store
 	Context     *plugin.Context
@@ -115,9 +115,8 @@ func Register(registerFunc RegisterFunc) {
 	})
 }
 
-// Handle should be called by the plugin when a command invocation is received from the Mattermost server.
-func (c *Command) Handle() (out string, err error) {
-	subcommands := map[string]func([]string) (string, error){
+func (c *Command) commands() map[string]func([]string) (string, error) {
+	return map[string]func([]string) (string, error){
 		commandInfo:     c.info,
 		commandRotation: c.rotation,
 		// commandShift:    c.shift,
@@ -127,7 +126,10 @@ func (c *Command) Handle() (out string, err error) {
 
 		"debug-clean": c.debugClean,
 	}
+}
 
+// Handle should be called by the plugin when a command invocation is received from the Mattermost server.
+func (c *Command) Handle() (out string, err error) {
 	defer func() {
 		prefix := md.CodeBlock(c.Args.Command) + "\n"
 		if err != nil {
@@ -141,7 +143,7 @@ func (c *Command) Handle() (out string, err error) {
 		return "", err
 	}
 	c.subcommand = command
-	return c.handleCommand(subcommands, parameters)
+	return c.handleCommand(c.commands(), parameters)
 }
 
 func (c *Command) validate() (string, []string, error) {
@@ -192,6 +194,24 @@ func (c *Command) subUsage(subcommands map[string]func([]string) (string, error)
 	usage := fmt.Sprintf("`%s %s`", c.subcommand, strings.Join(subs, "|"))
 	return fmt.Sprintf("Usage: %s\nUse `%s <subcommand> help` for more info.",
 		usage, c.subcommand)
+}
+
+func newFS() *pflag.FlagSet {
+	return pflag.NewFlagSet("", pflag.ContinueOnError)
+}
+
+func newRotationFS() *pflag.FlagSet {
+	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
+	fRotation(fs)
+	return fs
+}
+
+func fJSON(fs *pflag.FlagSet) *bool {
+	return fs.Bool(flagJSON, false, "output as JSON")
+}
+
+func fRotation(fs *pflag.FlagSet) {
+	fs.StringP(flagRotation, flagPRotation, "", "rotation reference")
 }
 
 func (c *Command) debugClean(parameters []string) (string, error) {

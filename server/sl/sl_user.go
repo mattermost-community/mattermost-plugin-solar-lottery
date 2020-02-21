@@ -198,7 +198,7 @@ func (sl *sl) storeUserWelcomeNew(orig *User) (*User, error) {
 
 func (sl *sl) storeUser(orig *User) (*User, error) {
 	user := orig.Clone()
-	user.PluginVersion = sl.Config.PluginVersion
+	user.PluginVersion = sl.Config().PluginVersion
 	err := sl.Store.Entity(KeyUser).Store(user.MattermostUserID, user)
 	if err != nil {
 		return nil, err

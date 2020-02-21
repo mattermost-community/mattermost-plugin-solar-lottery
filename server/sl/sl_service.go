@@ -22,6 +22,7 @@ type PluginAPI interface {
 type Service struct {
 	PluginAPI
 	Config config.Service
+
 	// Autofillers map[string]Autofiller
 	Logger bot.Logger
 	Poster bot.Poster
@@ -31,7 +32,7 @@ type Service struct {
 func (s *Service) ActingAs(mattermostUserID string) SL {
 	return &sl{
 		Service:                s,
-		Config:                 s.Config.Get(),
+		conf:                   s.Config.Get(),
 		actingMattermostUserID: mattermostUserID,
 		Logger: s.Logger.With(bot.LogContext{
 			"ActingUserID": mattermostUserID,

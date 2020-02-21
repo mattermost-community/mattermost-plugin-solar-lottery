@@ -60,7 +60,7 @@ func (p *Plugin) OnActivate() error {
 		// Autofillers map[string]Autofiller
 		Logger: p.bot,
 		Poster: p.bot,
-		Store:  kvstore.New(kvstore.NewPluginStore(p.API)),
+		Store:  kvstore.NewStore(kvstore.NewPluginStore(p.API)),
 	}
 
 	router := &mux.Router{}
@@ -88,7 +88,6 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 
 	command := command.Command{
 		Context:   c,
-		Config:    p.config.Get(),
 		Args:      args,
 		ChannelID: args.ChannelId,
 		SL:        p.sl.ActingAs(args.UserId),

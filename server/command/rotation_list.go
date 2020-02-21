@@ -6,26 +6,32 @@ package command
 import (
 	"fmt"
 
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/pkg/errors"
-
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
 )
 
 func (c *Command) listRotations(parameters []string) (string, error) {
-	if len(parameters) > 0 {
+	fs := newFS()
+	jsonOut := fJSON(fs)
+	err := fs.Parse(parameters)
+	if len(fs.Args()) > 0 {
 		return c.subUsage(nil), errors.New("unexpected parameters")
 	}
+
 	rotations, err := c.SL.LoadActiveRotations()
 	if err != nil {
 		return "", err
 	}
+
+	if *jsonOut {
+		return md.JSONBlock(rotations), nil
+	}
 	if rotations.Len() == 0 {
 		return "*none*", nil
 	}
-
 	out := ""
 	rotations.ForEach(func(id string) {
-		out += fmt.Sprintf("- %s\n", kvstore.NameFromID(id))
+		out += fmt.Sprintf("- %s\n", id)
 	})
 	return out, nil
 }
