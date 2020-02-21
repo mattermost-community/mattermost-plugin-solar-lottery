@@ -21,7 +21,7 @@ func (c *Command) user(parameters []string) (string, error) {
 	return c.handleCommand(subcommands, parameters)
 }
 
-func (c *Command) users(args []string) (users sl.UserMap, err error) {
+func (c *Command) loadUsernames(args []string) (users sl.UserMap, err error) {
 	users = sl.UserMap{}
 
 	for _, arg := range args {

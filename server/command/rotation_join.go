@@ -22,7 +22,7 @@ func (c *Command) joinRotation(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	r, users, err := c.rotationUsers(fs)
+	r, users, err := c.loadRotationUsernames(fs)
 	if err != nil {
 		return "", err
 	}

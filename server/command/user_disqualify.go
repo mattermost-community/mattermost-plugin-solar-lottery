@@ -6,26 +6,29 @@ package command
 import (
 	"fmt"
 
-	"github.com/spf13/pflag"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
 func (c *Command) disqualifyUsers(parameters []string) (string, error) {
-	var skillName string
-	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
-	withSkillFlags(fs, &skillName, nil)
+	fs := newFS()
+	jsonOut := fJSON(fs)
+	skill := fSkill(fs)
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err
 	}
 
-	users, err := c.users(fs.Args())
+	users, err := c.loadUsernames(fs.Args())
 	if err != nil {
 		return "", err
 	}
 
-	err = c.SL.Disqualify(users, skillName)
+	err = c.SL.Disqualify(users, *skill)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("Disqualified %s from %s", users.Markdown(), skillName), nil
+	if *jsonOut {
+		return md.JSONBlock(users), nil
+	}
+	return fmt.Sprintf("Disqualified %s from %s", users.Markdown(), *skill), nil
 }

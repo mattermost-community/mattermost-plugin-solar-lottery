@@ -24,7 +24,7 @@ func (c *Command) userUnavailable(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	users, err := c.users(fs.Args())
+	users, err := c.loadUsernames(fs.Args())
 	if err != nil {
 		return "", err
 	}

@@ -24,15 +24,23 @@ func (c *Command) info(parameters []string) (string, error) {
 - [x] rotation
 	- [x] new
 	- [x] archive
-	- [ ] autopilot
 	- [x] debug-delete
-	- [ ] forecast
-	- [ ] guess
 	- [x] join
 	- [x] leave
 	- [x] list
-	- [x] need (add/delete)
 	- [x] show
+
+- [x] skill
+	- [x] new
+	- [x] list
+	- [x] delete
+
+- [x] user: manage my profile.
+	- [ ] forecast
+	- [ ] show [--users] 
+	- [ ] unavailable: --from --to [--clear] [--type=unavailable]
+	- [ ] qualify --skill --level --users
+	- [ ] disqualify --skill --users
 
 - [ ] shift
 	- [x] new
@@ -44,18 +52,6 @@ func (c *Command) info(parameters []string) (string, error) {
 	- [x] list
 	- [ ] show
 	- [x] start: starts a shift.
-
-- [x] skill
-	- [x] new
-	- [x] list
-	- [x] delete
-
-- [x] user: manage my profile.
-	- [x] forecast
-	- [x] show [--users] 
-	- [x] unavailable: --from --to [--clear] [--type=unavailable]
-	- [x] qualify --skill --level --users
-	- [x] disqualify --skill --users
 `
 	return resp, nil
 }

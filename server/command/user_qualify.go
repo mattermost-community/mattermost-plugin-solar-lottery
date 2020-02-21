@@ -7,33 +7,36 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/pflag"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
 func (c *Command) qualifyUsers(parameters []string) (string, error) {
-	var skillName string
-	var level sl.Level
-	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
-	withSkillFlags(fs, &skillName, &level)
+	fs := newFS()
+	jsonOut := fJSON(fs)
+	skill := fSkill(fs)
+	level := fLevel(fs)
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err
 	}
-	if skillName == "" || level == 0 {
+	if *skill == "" || *level == 0 {
 		return c.flagUsage(fs), errors.New("must provide --level and --skill values")
 	}
 
-	users, err := c.users(fs.Args())
+	users, err := c.loadUsernames(fs.Args())
 	if err != nil {
 		return "", err
 	}
 
-	err = c.SL.Qualify(users, skillName, level)
+	err = c.SL.Qualify(users, *skill, *level)
 	if err != nil {
 		return "", err
 	}
 
-	return fmt.Sprintf("Qualified %s as %s", users.Markdown(), sl.MarkdownSkillLevel(skillName, level)), nil
+	if *jsonOut {
+		return md.JSONBlock(users), nil
+	}
+	return fmt.Sprintf("Qualified %s as %s", users.Markdown(), sl.MarkdownSkillLevel(*skill, *level)), nil
 }

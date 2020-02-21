@@ -30,7 +30,7 @@ func (c *Command) rotation(parameters []string) (string, error) {
 	return c.handleCommand(subcommands, parameters)
 }
 
-func (c *Command) rotationUsers(fs *pflag.FlagSet) (*sl.Rotation, sl.UserMap, error) {
+func (c *Command) loadRotationUsernames(fs *pflag.FlagSet) (*sl.Rotation, sl.UserMap, error) {
 	ref, _ := fs.GetString(flagRotation)
 	usernames := types.NewSet()
 	rid := ref
@@ -63,7 +63,7 @@ func (c *Command) rotationUsers(fs *pflag.FlagSet) (*sl.Rotation, sl.UserMap, er
 		return nil, nil, err
 	}
 
-	users, err := c.users(usernames.AsArray())
+	users, err := c.loadUsernames(usernames.AsArray())
 	if err != nil {
 		return nil, nil, err
 	}

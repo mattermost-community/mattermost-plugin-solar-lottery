@@ -62,7 +62,7 @@ func (s *indexStore) DeleteFrom(id string) error {
 func (s *indexStore) AddTo(id string) error {
 	index := types.NewSet()
 	err := LoadJSON(s.kv, s.key, &index)
-	if err != nil {
+	if err != nil && err != ErrNotFound {
 		return err
 	}
 

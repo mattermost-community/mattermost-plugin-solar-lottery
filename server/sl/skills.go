@@ -45,6 +45,7 @@ func (sl *sl) AddKnownSkill(skillName string) error {
 	if err != nil {
 		return err
 	}
+	sl.knownSkills.Add(skillName)
 
 	logger.Infof("%s added known skill %s.", sl.actingUser.Markdown(), skillName)
 	return nil
@@ -68,6 +69,7 @@ func (sl *sl) DeleteKnownSkill(skillName string) error {
 	if err != nil {
 		return err
 	}
+	sl.knownSkills.Delete(skillName)
 
 	logger.Infof("%s deleted skill %s.", sl.actingUser.Markdown(), skillName)
 	return nil

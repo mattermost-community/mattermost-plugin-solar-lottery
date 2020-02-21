@@ -16,7 +16,7 @@ func (c *Command) archiveRotation(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	r, _, err := c.rotationUsers(fs)
+	r, _, err := c.loadRotationUsernames(fs)
 	if err != nil {
 		return "", err
 	}
@@ -40,7 +40,7 @@ func (c *Command) debugDeleteRotation(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	r, _, err := c.rotationUsers(fs)
+	r, _, err := c.loadRotationUsernames(fs)
 	if err != nil {
 		return "", err
 	}

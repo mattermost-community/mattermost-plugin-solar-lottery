@@ -13,7 +13,7 @@ func (c *Command) showRotation(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	r, _, err := c.rotationUsers(fs)
+	r, _, err := c.loadRotationUsernames(fs)
 	if err != nil {
 		return "", err
 	}
