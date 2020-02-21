@@ -26,8 +26,8 @@ func (c *Command) info(parameters []string) (string, error) {
 	- [x] archive
 	- [ ] autopilot
 	- [x] debug-delete
-	- [x] forecast
-	- [x] guess
+	- [ ] forecast
+	- [ ] guess
 	- [x] join
 	- [x] leave
 	- [x] list

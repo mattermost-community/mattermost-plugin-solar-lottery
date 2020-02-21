@@ -5,6 +5,7 @@ package types
 
 import (
 	"encoding/json"
+	"sort"
 )
 
 var notEmpty = struct{}{}
@@ -69,6 +70,13 @@ func (s Set) AsMap() map[string]struct{} {
 func (s Set) AsArray() []string {
 	n := make([]string, len(s.asArray))
 	copy(n, s.asArray)
+	return n
+}
+
+func (s Set) AsSorted() []string {
+	n := make([]string, len(s.asArray))
+	copy(n, s.asArray)
+	sort.Strings(n)
 	return n
 }
 

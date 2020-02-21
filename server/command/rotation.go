@@ -48,25 +48,24 @@ func (c *Command) rotationUsers(fs *pflag.FlagSet) (*sl.Rotation, sl.UserMap, er
 
 	var err error
 	var r *sl.Rotation
-	if rid != "" {
-		// explicit ref is used as is
-		if ref == "" {
-			rid, err = c.SL.ResolveRotation(rid)
-			if err != nil {
-				return nil, nil, err
-			}
-		}
-
-		r, err = c.SL.LoadRotation(rid)
+	if rid == "" {
+		return nil, nil, errors.New("rotation must be specified")
+	}
+	// explicit ref is used as is
+	if ref == "" {
+		rid, err = c.SL.ResolveRotation(rid)
 		if err != nil {
 			return nil, nil, err
 		}
+	}
+	r, err = c.SL.LoadRotation(rid)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	users, err := c.users(usernames.AsArray())
 	if err != nil {
 		return nil, nil, err
 	}
-
 	return r, users, nil
 }

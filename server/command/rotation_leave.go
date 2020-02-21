@@ -20,6 +20,9 @@ func (c *Command) leaveRotation(parameters []string) (string, error) {
 	}
 
 	r, users, err := c.rotationUsers(fs)
+	if err != nil {
+		return "", err
+	}
 
 	deleted, err := c.SL.LeaveRotation(r, users)
 	if err != nil {

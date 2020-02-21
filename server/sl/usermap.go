@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 	"github.com/pkg/errors"
 )
 
@@ -58,13 +59,13 @@ func (m UserMap) String() string {
 	return strings.Join(out, ", ")
 }
 
-// func (m UserMap) IDMap() store.IDMap {
-// 	ids := store.IDMap{}
-// 	for id := range m {
-// 		ids.Add(id)
-// 	}
-// 	return ids
-// }
+func (m UserMap) Set() *types.Set {
+	set := types.NewSet()
+	for id := range m {
+		set.Add(id)
+	}
+	return set
+}
 
 func (sl *sl) addUnavailable(users UserMap, u *Unavailable) error {
 	for _, user := range users {
