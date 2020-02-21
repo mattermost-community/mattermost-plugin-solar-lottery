@@ -40,11 +40,20 @@ var testConfig = config.Config{
 func getTestSL(t testing.TB, ctrl *gomock.Controller) (sl.SL, kvstore.Store) {
 	pluginAPI := mock_sl.NewMockPluginAPI(ctrl)
 
-	pluginAPI.EXPECT().GetMattermostUser(gomock.Eq("test-user")).AnyTimes().Return(
-		&model.User{
-			Id:       "test-user",
-			Username: "test-username",
-		}, nil)
+	pluginAPI.EXPECT().GetMattermostUser(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*model.User, error) {
+		return &model.User{
+			Id:       id,
+			Username: id + "-username",
+		}, nil
+	})
+
+	pluginAPI.EXPECT().GetMattermostUserByUsername(gomock.Any()).AnyTimes().DoAndReturn(func(username string) (*model.User, error) {
+		id := strings.TrimSuffix(username, "-username")
+		return &model.User{
+			Id:       id,
+			Username: username,
+		}, nil
+	})
 
 	serviceSL := &sl.Service{
 		PluginAPI: pluginAPI,
@@ -87,9 +96,13 @@ func runJSONCommand(t testing.TB, sl sl.SL, cmd string, ref interface{}) (string
 	return out, err
 }
 
-func runCommands(t testing.TB, sl sl.SL, in string) {
+func runCommands(t testing.TB, sl sl.SL, in string) error {
 	lines := strings.Split(in, "\n")
 	for _, line := range lines {
-		runCommand(t, sl, strings.TrimSpace(line))
+		_, err := runCommand(t, sl, strings.TrimSpace(line))
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-func TestCommandArchiveRotation(t *testing.T) {
+func TestCommandRotationArchive(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -29,7 +29,8 @@ func TestCommandArchiveRotation(t *testing.T) {
 		require.Equal(t, types.NewSet("test", "test-123", "test-345"), activeRotations)
 
 		r := &sl.Rotation{}
-		_, err = runJSONCommand(t, SL, `/lotto rotation archive test-123`, &r)
+		_, err = runJSONCommand(t, SL, `
+			/lotto rotation archive test-123`, &r)
 		require.NoError(t, err)
 		require.Equal(t, &sl.Rotation{
 			RotationID: "test-123",
@@ -43,7 +44,8 @@ func TestCommandArchiveRotation(t *testing.T) {
 		// store.Entity(sl.KeyRotation).Load()
 
 		rr := []string{}
-		_, err = runJSONCommand(t, SL, `/lotto rotation list`, &rr)
+		_, err = runJSONCommand(t, SL, `
+			/lotto rotation list`, &rr)
 		require.NoError(t, err)
 		require.Equal(t, []string{"test", "test-345"}, rr)
 	})

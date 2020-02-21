@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCommandListRotations(t *testing.T) {
+func TestCommandRotationList(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -21,7 +21,8 @@ func TestCommandListRotations(t *testing.T) {
 			/lotto rotation new test-345`)
 
 		out := []string{}
-		_, err := runJSONCommand(t, sl, `/lotto rotation list`, &out)
+		_, err := runJSONCommand(t, sl, `
+			/lotto rotation list`, &out)
 		require.NoError(t, err)
 		require.Equal(t, []string{"test", "test-123", "test-345"}, out)
 	})

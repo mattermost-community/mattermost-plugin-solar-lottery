@@ -21,9 +21,17 @@ type Rotation struct {
 }
 
 func NewRotation() *Rotation {
-	return &Rotation{
-		MattermostUserIDs: types.NewSet(),
-		users:             UserMap{},
+	r := &Rotation{}
+	r.init()
+	return r
+}
+
+func (r *Rotation) init() {
+	if r.MattermostUserIDs == nil {
+		r.MattermostUserIDs = types.NewSet()
+	}
+	if r.users == nil {
+		r.users = UserMap{}
 	}
 }
 

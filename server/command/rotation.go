@@ -37,7 +37,7 @@ func (c *Command) rotationUsers(fs *pflag.FlagSet) (*sl.Rotation, sl.UserMap, er
 
 	for _, arg := range fs.Args() {
 		if strings.HasPrefix(arg, "@") {
-			usernames.Add(arg[1:])
+			usernames.Add(arg)
 		} else {
 			if rid != "" {
 				return nil, nil, errors.Errorf("rotation %s is already specified, cant't interpret %s", rid, arg)
