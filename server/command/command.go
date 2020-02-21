@@ -18,6 +18,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/constants"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 const (
@@ -196,6 +197,10 @@ func (c *Command) subUsage(subcommands map[string]func([]string) (string, error)
 		usage, c.subcommand)
 }
 
+func (c *Command) debugClean(parameters []string) (string, error) {
+	return "Cleaned the KV store", c.SL.Clean()
+}
+
 func newFS() *pflag.FlagSet {
 	return pflag.NewFlagSet("", pflag.ContinueOnError)
 }
@@ -214,6 +219,70 @@ func fRotation(fs *pflag.FlagSet) {
 	fs.StringP(flagRotation, flagPRotation, "", "rotation reference")
 }
 
-func (c *Command) debugClean(parameters []string) (string, error) {
-	return "Cleaned the KV store", c.SL.Clean()
+func (c *Command) loadUsernames(args []string) (users sl.UserMap, err error) {
+	users = sl.UserMap{}
+
+	// if no args provided, return the acting user
+	if len(args) == 0 {
+		user, err := c.SL.GetActingUser()
+		if err != nil {
+			return nil, err
+		}
+		users[user.MattermostUserID] = user
+		return users, nil
+	}
+
+	for _, arg := range args {
+		if !strings.HasPrefix(arg, "@") {
+			return nil, errors.New("`@username`'s expected")
+		}
+		arg = arg[1:]
+		user, err := c.SL.LoadMattermostUsername(arg)
+		if err != nil {
+			return nil, err
+		}
+		users[user.MattermostUserID] = user
+	}
+
+	return users, nil
+}
+
+func (c *Command) loadRotationUsernames(fs *pflag.FlagSet) (*sl.Rotation, sl.UserMap, error) {
+	ref, _ := fs.GetString(flagRotation)
+	usernames := types.NewSet()
+	rid := ref
+
+	for _, arg := range fs.Args() {
+		if strings.HasPrefix(arg, "@") {
+			usernames.Add(arg)
+		} else {
+			if rid != "" {
+				return nil, nil, errors.Errorf("rotation %s is already specified, cant't interpret %s", rid, arg)
+			}
+			rid = arg
+		}
+	}
+
+	var err error
+	var r *sl.Rotation
+	if rid == "" {
+		return nil, nil, errors.New("rotation must be specified")
+	}
+	// explicit ref is used as is
+	if ref == "" {
+		rid, err = c.SL.ResolveRotation(rid)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	r, err = c.SL.LoadRotation(rid)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	users, err := c.loadUsernames(usernames.Array())
+	if err != nil {
+		return nil, nil, err
+	}
+	return r, users, nil
 }

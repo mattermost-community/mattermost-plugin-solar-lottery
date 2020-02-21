@@ -25,7 +25,7 @@ func TestCommandSkillList(t *testing.T) {
 
 		knownSkills, err := store.Index(sl.KeyKnownSkills).Load()
 		require.NoError(t, err)
-		require.Equal(t, []string{"test", "test-123", "test-345"}, knownSkills.AsSorted())
+		require.Equal(t, []string{"test", "test-123", "test-345"}, knownSkills.Sorted())
 
 		out := []string{}
 		_, err = runJSONCommand(t, SL, `

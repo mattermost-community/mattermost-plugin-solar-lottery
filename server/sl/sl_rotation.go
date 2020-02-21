@@ -195,7 +195,7 @@ func (sl *sl) MakeRotation(rotationName string) (*Rotation, error) {
 
 func (sl *sl) ExpandRotation(r *Rotation) error {
 	if r.MattermostUserIDs != nil && len(r.users) != r.MattermostUserIDs.Len() {
-		users, err := sl.LoadStoredUsers(r.MattermostUserIDs)
+		users, err := sl.loadStoredUsers(r.MattermostUserIDs)
 		if err != nil {
 			return err
 		}

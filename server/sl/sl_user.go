@@ -17,9 +17,7 @@ const eUser = "user_"
 
 type Users interface {
 	GetActingUser() (*User, error)
-	LoadMattermostUsernames(usernames *types.Set) (UserMap, error)
 	LoadMattermostUsername(username string) (*User, error)
-	LoadStoredUsers(mattermostUserIDs *types.Set) (UserMap, error)
 
 	Disqualify(users UserMap, skillName string) error
 	Qualify(users UserMap, skillName string, level Level) error
@@ -33,7 +31,7 @@ func (sl *sl) GetActingUser() (*User, error) {
 	return sl.actingUser, nil
 }
 
-func (sl *sl) LoadStoredUsers(ids *types.Set) (UserMap, error) {
+func (sl *sl) loadStoredUsers(ids *types.Set) (UserMap, error) {
 	users := UserMap{}
 	err := ids.ForEachWithError(func(id string) error {
 		var user User
@@ -42,34 +40,6 @@ func (sl *sl) LoadStoredUsers(ids *types.Set) (UserMap, error) {
 			return err
 		}
 		users[id] = &user
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return users, nil
-}
-
-func (sl *sl) LoadMattermostUsernames(usernames *types.Set) (UserMap, error) {
-	err := sl.Filter(withActingUserExpanded)
-	if err != nil {
-		return nil, err
-	}
-
-	if usernames.Len() == 0 {
-		return UserMap{
-			sl.actingMattermostUserID: sl.actingUser,
-		}, nil
-	}
-
-	users := UserMap{}
-	err = usernames.ForEachWithError(func(username string) error {
-		var user *User
-		user, err = sl.LoadMattermostUsername(username)
-		if err != nil {
-			return err
-		}
-		users[user.MattermostUserID] = user
 		return nil
 	})
 	if err != nil {

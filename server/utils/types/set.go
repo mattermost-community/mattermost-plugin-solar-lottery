@@ -27,8 +27,8 @@ func NewSet(vv ...string) *Set {
 
 func (s Set) Clone() *Set {
 	n := NewSet()
-	n.asMap = s.AsMap()
-	n.asArray = s.AsArray()
+	n.asMap = s.Map()
+	n.asArray = s.Array()
 	return n
 }
 
@@ -59,7 +59,7 @@ func (s Set) ForEachWithBreak(f func(id string) bool) {
 	}
 }
 
-func (s Set) AsMap() map[string]struct{} {
+func (s Set) Map() map[string]struct{} {
 	m := map[string]struct{}{}
 	for _, v := range s.asArray {
 		m[v] = notEmpty
@@ -67,13 +67,13 @@ func (s Set) AsMap() map[string]struct{} {
 	return m
 }
 
-func (s Set) AsArray() []string {
+func (s Set) Array() []string {
 	n := make([]string, len(s.asArray))
 	copy(n, s.asArray)
 	return n
 }
 
-func (s Set) AsSorted() []string {
+func (s Set) Sorted() []string {
 	n := make([]string, len(s.asArray))
 	copy(n, s.asArray)
 	sort.Strings(n)

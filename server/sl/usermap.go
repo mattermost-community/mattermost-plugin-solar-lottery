@@ -59,12 +59,20 @@ func (m UserMap) String() string {
 	return strings.Join(out, ", ")
 }
 
-func (m UserMap) Set() *types.Set {
+func (m UserMap) IDs() *types.Set {
 	set := types.NewSet()
 	for id := range m {
 		set.Add(id)
 	}
 	return set
+}
+
+func (m UserMap) Sorted() []User {
+	out := []User{}
+	for _, id := range m.IDs().Sorted() {
+		out = append(out, *m[id])
+	}
+	return out
 }
 
 func (sl *sl) addUnavailable(users UserMap, u *Unavailable) error {
