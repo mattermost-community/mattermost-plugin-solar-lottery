@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 func TestCommandUserDisqualify(t *testing.T) {
@@ -31,7 +32,7 @@ func TestCommandUserDisqualify(t *testing.T) {
 			sl.User{
 				PluginVersion:    "test-plugin-version",
 				MattermostUserID: "test-user",
-				SkillLevels: sl.IntMap{
+				SkillLevels: types.IntMap{
 					"somethingelse": 3,
 				},
 			},

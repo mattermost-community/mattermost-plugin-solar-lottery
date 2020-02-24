@@ -22,36 +22,36 @@ func (c *Command) info(parameters []string) (string, error) {
 - [x] info: display this.
 
 - [x] rotation
-	- [x] new
 	- [x] archive
 	- [x] debug-delete
 	- [x] join
 	- [x] leave
 	- [x] list
+	- [x] new
 	- [x] show
 
 - [x] skill
-	- [x] new
-	- [x] list
 	- [x] delete
-
-- [x] user: manage my profile.
-	- [ ] forecast
-	- [ ] show [--users] 
-	- [ ] unavailable: --from --to [--clear] [--type=unavailable]
-	- [ ] qualify --skill --level --users
-	- [ ] disqualify --skill --users
-
-- [ ] shift
-	- [x] new
-	- [x] debug-delete
-	- [x] fill: evaluates shift readiness, autofills.
-	- [x] finish: finishes a shift.
-	- [x] join: add user(s) to shift.
-	- [ ] leave: remove user(s) from shift.
 	- [x] list
+	- [x] new
+
+- [x] user: manage users.
+	- [x] disqualify --skill 
+	- [x] qualify --skill --level 
+	- [x] show: show users
+	- [x] unavailable: --start --finish [--clear] 
+
+- [ ] task
+	- [ ] assign [--auto aka fill]
+	- [ ] close
+	- [ ] debug-delete
+	- [ ] list (by rotation, by task queue)
+	- [ ] new issue
+	- [ ] new shift 
 	- [ ] show
-	- [x] start: starts a shift.
-`
+	- [ ] start
+	- [ ] unassign
+
+	`
 	return resp, nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 const (
@@ -90,8 +91,8 @@ func TestUsermap(t *testing.T) {
 	)
 }
 
-func Skillmap(skillLevels ...interface{}) sl.IntMap {
-	m := sl.IntMap{}
+func Skillmap(skillLevels ...interface{}) types.IntMap {
+	m := types.IntMap{}
 	for i := 0; i < len(skillLevels); i += 2 {
 		skill, _ := skillLevels[i].(string)
 		level, _ := skillLevels[i+1].(int)
@@ -102,7 +103,7 @@ func Skillmap(skillLevels ...interface{}) sl.IntMap {
 
 func TestSkillmap(t *testing.T) {
 	require.Equal(t,
-		sl.IntMap{
+		types.IntMap{
 			"t": 1,
 			"z": 2,
 		},

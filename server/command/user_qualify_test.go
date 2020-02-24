@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 func TestCommandUserQualify(t *testing.T) {
@@ -31,14 +32,14 @@ func TestCommandUserQualify(t *testing.T) {
 			sl.User{
 				PluginVersion:    "test-plugin-version",
 				MattermostUserID: "uid1",
-				SkillLevels: sl.IntMap{
+				SkillLevels: types.IntMap{
 					"webapp": 2,
 				},
 			},
 			sl.User{
 				PluginVersion:    "test-plugin-version",
 				MattermostUserID: "uid2",
-				SkillLevels: sl.IntMap{
+				SkillLevels: types.IntMap{
 					"webapp": 2,
 				},
 			},

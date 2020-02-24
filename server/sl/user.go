@@ -16,8 +16,8 @@ import (
 type User struct {
 	PluginVersion    string `json:",omitempty"`
 	MattermostUserID string
-	SkillLevels      IntMap         `json:",omitempty"`
-	LastServed       IntMap         `json:",omitempty"` // Last time completed a task, per rotation ID; Unix time.
+	SkillLevels      types.IntMap   `json:",omitempty"`
+	LastServed       types.IntMap   `json:",omitempty"` // Last time completed a task, per rotation ID; Unix time.
 	Calendar         []*Unavailable `json:",omitempty"` // Sorted by start date of the events.
 
 	// private fields
@@ -29,8 +29,8 @@ type User struct {
 func NewUser(mattermostUserID string) *User {
 	return &User{
 		MattermostUserID: mattermostUserID,
-		SkillLevels:      IntMap{},
-		LastServed:       IntMap{},
+		SkillLevels:      types.IntMap{},
+		LastServed:       types.IntMap{},
 		Calendar:         []*Unavailable{},
 	}
 }
@@ -49,10 +49,10 @@ func (user *User) WithLastServed(rotationID string, finishTime types.Time) *User
 	return newUser
 }
 
-func (user *User) WithSkills(skillsLevels IntMap) *User {
+func (user *User) WithSkills(skillsLevels types.IntMap) *User {
 	newUser := user.Clone()
 	if newUser.SkillLevels != nil {
-		newUser.SkillLevels = IntMap{}
+		newUser.SkillLevels = types.IntMap{}
 	}
 	for s, l := range skillsLevels {
 		newUser.SkillLevels[s] = l
