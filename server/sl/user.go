@@ -6,6 +6,7 @@ package sl
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/mattermost/mattermost-server/v5/model"
 
@@ -22,6 +23,7 @@ type User struct {
 	// private fields
 	loaded         bool
 	mattermostUser *model.User
+	location       *time.Location
 }
 
 func NewUser(mattermostUserID string) *User {
@@ -74,6 +76,19 @@ func (user *User) Markdown() string {
 	}
 }
 
+func (user *User) MarkdownUnavailable(u *Unavailable) string {
+	return fmt.Sprintf("%s: %s", u.Reason, user.MarkdownInterval(u.Interval))
+}
+
+func (user *User) Time(t types.Time) types.Time {
+	return t.In(user.location)
+}
+
+func (user *User) MarkdownInterval(i types.Interval) string {
+	return fmt.Sprintf("%s to %s",
+		user.Time(i.Start), user.Time(i.Finish))
+}
+
 func (user *User) MarkdownWithSkills() string {
 	return fmt.Sprintf("%s %s", user.Markdown(), user.MarkdownSkills())
 }
@@ -111,35 +126,30 @@ UNAVAILABLE:
 	}
 }
 
-// func (user *User) OverlapEvents(intervalStart, intervalEnd time.Time, remove bool) ([]store.Event, error) {
-// 	var found, updated []store.Event
-// 	for _, event := range user.Events {
-// 		s, e, err := ParseDatePair(event.Start, event.End)
-// 		if err != nil {
-// 			return nil, err
-// 		}
+func (user *User) findUnavailable(interval types.Interval, remove bool) []*Unavailable {
+	var found, updated []*Unavailable
+	for _, u := range user.Calendar {
+		s, f := u.Start, u.Finish
+		if s.Before(interval.Start.Time) {
+			s = interval.Start
+		}
+		if f.After(interval.Finish.Time) {
+			f = interval.Finish
+		}
 
-// 		// Find the overlap
-// 		if s.Before(intervalStart) {
-// 			s = intervalStart
-// 		}
-// 		if e.After(intervalEnd) {
-// 			e = intervalEnd
-// 		}
+		if s.Before(f.Time) {
+			// Overlap
+			found = append(found, u)
+			if remove {
+				continue
+			}
+		}
 
-// 		if s.Before(e) {
-// 			// Overlap
-// 			found = append(found, event)
-// 			if remove {
-// 				continue
-// 			}
-// 		}
-
-// 		updated = append(updated, event)
-// 	}
-// 	user.Events = updated
-// 	return found, nil
-// }
+		updated = append(updated, u)
+	}
+	user.Calendar = updated
+	return found
+}
 
 func (user *User) IsQualified(need *Need) bool {
 	skillLevel, _ := user.SkillLevels[need.Skill]

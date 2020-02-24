@@ -4,7 +4,6 @@
 package sl
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
@@ -28,11 +27,6 @@ func NewUnavailable(reason string, interval types.Interval) *Unavailable {
 		Reason:   reason,
 		Interval: interval,
 	}
-}
-
-func (u Unavailable) Markdown() string {
-	return fmt.Sprintf("%s: %s to %s",
-		u.Reason, u.Start.LocalString(), u.Finish.LocalString())
 }
 
 type unavailableSorter struct {

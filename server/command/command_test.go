@@ -37,22 +37,33 @@ var testConfig = config.Config{
 	PluginURLPath:          "test-plugin-path",
 }
 
+func testUserTimezone() model.StringMap {
+	return model.StringMap{
+		"useAutomaticTimezone": "false",
+		"manualTimezone":       "America/Los_Angeles",
+	}
+}
+
 func getTestSL(t testing.TB, ctrl *gomock.Controller) (sl.SL, kvstore.Store) {
 	pluginAPI := mock_sl.NewMockPluginAPI(ctrl)
 
 	pluginAPI.EXPECT().GetMattermostUser(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*model.User, error) {
-		return &model.User{
+		user := &model.User{
 			Id:       id,
 			Username: id + "-username",
-		}, nil
+			Timezone: testUserTimezone(),
+		}
+		return user, nil
 	})
 
 	pluginAPI.EXPECT().GetMattermostUserByUsername(gomock.Any()).AnyTimes().DoAndReturn(func(username string) (*model.User, error) {
 		id := strings.TrimSuffix(username, "-username")
-		return &model.User{
+		user := &model.User{
 			Id:       id,
 			Username: username,
-		}, nil
+			Timezone: testUserTimezone(),
+		}
+		return user, nil
 	})
 
 	serviceSL := &sl.Service{

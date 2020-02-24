@@ -94,8 +94,8 @@ func Skillmap(skillLevels ...interface{}) sl.IntMap {
 	m := sl.IntMap{}
 	for i := 0; i < len(skillLevels); i += 2 {
 		skill, _ := skillLevels[i].(string)
-		level, _ := skillLevels[i+1].(int64)
-		m[skill] = level
+		level, _ := skillLevels[i+1].(int)
+		m[skill] = int64(level)
 	}
 	return m
 }

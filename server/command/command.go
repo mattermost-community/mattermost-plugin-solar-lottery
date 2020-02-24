@@ -52,7 +52,7 @@ const (
 )
 
 const (
-	flagPEnd      = "e"
+	flagPFinish   = "f"
 	flagPLevel    = "l"
 	flagPNumber   = "n"
 	flagPRotation = "r"
@@ -66,7 +66,7 @@ const (
 	flagClear      = "clear"
 	flagDebugRun   = "debug-run"
 	flagDeleteNeed = "delete-need"
-	flagEnd        = "end"
+	flagFinish     = "finish"
 	flagFill       = "fill"
 	flagFillDays   = "fill-before"
 	flagGrace      = "grace"
@@ -221,11 +221,23 @@ func fRotation(fs *pflag.FlagSet) {
 	fs.StringP(flagRotation, flagPRotation, "", "rotation reference")
 }
 
+func fStartFinish(fs *pflag.FlagSet, actingUser *sl.User) (*types.Time, *types.Time) {
+	start := actingUser.Time(types.NewTime())
+	finish := start
+	fs.VarP(&start, flagStart, flagPStart, "start of the interval")
+	fs.VarP(&finish, flagFinish, flagPFinish, "end of the interval")
+	return &start, &finish
+}
+
+func fClear(fs *pflag.FlagSet) *bool {
+	return fs.Bool(flagClear, false, "mark as available by clearing all overlapping unavailability events")
+}
+
 func (c *Command) loadUsernames(args []string) (users sl.UserMap, err error) {
 	users = sl.UserMap{}
 	// if no args provided, return the acting user
 	if len(args) == 0 {
-		user, err := c.SL.GetActingUser()
+		user, err := c.SL.ActingUser()
 		if err != nil {
 			return nil, err
 		}

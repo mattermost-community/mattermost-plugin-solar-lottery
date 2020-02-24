@@ -6,20 +6,25 @@ package command
 import (
 	"fmt"
 
-	"github.com/spf13/pflag"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 func (c *Command) userUnavailable(parameters []string) (string, error) {
-	var start, finish types.Time
-	var clear bool
-	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
-	fs.VarP(&start, flagStart, flagPStart, "start of the interval")
-	fs.VarP(&finish, flagEnd, flagPEnd, "end of the interval")
-	fs.BoolVar(&clear, flagClear, false, "mark as available by clearing all overlapping unavailability events")
-	err := fs.Parse(parameters)
+	actingUser, err := c.SL.ActingUser()
+	if err != nil {
+		return "", err
+	}
+
+	fs := newFS()
+	jsonOut := fJSON(fs)
+	clear := fClear(fs)
+	start, finish := fStartFinish(fs, actingUser)
+	if err != nil {
+		return "", err
+	}
+	err = fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err
 	}
@@ -29,14 +34,17 @@ func (c *Command) userUnavailable(parameters []string) (string, error) {
 		return "", err
 	}
 	interval := types.Interval{
-		Start:  start,
-		Finish: finish,
+		Start:  *start,
+		Finish: *finish,
 	}
 
-	if clear {
+	if *clear {
 		err = c.SL.ClearCalendar(users, interval)
 		if err != nil {
 			return "", err
+		}
+		if *jsonOut {
+			return md.JSONBlock(users), nil
 		}
 		return fmt.Sprintf("cleared %s to %s from %s", start, finish, users.Markdown()), nil
 	}
@@ -46,5 +54,9 @@ func (c *Command) userUnavailable(parameters []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("Added %s to %s", u.Markdown(), users.Markdown()), nil
+
+	if *jsonOut {
+		return md.JSONBlock(users), nil
+	}
+	return fmt.Sprintf("Added %s to %s", actingUser.MarkdownUnavailable(u), users.Markdown()), nil
 }

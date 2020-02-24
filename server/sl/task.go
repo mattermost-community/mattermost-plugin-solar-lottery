@@ -37,7 +37,7 @@ type Task struct {
 func NewTask() *Task {
 	return &Task{
 		Status:            TaskStatusPending,
-		Created:           types.Now(),
+		Created:           types.NewTime(),
 		MattermostUserIDs: types.NewSet(),
 		users:             UserMap{},
 	}
@@ -63,7 +63,7 @@ func (t *Task) NewUnavailable() []*Unavailable {
 		interval = t.Scheduled
 	}
 	if interval.IsEmpty() {
-		now := types.Now()
+		now := types.NewTime()
 		interval = &types.Interval{
 			Start:  now,
 			Finish: now,

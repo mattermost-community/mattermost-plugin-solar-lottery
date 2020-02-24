@@ -5,6 +5,7 @@ package sl
 
 import (
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -16,14 +17,12 @@ import (
 const eUser = "user_"
 
 type Users interface {
-	GetActingUser() (*User, error)
 	LoadMattermostUsername(username string) (*User, error)
-
 	Disqualify(users UserMap, skillName string) error
 	Qualify(users UserMap, skillName string, level Level) error
 }
 
-func (sl *sl) GetActingUser() (*User, error) {
+func (sl *sl) ActingUser() (*User, error) {
 	err := sl.Filter(withActingUser)
 	if err != nil {
 		return nil, err
@@ -136,6 +135,12 @@ func (sl *sl) ExpandUser(user *User) error {
 		return err
 	}
 	user.mattermostUser = mattermostUser
+
+	loc, err := time.LoadLocation(mattermostUser.GetPreferredTimezone())
+	if err != nil {
+		return err
+	}
+	user.location = loc
 	return nil
 }
 

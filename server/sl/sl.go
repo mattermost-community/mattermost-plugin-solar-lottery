@@ -24,6 +24,7 @@ type SL interface {
 	PluginAPI
 	bot.Logger
 
+	ActingUser() (*User, error)
 	Config() *config.Config
 }
 

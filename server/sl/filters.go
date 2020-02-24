@@ -43,6 +43,20 @@ func withRotationIsNotArchived(rotation *Rotation) func(sl *sl) error {
 	}
 }
 
+func withUser(user *User) func(sl *sl) error {
+	return func(sl *sl) error {
+		if user.loaded {
+			return nil
+		}
+		loadedUser, _, err := sl.loadOrMakeUser(user.MattermostUserID)
+		if err != nil {
+			return err
+		}
+		*user = *loadedUser
+		return nil
+	}
+}
+
 func withActingUser(sl *sl) error {
 	if sl.actingUser != nil {
 		return nil
@@ -64,6 +78,19 @@ func withActingUserExpanded(sl *sl) error {
 		return err
 	}
 	return sl.ExpandUser(sl.actingUser)
+}
+
+func withUserExpanded(user *User) func(sl *sl) error {
+	return func(sl *sl) error {
+		if user != nil && user.mattermostUser != nil {
+			return nil
+		}
+		err := withUser(user)(sl)
+		if err != nil {
+			return err
+		}
+		return sl.ExpandUser(sl.actingUser)
+	}
 }
 
 func withKnownSkills(sl *sl) error {

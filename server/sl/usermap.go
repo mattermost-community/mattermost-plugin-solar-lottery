@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
-	"github.com/pkg/errors"
 )
 
 type UserMap map[string]*User
@@ -67,23 +66,15 @@ func (m UserMap) IDs() *types.Set {
 	return set
 }
 
+// Sorted returns all users, sorted by ID. It is used in testing, so it returns
+// []User rather than a []*User to make it easier to compare with expected
+// results.
 func (m UserMap) Sorted() []User {
 	out := []User{}
 	for _, id := range m.IDs().Sorted() {
 		out = append(out, *m[id])
 	}
 	return out
-}
-
-func (sl *sl) addUnavailable(users UserMap, u *Unavailable) error {
-	for _, user := range users {
-		user.AddUnavailable(u)
-		_, err := sl.storeUser(user)
-		if err != nil {
-			return errors.WithMessagef(err, "failed to update user %s", user.Markdown())
-		}
-	}
-	return nil
 }
 
 func (users UserMap) Qualified(need *Need) UserMap {

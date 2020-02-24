@@ -55,14 +55,14 @@ func (p *Period) Set(in string) error {
 	return nil
 }
 
-func (p *Period) ForTime(beginning, now Time) Interval {
-	start := p.StartForTime(beginning, now)
-	next := p.Next(start)
-	return Interval{
-		Start:  start,
-		Finish: next,
-	}
-}
+// func (p *Period) IntervalForTime(beginning, now Time) Interval {
+// 	start := p.StartForTime(beginning, now)
+// 	next := p.Next(start)
+// 	return Interval{
+// 		Start:  start,
+// 		Finish: next,
+// 	}
+// }
 
 func (p *Period) StartForTime(start, now Time) Time {
 	const (
@@ -80,7 +80,7 @@ func (p *Period) StartForTime(start, now Time) Time {
 	switch p.value {
 	case EveryDuration:
 		reduced := now.Add(-p.dur / 2)
-		return Time{reduced.Round(p.dur)}
+		return NewTime(reduced.Round(p.dur))
 
 	case EveryDay:
 		days = 1
@@ -104,12 +104,12 @@ func (p *Period) StartForTime(start, now Time) Time {
 
 	t := start.AddDate(0, months*n, days*n)
 	if now.Before(t) {
-		panic("<><>")
+		panic("<><> TODO")
 	}
 	for {
 		next := t.AddDate(0, months, days)
 		if now.Before(next) {
-			return Time{t}
+			return NewTime(t)
 		}
 		t = next
 	}
@@ -120,7 +120,7 @@ func (p *Period) Next(start Time) Time {
 	switch p.value {
 	case EveryDuration:
 		reduced := start.Add(-p.dur / 2)
-		return Time{reduced.Round(p.dur)}
+		return NewTime(reduced.Round(p.dur))
 
 	case EveryDay:
 		days = 1
@@ -135,5 +135,5 @@ func (p *Period) Next(start Time) Time {
 		months = 1
 	}
 
-	return Time{start.AddDate(0, months, days)}
+	return NewTime(start.AddDate(0, months, days))
 }

@@ -20,5 +20,10 @@ func (c *Command) showUser(parameters []string) (string, error) {
 		return "", err
 	}
 
+	if len(users) == 1 {
+		for _, user := range users {
+			return md.JSONBlock(user), nil
+		}
+	}
 	return md.JSONBlock(users), nil
 }

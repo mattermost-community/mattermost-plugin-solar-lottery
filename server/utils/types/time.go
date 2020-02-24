@@ -17,24 +17,28 @@ const (
 )
 
 type Time struct {
-	time.Time
+	time.Time // always in UTC
 }
 
-var _ json.Marshaler = (*Time)(nil)
-var _ json.Unmarshaler = (*Time)(nil)
+// var _ json.Marshaler = (*Time)(nil)
+// var _ json.Unmarshaler = (*Time)(nil)
 var _ pflag.Value = (*Time)(nil)
 
-func Now() Time {
-	// TODO  use MM time zone
+func NewTime(tt ...time.Time) Time {
+	if len(tt) == 0 {
+		return Time{
+			Time: time.Now(),
+		}
+	}
+
 	return Time{
-		Time: time.Now().UTC(),
+		Time: tt[0],
 	}
 }
 
-func NewTime(t time.Time) Time {
-	// TODO  use MM time zone
+func (t Time) In(l *time.Location) Time {
 	return Time{
-		Time: t.UTC(),
+		Time: t.Time.In(l),
 	}
 }
 
@@ -42,29 +46,32 @@ func (t *Time) Type() string {
 	return "time"
 }
 
+// Set implements pflag.Var, treats the parameter as UTC; to parse local
+// times, use t.In(location) before calling fs.Parse().
 func (t *Time) Set(in string) error {
-	// TODO  use MM time zone
-	tt, err := time.Parse(time.RFC3339, in)
-	if err != nil {
-		return err
+	loc := t.Time.Location()
+	if loc == nil {
+		loc = time.UTC
 	}
-	t.Time = tt.UTC()
+
+	tt, err := time.ParseInLocation(TimeFormat, in, loc)
+	if err != nil {
+		tt, err = time.ParseInLocation(DateFormat, in, loc)
+		if err != nil {
+			return err
+		}
+	}
+	t.Time = tt
 	return nil
 }
 
 // String is in UTC, use LocalString for local time
 func (t Time) String() string {
-	s := t.UTC().Format(TimeFormat)
-	return strings.TrimSuffix(s, "T00:00")
-}
-
-func (t Time) LocalString() string {
-	s := t.Local().Format(TimeFormat)
-	return strings.TrimSuffix(s, "T00:00")
+	return strings.TrimSuffix(t.Format(TimeFormat), "T00:00")
 }
 
 func (t *Time) MarshalJSON() ([]byte, error) {
-	return json.Marshal(t.String())
+	return json.Marshal(t.Time.UTC())
 }
 
 func (t *Time) UnmarshalJSON(data []byte) error {
@@ -73,11 +80,24 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-
-	parsedTime, err := time.Parse(time.RFC3339, s)
+	t.Time, err = time.Parse(time.RFC3339, s)
 	if err != nil {
 		return err
 	}
-	t.Time = parsedTime.UTC()
 	return nil
+}
+
+// Exposed for testing other packages
+var EST, PST *time.Location
+
+func init() {
+	var err error
+	EST, err = time.LoadLocation("America/New_York")
+	if err != nil {
+		panic(err.Error())
+	}
+	PST, err = time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		panic(err.Error())
+	}
 }
