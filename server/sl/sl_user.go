@@ -19,7 +19,7 @@ const eUser = "user_"
 type Users interface {
 	LoadMattermostUsername(username string) (*User, error)
 	Disqualify(users UserMap, skillName string) error
-	Qualify(users UserMap, skillName string, level Level) error
+	Qualify(users UserMap, skillLevel SkillLevel) error
 }
 
 func (sl *sl) ActingUser() (*User, error) {
@@ -68,7 +68,7 @@ func (sl *sl) LoadMattermostUsername(username string) (*User, error) {
 	return user, nil
 }
 
-func (sl *sl) Qualify(users UserMap, skillName string, level Level) error {
+func (sl *sl) Qualify(users UserMap, skillLevel SkillLevel) error {
 	err := sl.Filter(
 		withActingUserExpanded,
 	)
@@ -79,23 +79,22 @@ func (sl *sl) Qualify(users UserMap, skillName string, level Level) error {
 		"Location":       "Qualify",
 		"ActingUsername": sl.actingUser.MattermostUsername(),
 		"Users":          users.String(),
-		"Skill":          skillName,
-		"Level":          level,
+		"SkillLevel":     skillLevel,
 	})
 
-	err = sl.AddKnownSkill(skillName)
+	err = sl.AddKnownSkill(skillLevel.Skill)
 	if err != nil {
 		return err
 	}
 	for _, user := range users {
-		err = sl.updateUserSkill(user, skillName, level)
+		err = sl.updateUserSkill(user, skillLevel)
 		if err != nil {
 			return err
 		}
 	}
 
 	logger.Infof("%s added skill %s to %s.",
-		sl.actingUser.Markdown(), MarkdownSkillLevel(skillName, level), users.Markdown())
+		sl.actingUser.Markdown(), skillLevel, users.Markdown())
 	return nil
 }
 
@@ -115,7 +114,10 @@ func (sl *sl) Disqualify(users UserMap, skillName string) error {
 	})
 
 	for _, user := range users {
-		err = sl.updateUserSkill(user, skillName, 0)
+		err = sl.updateUserSkill(user, SkillLevel{
+			Skill: skillName,
+			Level: Level(0),
+		})
 		if err != nil {
 			return err
 		}
@@ -181,27 +183,26 @@ func (sl *sl) storeUser(orig *User) (*User, error) {
 	return user, nil
 }
 
-func (sl *sl) updateUserSkill(user *User, skillName string, level Level) error {
-	if user.SkillLevels[skillName] == int64(level) {
+func (sl *sl) updateUserSkill(user *User, skillLevel SkillLevel) error {
+	s, l := skillLevel.Skill, skillLevel.Level
+	if user.SkillLevels[s] == int64(l) {
 		// nothing to do
-		sl.Logger.Debugf("nothing to do for user %s, already has skill %s (%v)", user.Markdown(), skillName, level)
+		sl.Logger.Debugf("nothing to do for user %s, already is %s", user.Markdown(), skillLevel)
 		return nil
 	}
 
-	if level == 0 {
-		_, ok := user.SkillLevels[skillName]
-		if !ok {
-			return errors.Errorf("%s does not have skill %s", user.Markdown(), skillName)
+	if l == 0 {
+		_, ok := user.SkillLevels[s]
+		if ok {
+			delete(user.SkillLevels, s)
 		}
-		delete(user.SkillLevels, skillName)
 	} else {
-		user.SkillLevels[skillName] = int64(level)
+		user.SkillLevels[s] = int64(l)
 	}
-
 	user, err := sl.storeUserWelcomeNew(user)
 	if err != nil {
 		return err
 	}
-	sl.Logger.Debugf("%s (%v) skill updated user %s", skillName, level, user.Markdown())
+	sl.Logger.Debugf("%s updated to %s", user.Markdown(), skillLevel)
 	return nil
 }

@@ -20,7 +20,7 @@ func TestCommandUserQualify(t *testing.T) {
 
 		qualified := sl.UserMap{}
 		_, err := runJSONCommand(t, SL, `
-			/lotto user qualify @uid1-username -k webapp -l 2 @uid2-username`, &qualified)
+			/lotto user qualify @uid1-username -k webapp-▣ @uid2-username`, &qualified)
 		require.NoError(t, err)
 		require.Equal(t, []string{"uid1", "uid2"}, qualified.IDs().Sorted())
 
@@ -47,7 +47,7 @@ func TestCommandUserQualify(t *testing.T) {
 
 		qualified = sl.UserMap{}
 		_, err = runJSONCommand(t, SL, `
-			/lotto user qualify -k somethingelse -l 2`, &qualified)
+			/lotto user qualify -k somethingelse-3`, &qualified)
 		require.NoError(t, err)
 		require.Equal(t, []string{"test-user"}, qualified.IDs().Sorted())
 

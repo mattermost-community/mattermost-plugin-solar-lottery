@@ -7,9 +7,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/pflag"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
@@ -83,14 +81,4 @@ func (c *Command) listSkills(parameters []string) (string, error) {
 		return md.JSONBlock(skills), nil
 	}
 	return "Known skills: " + md.JSONBlock(skills), nil
-}
-
-func fSkill(fs *pflag.FlagSet) *string {
-	return fs.StringP(flagSkill, flagPSkill, "", "Skill name")
-}
-
-func fLevel(fs *pflag.FlagSet) *sl.Level {
-	var level sl.Level
-	fs.VarP(&level, flagLevel, flagPLevel, "Skill level")
-	return &level
 }

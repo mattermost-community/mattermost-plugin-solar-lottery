@@ -8,20 +8,18 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
 func (c *Command) qualifyUsers(parameters []string) (string, error) {
 	fs := newFS()
 	jsonOut := fJSON(fs)
-	skill := fSkill(fs)
-	level := fLevel(fs)
+	skillLevel := fSkillLevel(fs)
 	err := fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(fs), err
 	}
-	if *skill == "" || *level == 0 {
+	if skillLevel.Skill == "" || skillLevel.Level == 0 {
 		return c.flagUsage(fs), errors.New("must provide --level and --skill values")
 	}
 
@@ -30,7 +28,7 @@ func (c *Command) qualifyUsers(parameters []string) (string, error) {
 		return "", err
 	}
 
-	err = c.SL.Qualify(users, *skill, *level)
+	err = c.SL.Qualify(users, *skillLevel)
 	if err != nil {
 		return "", err
 	}
@@ -38,5 +36,5 @@ func (c *Command) qualifyUsers(parameters []string) (string, error) {
 	if *jsonOut {
 		return md.JSONBlock(users), nil
 	}
-	return fmt.Sprintf("Qualified %s as %s", users.Markdown(), sl.MarkdownSkillLevel(*skill, *level)), nil
+	return fmt.Sprintf("Qualified %s as %s", users.Markdown(), skillLevel.String()), nil
 }

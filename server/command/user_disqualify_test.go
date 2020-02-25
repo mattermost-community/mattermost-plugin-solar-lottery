@@ -19,8 +19,8 @@ func TestCommandUserDisqualify(t *testing.T) {
 		SL, _ := getTestSL(t, ctrl)
 
 		err := runCommands(t, SL, `
-			/lotto user qualify -k webapp -l 2
-			/lotto user qualify -k somethingelse -l 3
+			/lotto user qualify -k webapp-2
+			/lotto user qualify -k somethingelse-3
 		`)
 		require.NoError(t, err)
 

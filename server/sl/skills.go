@@ -4,8 +4,6 @@
 package sl
 
 import (
-	"fmt"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
@@ -73,8 +71,4 @@ func (sl *sl) DeleteKnownSkill(skillName string) error {
 
 	logger.Infof("%s deleted skill %s.", sl.actingUser.Markdown(), skillName)
 	return nil
-}
-
-func MarkdownSkillLevel(skillName string, level Level) string {
-	return fmt.Sprintf("%s%s", Level(level).String(), skillName)
 }

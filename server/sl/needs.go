@@ -5,33 +5,29 @@ package sl
 
 import (
 	"fmt"
-	"strconv"
 )
 
 type Need struct {
+	SkillLevel
 	Count int
-	Skill string
-	Level int
 }
 
 func NewNeed(skill string, level int, count int) *Need {
 	return &Need{
 		Count: count,
-		Skill: skill,
-		Level: level,
+		SkillLevel: SkillLevel{
+			Skill: skill,
+			Level: Level(level),
+		},
 	}
 }
 
 func (need Need) String() string {
-	return fmt.Sprintf("%s-%v-%v", need.Skill, need.Level, need.Count)
-}
-
-func (need Need) SkillLevel() string {
-	return need.Skill + "-" + strconv.Itoa(need.Level)
+	return fmt.Sprintf("%v-%s", need.Count, need.SkillLevel)
 }
 
 func (need *Need) Markdown() string {
-	return fmt.Sprintf("**%v** %s", need.Count, need.SkillLevel())
+	return fmt.Sprintf("**%v** %s", need.Count, need.SkillLevel)
 }
 
 func UnmetRequirements(needs []*Need, users UserMap) []*Need {

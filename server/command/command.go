@@ -53,7 +53,6 @@ const (
 
 const (
 	flagPFinish   = "f"
-	flagPLevel    = "l"
 	flagPNumber   = "n"
 	flagPRotation = "r"
 	flagPShift    = "s"
@@ -71,7 +70,6 @@ const (
 	flagFillDays   = "fill-before"
 	flagGrace      = "grace"
 	flagJSON       = "json"
-	flagLevel      = "level"
 	flagMax        = "max"
 	flagMin        = "min"
 	flagNotifyDays = "notify"
@@ -231,6 +229,16 @@ func fStartFinish(fs *pflag.FlagSet, actingUser *sl.User) (*types.Time, *types.T
 
 func fClear(fs *pflag.FlagSet) *bool {
 	return fs.Bool(flagClear, false, "mark as available by clearing all overlapping unavailability events")
+}
+
+func fSkill(fs *pflag.FlagSet) *string {
+	return fs.StringP(flagSkill, flagPSkill, "", "Skill name")
+}
+
+func fSkillLevel(fs *pflag.FlagSet) *sl.SkillLevel {
+	var skillLevel sl.SkillLevel
+	fs.VarP(&skillLevel, flagSkill, flagPSkill, "Skill-level")
+	return &skillLevel
 }
 
 func (c *Command) loadUsernames(args []string) (users sl.UserMap, err error) {

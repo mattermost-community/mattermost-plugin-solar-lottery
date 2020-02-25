@@ -4,11 +4,19 @@
 package sl
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 )
 
 type Level int
+
+type SkillLevel struct {
+	Skill string
+	Level Level
+}
 
 var _ pflag.Value = (*Level)(nil)
 
@@ -77,5 +85,31 @@ func (level *Level) Set(in string) error {
 	default:
 		return errors.Errorf("%s is not a valid skill level", in)
 	}
+	return nil
+}
+
+func (skillLevel SkillLevel) String() string {
+	return fmt.Sprintf("%s-%s", skillLevel.Skill, skillLevel.Level)
+}
+
+func (skillLevel SkillLevel) Type() string {
+	return fmt.Sprintf("%s-%v", skillLevel.Skill, int(skillLevel.Level))
+}
+
+func (skillLevel *SkillLevel) Set(in string) error {
+	split := strings.Split(in, "-")
+	if len(split) > 2 {
+		return errors.Errorf("should be formatted as skill-level: %s", skillLevel)
+	}
+
+	l := Beginner
+	if len(split) == 2 {
+		err := l.Set(split[1])
+		if err != nil {
+			return err
+		}
+	}
+	skillLevel.Skill = split[0]
+	skillLevel.Level = l
 	return nil
 }

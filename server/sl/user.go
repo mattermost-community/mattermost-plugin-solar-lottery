@@ -94,15 +94,14 @@ func (user *User) MarkdownWithSkills() string {
 }
 
 func (user *User) MarkdownSkills() string {
-	skills := []string{}
+	skillLevels := []string{}
 	for s, l := range user.SkillLevels {
-		skills = append(skills, MarkdownSkillLevel(s, Level(l)))
+		skillLevels = append(skillLevels, SkillLevel{Skill: s, Level: Level(l)}.String())
 	}
-
-	if len(skills) == 0 {
-		return "(kook)"
+	if len(skillLevels) == 0 {
+		return "(none)"
 	}
-	ss := strings.Join(skills, ", ")
+	ss := strings.Join(skillLevels, ", ")
 	return fmt.Sprintf("(%s)", ss)
 }
 
