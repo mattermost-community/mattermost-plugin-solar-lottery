@@ -47,8 +47,8 @@ func TestIndexJSON(t *testing.T) {
 		require.NoError(t, err)
 
 		var ain, aout stringArrayProto
-		in.AsArray(&ain)
-		out.AsArray(&aout)
+		in.TestAsArray(&ain)
+		out.TestAsArray(&aout)
 		require.EqualValues(t, ain, aout)
 	})
 	t.Run("structs", func(t *testing.T) {
@@ -77,8 +77,8 @@ func TestIndexJSON(t *testing.T) {
 		require.NoError(t, err)
 
 		var ain, aout structArrayProto
-		in.AsArray(&ain)
-		out.AsArray(&aout)
+		in.TestAsArray(&ain)
+		out.TestAsArray(&aout)
 		require.EqualValues(t, ain, aout)
 	})
 }

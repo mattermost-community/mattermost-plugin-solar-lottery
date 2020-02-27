@@ -21,6 +21,6 @@ func TestStringSet(t *testing.T) {
 		out := NewStringSet()
 		err = json.Unmarshal(data, &out)
 		require.NoError(t, err)
-		require.EqualValues(t, in.SortedKeys(), out.SortedKeys())
+		require.EqualValues(t, in.TestSortedKeys(), out.TestSortedKeys())
 	})
 }

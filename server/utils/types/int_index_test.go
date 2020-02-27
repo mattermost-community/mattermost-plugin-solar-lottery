@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestIntSet(t *testing.T) {
+func TestIntIndex(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
 		in := NewIntSet()
 		in.Set("b", 2)
@@ -24,6 +24,9 @@ func TestIntSet(t *testing.T) {
 		out := NewIntSet()
 		err = json.Unmarshal(data, &out)
 		require.NoError(t, err)
-		require.EqualValues(t, in.SortedKeys(), out.SortedKeys())
+		var ain, aout intArrayProto
+		in.TestAsArray(&ain)
+		out.TestAsArray(&aout)
+		require.EqualValues(t, ain, aout)
 	})
 }

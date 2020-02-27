@@ -40,14 +40,13 @@ type Index interface {
 	json.Marshaler
 	json.Unmarshaler
 
-	AsMap(IndexSetter)
-	AsArray(IndexPrototype)
 	Contains(id string) bool
 	Delete(keyToDelete string)
 	Get(string) Identifiable
 	Keys() []string
 	Set(Identifiable)
-	SortedKeys() []string
+	TestAsArray(IndexPrototype)
+	TestSortedKeys() []string
 }
 
 type index struct {
@@ -66,19 +65,6 @@ func NewIndex(proto IndexPrototype, vv ...Identifiable) Index {
 		i.Set(v)
 	}
 	return i
-}
-
-func (i *index) AsArray(out IndexPrototype) {
-	out.Resize(len(i.keys))
-	for n, key := range i.keys {
-		out.SetAt(n, i.m[key])
-	}
-}
-
-func (i *index) AsMap(out IndexSetter) {
-	for _, v := range i.m {
-		out.Set(v)
-	}
 }
 
 func (i *index) Clone(deep bool) Cloneable {
@@ -145,12 +131,6 @@ func (i *index) SetAt(n int, v Identifiable) {
 	i.m[id] = v
 }
 
-func (i *index) SortedKeys() []string {
-	n := i.Keys()
-	sort.Strings(n)
-	return n
-}
-
 func (i *index) MarshalJSON() ([]byte, error) {
 	proto := i.proto.InstanceOf()
 	proto.Resize(len(i.keys))
@@ -174,4 +154,17 @@ func (i *index) UnmarshalJSON(data []byte) error {
 		i.Set(proto.GetAt(n))
 	}
 	return nil
+}
+
+func (i *index) TestAsArray(out IndexPrototype) {
+	out.Resize(len(i.keys))
+	for n, key := range i.keys {
+		out.SetAt(n, i.m[key])
+	}
+}
+
+func (i *index) TestSortedKeys() []string {
+	n := i.Keys()
+	sort.Strings(n)
+	return n
 }
