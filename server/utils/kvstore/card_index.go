@@ -7,28 +7,28 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-type IndexStore interface {
-	Load() (types.Index, error)
-	Store(types.Index) error
+type CardIndexStore interface {
+	Load() (*types.Index, error)
+	Store(*types.Index) error
 	Delete(id string) error
-	StoreValue(v types.Identifiable) error
+	StoreCard(v types.IndexCard) error
 }
 
-type indexStore struct {
+type cardIndexStore struct {
 	key   string
 	kv    KVStore
-	proto types.IndexPrototype
+	proto types.IndexCardArray
 }
 
-func (s *store) Index(key string, proto types.IndexPrototype) IndexStore {
-	return &indexStore{
+func (s *store) CardIndex(key string, proto types.IndexCardArray) CardIndexStore {
+	return &cardIndexStore{
 		key:   key,
 		kv:    s.KVStore,
 		proto: proto,
 	}
 }
 
-func (s *indexStore) Load() (types.Index, error) {
+func (s *cardIndexStore) Load() (*types.Index, error) {
 	index := types.NewIndex(s.proto)
 	err := LoadJSON(s.kv, s.key, &index)
 	if err != nil {
@@ -37,7 +37,7 @@ func (s *indexStore) Load() (types.Index, error) {
 	return index, nil
 }
 
-func (s *indexStore) Store(index types.Index) error {
+func (s *cardIndexStore) Store(index *types.Index) error {
 	err := StoreJSON(s.kv, s.key, index)
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func (s *indexStore) Store(index types.Index) error {
 	return nil
 }
 
-func (s *indexStore) Delete(id string) error {
+func (s *cardIndexStore) Delete(id string) error {
 	index, err := s.Load()
 	if err != nil {
 		return err
@@ -56,7 +56,7 @@ func (s *indexStore) Delete(id string) error {
 	return s.Store(index)
 }
 
-func (s *indexStore) StoreValue(v types.Identifiable) error {
+func (s *cardIndexStore) StoreCard(v types.IndexCard) error {
 	index, err := s.Load()
 	if err != nil {
 		return err

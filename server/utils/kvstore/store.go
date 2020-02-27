@@ -9,7 +9,8 @@ type Store interface {
 	KVStore
 
 	Entity(string) EntityStore
-	Index(string, types.IndexPrototype) IndexStore
+	CardIndex(string, types.IndexCardArray) CardIndexStore
+	IDIndex(string) IDIndexStore
 }
 
 type store struct {
