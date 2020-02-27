@@ -3,11 +3,13 @@
 
 package kvstore
 
+import "github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
+
 type Store interface {
 	KVStore
 
 	Entity(string) EntityStore
-	Index(string) IndexStore
+	Index(string, types.IndexPrototype) IndexStore
 }
 
 type store struct {

@@ -10,11 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type stringIdentifiable string
-
-func (si stringIdentifiable) GetID() string       { return string(si) }
-func (si stringIdentifiable) Clone() Identifiable { return si }
-
 type structIdentifiable struct {
 	ID   string
 	Data string
@@ -22,21 +17,6 @@ type structIdentifiable struct {
 
 func (si structIdentifiable) GetID() string       { return si.ID }
 func (si structIdentifiable) Clone() Identifiable { return si }
-
-type stringArrayProto []stringIdentifiable
-
-func (p stringArrayProto) Len() int                    { return len(p) }
-func (p stringArrayProto) GetAt(n int) Identifiable    { return p[n] }
-func (p stringArrayProto) SetAt(n int, v Identifiable) { p[n] = v.(stringIdentifiable) }
-
-func (p stringArrayProto) InstanceOf() IndexPrototype {
-	inst := make(stringArrayProto, 0)
-	return &inst
-}
-func (p *stringArrayProto) Ref() interface{} { return p }
-func (p *stringArrayProto) Resize(n int) {
-	*p = make(stringArrayProto, n)
-}
 
 type structArrayProto []structIdentifiable
 
@@ -54,7 +34,7 @@ func (p *structArrayProto) Resize(n int) {
 }
 
 func TestIndexJSON(t *testing.T) {
-	t.Run("Marshal strings", func(t *testing.T) {
+	t.Run("strings", func(t *testing.T) {
 		proto := &stringArrayProto{}
 		in := NewIndex(proto, stringIdentifiable("test1"), stringIdentifiable("test2"))
 
@@ -71,7 +51,7 @@ func TestIndexJSON(t *testing.T) {
 		out.AsArray(&aout)
 		require.EqualValues(t, ain, aout)
 	})
-	t.Run("Marshal structs", func(t *testing.T) {
+	t.Run("structs", func(t *testing.T) {
 		proto := &structArrayProto{}
 		in := NewIndex(proto,
 			structIdentifiable{

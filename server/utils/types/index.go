@@ -32,6 +32,8 @@ type IndexPrototype interface {
 
 type Index interface {
 	IndexArray
+	json.Marshaler
+	json.Unmarshaler
 
 	// Clone() Index
 	AsMap(IndexSetter)

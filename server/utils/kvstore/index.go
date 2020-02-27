@@ -8,26 +8,28 @@ import (
 )
 
 type IndexStore interface {
-	Load() (*types.Set, error)
-	Store(index *types.Set) error
-	DeleteFrom(id string) error
-	AddTo(id string) error
+	Load() (types.Index, error)
+	Store(types.Index) error
+	Delete(id string) error
+	StoreValue(v types.Identifiable) error
 }
 
 type indexStore struct {
-	key string
-	kv  KVStore
+	key   string
+	kv    KVStore
+	proto types.IndexPrototype
 }
 
-func (s *store) Index(key string) IndexStore {
+func (s *store) Index(key string, proto types.IndexPrototype) IndexStore {
 	return &indexStore{
-		key: key,
-		kv:  s.KVStore,
+		key:   key,
+		kv:    s.KVStore,
+		proto: proto,
 	}
 }
 
-func (s *indexStore) Load() (*types.Set, error) {
-	index := types.NewSet()
+func (s *indexStore) Load() (types.Index, error) {
+	index := types.NewIndex(s.proto)
 	err := LoadJSON(s.kv, s.key, &index)
 	if err != nil {
 		return nil, err
@@ -35,7 +37,7 @@ func (s *indexStore) Load() (*types.Set, error) {
 	return index, nil
 }
 
-func (s *indexStore) Store(index *types.Set) error {
+func (s *indexStore) Store(index types.Index) error {
 	err := StoreJSON(s.kv, s.key, index)
 	if err != nil {
 		return err
@@ -43,34 +45,24 @@ func (s *indexStore) Store(index *types.Set) error {
 	return nil
 }
 
-func (s *indexStore) DeleteFrom(id string) error {
-	index := types.NewSet()
-	err := LoadJSON(s.kv, s.key, &index)
+func (s *indexStore) Delete(id string) error {
+	index, err := s.Load()
 	if err != nil {
 		return err
 	}
 
 	index.Delete(id)
 
-	err = StoreJSON(s.kv, s.key, index)
-	if err != nil {
-		return err
-	}
-	return nil
+	return s.Store(index)
 }
 
-func (s *indexStore) AddTo(id string) error {
-	index := types.NewSet()
-	err := LoadJSON(s.kv, s.key, &index)
-	if err != nil && err != ErrNotFound {
-		return err
-	}
-
-	index.Add(id)
-
-	err = StoreJSON(s.kv, s.key, index)
+func (s *indexStore) StoreValue(v types.Identifiable) error {
+	index, err := s.Load()
 	if err != nil {
 		return err
 	}
-	return nil
+
+	index.Set(v)
+
+	return s.Store(index)
 }
