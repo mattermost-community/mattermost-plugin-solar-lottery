@@ -15,8 +15,8 @@ type structIdentifiable struct {
 	Data string
 }
 
-func (si structIdentifiable) GetID() string       { return si.ID }
-func (si structIdentifiable) Clone() Identifiable { return si }
+func (si structIdentifiable) GetID() string        { return si.ID }
+func (si structIdentifiable) Clone(bool) Cloneable { return si }
 
 type structArrayProto []structIdentifiable
 

@@ -8,9 +8,13 @@ import (
 	"sort"
 )
 
+type Cloneable interface {
+	Clone(deep bool) Cloneable
+}
+
 type Identifiable interface {
+	Cloneable
 	GetID() string
-	Clone() Identifiable
 }
 
 type IndexArray interface {
@@ -32,10 +36,10 @@ type IndexPrototype interface {
 
 type Index interface {
 	IndexArray
+	Cloneable
 	json.Marshaler
 	json.Unmarshaler
 
-	// Clone() Index
 	AsMap(IndexSetter)
 	AsArray(IndexPrototype)
 	Contains(id string) bool
@@ -77,12 +81,13 @@ func (i *index) AsMap(out IndexSetter) {
 	}
 }
 
-// func (i *index) Clone() Index {
-// 	n := NewIndex()
-// 	n.m = s.Map()
-// 	n.asArray = s.Array()
-// 	return n
-// }
+func (i *index) Clone(deep bool) Cloneable {
+	n := NewIndex(i.proto)
+	for _, key := range i.keys {
+		n.Set(i.m[key].Clone(deep).(Identifiable))
+	}
+	return n
+}
 
 func (i *index) Contains(id string) bool {
 	_, ok := i.m[id]

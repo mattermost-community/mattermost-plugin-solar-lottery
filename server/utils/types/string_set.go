@@ -5,8 +5,8 @@ package types
 
 type stringIdentifiable string
 
-func (si stringIdentifiable) GetID() string       { return string(si) }
-func (si stringIdentifiable) Clone() Identifiable { return si }
+func (si stringIdentifiable) GetID() string        { return string(si) }
+func (si stringIdentifiable) Clone(bool) Cloneable { return si }
 
 type stringArrayProto []stringIdentifiable
 

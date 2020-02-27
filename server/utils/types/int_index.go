@@ -3,18 +3,26 @@
 
 package types
 
-import "strconv"
+type idInt struct {
+	ID string
+	V  int64
+}
 
-type intIdentifiable int64
+func NewIDInt(id string, value int64) Identifiable {
+	return idInt{
+		ID: id,
+		V:  value,
+	}
+}
 
-func (ii intIdentifiable) GetID() string       { return strconv.Itoa(int(ii)) }
-func (ii intIdentifiable) Clone() Identifiable { return ii }
+func (ii idInt) GetID() string        { return ii.ID }
+func (ii idInt) Clone(bool) Cloneable { return ii }
 
-type intArrayProto []intIdentifiable
+type intArrayProto []idInt
 
 func (p intArrayProto) Len() int                    { return len(p) }
 func (p intArrayProto) GetAt(n int) Identifiable    { return p[n] }
-func (p intArrayProto) SetAt(n int, v Identifiable) { p[n] = v.(intIdentifiable) }
+func (p intArrayProto) SetAt(n int, v Identifiable) { p[n] = v.(idInt) }
 
 func (p intArrayProto) InstanceOf() IndexPrototype {
 	inst := make(intArrayProto, 0)
@@ -29,18 +37,14 @@ type IntSet struct {
 	Index
 }
 
-func NewIntSet(vv ...int64) *IntSet {
-	s := &IntSet{
+func NewIntSet() *IntSet {
+	return &IntSet{
 		Index: NewIndex(&intArrayProto{}),
 	}
-	for _, v := range vv {
-		s.Set(v)
-	}
-	return s
 }
 
-func (s *IntSet) Set(v int64) {
-	s.Index.Set(intIdentifiable(v))
+func (s *IntSet) Set(id string, v int64) {
+	s.Index.Set(NewIDInt(id, v))
 }
 
 func (s *IntSet) MarshalJSON() ([]byte, error) {
