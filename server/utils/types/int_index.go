@@ -33,24 +33,24 @@ func (p *intArrayProto) Resize(n int) {
 	*p = make(intArrayProto, n)
 }
 
-type IntSet struct {
+type IntIndex struct {
 	Index
 }
 
-func NewIntSet() *IntSet {
-	return &IntSet{
+func NewIntSet() *IntIndex {
+	return &IntIndex{
 		Index: NewIndex(&intArrayProto{}),
 	}
 }
 
-func (s *IntSet) Set(id string, v int64) {
+func (s *IntIndex) Set(id string, v int64) {
 	s.Index.Set(NewIDInt(id, v))
 }
 
-func (s *IntSet) MarshalJSON() ([]byte, error) {
+func (s *IntIndex) MarshalJSON() ([]byte, error) {
 	return s.Index.MarshalJSON()
 }
 
-func (s *IntSet) UnmarshalJSON(data []byte) error {
+func (s *IntIndex) UnmarshalJSON(data []byte) error {
 	return s.Index.UnmarshalJSON(data)
 }

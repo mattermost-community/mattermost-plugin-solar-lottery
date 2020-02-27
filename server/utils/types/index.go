@@ -17,7 +17,7 @@ type Identifiable interface {
 	GetID() string
 }
 
-type IndexArray interface {
+type indexArray interface {
 	Len() int
 	GetAt(int) Identifiable
 	SetAt(int, Identifiable)
@@ -28,14 +28,14 @@ type IndexSetter interface {
 }
 
 type IndexPrototype interface {
-	IndexArray
+	indexArray
 	InstanceOf() IndexPrototype
 	Ref() interface{}
 	Resize(int)
 }
 
 type Index interface {
-	IndexArray
+	indexArray
 	Cloneable
 	json.Marshaler
 	json.Unmarshaler
