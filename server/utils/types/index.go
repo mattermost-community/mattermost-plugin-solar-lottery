@@ -12,53 +12,38 @@ type Cloneable interface {
 	Clone(deep bool) Cloneable
 }
 
-type Identifiable interface {
+type IndexCard interface {
 	Cloneable
 	GetID() string
 }
 
-type indexArray interface {
-	Len() int
-	GetAt(int) Identifiable
-	SetAt(int, Identifiable)
-}
-
 type IndexSetter interface {
-	Set(Identifiable)
+	Set(IndexCard)
 }
 
-type IndexPrototype interface {
-	indexArray
-	InstanceOf() IndexPrototype
+type IndexGetter interface {
+	Get(IndexCard)
+}
+
+type IndexCardArray interface {
+	Len() int
+	GetAt(int) IndexCard
+	SetAt(int, IndexCard)
+	InstanceOf() IndexCardArray
 	Ref() interface{}
 	Resize(int)
 }
 
-type Index interface {
-	indexArray
-	Cloneable
-	json.Marshaler
-	json.Unmarshaler
-
-	Contains(id string) bool
-	Delete(keyToDelete string)
-	Get(string) Identifiable
-	Keys() []string
-	Set(Identifiable)
-	TestAsArray(IndexPrototype)
-	TestSortedKeys() []string
-}
-
-type index struct {
-	proto IndexPrototype
+type Index struct {
+	proto IndexCardArray
 	keys  []string
-	m     map[string]Identifiable
+	m     map[string]IndexCard
 }
 
-func NewIndex(proto IndexPrototype, vv ...Identifiable) Index {
-	i := &index{
+func NewIndex(proto IndexCardArray, vv ...IndexCard) *Index {
+	i := &Index{
 		keys:  []string{},
-		m:     map[string]Identifiable{},
+		m:     map[string]IndexCard{},
 		proto: proto,
 	}
 	for _, v := range vv {
@@ -67,20 +52,20 @@ func NewIndex(proto IndexPrototype, vv ...Identifiable) Index {
 	return i
 }
 
-func (i *index) Clone(deep bool) Cloneable {
+func (i *Index) Clone(deep bool) Cloneable {
 	n := NewIndex(i.proto)
 	for _, key := range i.keys {
-		n.Set(i.m[key].Clone(deep).(Identifiable))
+		n.Set(i.m[key].Clone(deep).(IndexCard))
 	}
 	return n
 }
 
-func (i *index) Contains(id string) bool {
+func (i *Index) Contains(id string) bool {
 	_, ok := i.m[id]
 	return ok
 }
 
-func (i *index) Delete(keyToDelete string) {
+func (i *Index) Delete(keyToDelete string) {
 	if !i.Contains(keyToDelete) {
 		return
 	}
@@ -97,25 +82,25 @@ func (i *index) Delete(keyToDelete string) {
 	delete(i.m, keyToDelete)
 }
 
-func (i *index) Get(key string) Identifiable {
+func (i *Index) Get(key string) IndexCard {
 	return i.m[key]
 }
 
-func (i *index) GetAt(n int) Identifiable {
+func (i *Index) GetAt(n int) IndexCard {
 	return i.m[i.keys[n]]
 }
 
-func (i *index) Len() int {
+func (i *Index) Len() int {
 	return len(i.keys)
 }
 
-func (i *index) Keys() []string {
+func (i *Index) Keys() []string {
 	n := make([]string, len(i.keys))
 	copy(n, i.keys)
 	return n
 }
 
-func (i *index) Set(v Identifiable) {
+func (i *Index) Set(v IndexCard) {
 	id := v.GetID()
 	if !i.Contains(id) {
 		i.keys = append(i.keys, id)
@@ -123,7 +108,7 @@ func (i *index) Set(v Identifiable) {
 	i.m[id] = v
 }
 
-func (i *index) SetAt(n int, v Identifiable) {
+func (i *Index) SetAt(n int, v IndexCard) {
 	id := v.GetID()
 	if !i.Contains(id) {
 		i.keys = append(i.keys, id)
@@ -131,7 +116,7 @@ func (i *index) SetAt(n int, v Identifiable) {
 	i.m[id] = v
 }
 
-func (i *index) MarshalJSON() ([]byte, error) {
+func (i *Index) MarshalJSON() ([]byte, error) {
 	proto := i.proto.InstanceOf()
 	proto.Resize(len(i.keys))
 	for n, key := range i.keys {
@@ -140,7 +125,7 @@ func (i *index) MarshalJSON() ([]byte, error) {
 	return json.Marshal(proto)
 }
 
-func (i *index) UnmarshalJSON(data []byte) error {
+func (i *Index) UnmarshalJSON(data []byte) error {
 	proto := i.proto.InstanceOf()
 	err := json.Unmarshal(data, proto.Ref())
 	if err != nil {
@@ -148,7 +133,7 @@ func (i *index) UnmarshalJSON(data []byte) error {
 	}
 
 	i.keys = []string{}
-	i.m = map[string]Identifiable{}
+	i.m = map[string]IndexCard{}
 
 	for n := 0; n < proto.Len(); n++ {
 		i.Set(proto.GetAt(n))
@@ -156,14 +141,14 @@ func (i *index) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (i *index) TestAsArray(out IndexPrototype) {
+func (i *Index) TestAsArray(out IndexCardArray) {
 	out.Resize(len(i.keys))
 	for n, key := range i.keys {
 		out.SetAt(n, i.m[key])
 	}
 }
 
-func (i *index) TestSortedKeys() []string {
+func (i *Index) TestSortedKeys() []string {
 	n := i.Keys()
 	sort.Strings(n)
 	return n

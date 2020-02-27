@@ -20,11 +20,11 @@ func (si structIdentifiable) Clone(bool) Cloneable { return si }
 
 type structArrayProto []structIdentifiable
 
-func (p structArrayProto) Len() int                    { return len(p) }
-func (p structArrayProto) GetAt(n int) Identifiable    { return p[n] }
-func (p structArrayProto) SetAt(n int, v Identifiable) { p[n] = v.(structIdentifiable) }
+func (p structArrayProto) Len() int                 { return len(p) }
+func (p structArrayProto) GetAt(n int) IndexCard    { return p[n] }
+func (p structArrayProto) SetAt(n int, v IndexCard) { p[n] = v.(structIdentifiable) }
 
-func (p structArrayProto) InstanceOf() IndexPrototype {
+func (p structArrayProto) InstanceOf() IndexCardArray {
 	inst := make(structArrayProto, 0)
 	return &inst
 }
@@ -35,18 +35,17 @@ func (p *structArrayProto) Resize(n int) {
 
 func TestIndexJSON(t *testing.T) {
 	t.Run("strings", func(t *testing.T) {
-		proto := &stringArrayProto{}
-		in := NewIndex(proto, stringIdentifiable("test1"), stringIdentifiable("test2"))
+		in := NewIndex(StringSetProto, stringIdentifiable("test1"), stringIdentifiable("test2"))
 
 		data, err := json.Marshal(in)
 		require.NoError(t, err)
 		require.Equal(t, `["test1","test2"]`, string(data))
 
-		out := NewIndex(proto)
+		out := NewIndex(StringSetProto)
 		err = json.Unmarshal(data, &out)
 		require.NoError(t, err)
 
-		var ain, aout stringArrayProto
+		var ain, aout stringSetProto
 		in.TestAsArray(&ain)
 		out.TestAsArray(&aout)
 		require.EqualValues(t, ain, aout)

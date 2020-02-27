@@ -8,7 +8,7 @@ type idInt struct {
 	V  int64
 }
 
-func NewIDInt(id string, value int64) Identifiable {
+func NewIDInt(id string, value int64) IndexCard {
 	return idInt{
 		ID: id,
 		V:  value,
@@ -20,11 +20,11 @@ func (ii idInt) Clone(bool) Cloneable { return ii }
 
 type intArrayProto []idInt
 
-func (p intArrayProto) Len() int                    { return len(p) }
-func (p intArrayProto) GetAt(n int) Identifiable    { return p[n] }
-func (p intArrayProto) SetAt(n int, v Identifiable) { p[n] = v.(idInt) }
+func (p intArrayProto) Len() int                 { return len(p) }
+func (p intArrayProto) GetAt(n int) IndexCard    { return p[n] }
+func (p intArrayProto) SetAt(n int, v IndexCard) { p[n] = v.(idInt) }
 
-func (p intArrayProto) InstanceOf() IndexPrototype {
+func (p intArrayProto) InstanceOf() IndexCardArray {
 	inst := make(intArrayProto, 0)
 	return &inst
 }
@@ -34,7 +34,7 @@ func (p *intArrayProto) Resize(n int) {
 }
 
 type IntIndex struct {
-	Index
+	*Index
 }
 
 func NewIntSet() *IntIndex {
@@ -47,10 +47,6 @@ func (s *IntIndex) Set(id string, v int64) {
 	s.Index.Set(NewIDInt(id, v))
 }
 
-func (s *IntIndex) MarshalJSON() ([]byte, error) {
-	return s.Index.MarshalJSON()
-}
-
-func (s *IntIndex) UnmarshalJSON(data []byte) error {
-	return s.Index.UnmarshalJSON(data)
+func (s *IntIndex) Get(id string) int64 {
+	return s.Index.Get(id).(idInt).V
 }
