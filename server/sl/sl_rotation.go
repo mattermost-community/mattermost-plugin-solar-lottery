@@ -25,23 +25,18 @@ type Rotations interface {
 	LoadRotation(types.ID) (*Rotation, error)
 	MakeRotation(rotationName string) (*Rotation, error)
 	ResolveRotation(string) (types.ID, error)
-	UpdateRotation(*Rotation, func(*Rotation) error) error
 	LoadActiveRotations() (*types.IDIndex, error)
 }
 
 func (sl *sl) AddRotation(r *Rotation) error {
-	err := sl.Filter(
-		withActingUserExpanded,
+	err := sl.Setup(pushLogger("AddRotation", bot.LogContext{ctxRotationID: r.RotationID}),
 		withActiveRotations,
 	)
 	if err != nil {
 		return err
 	}
-	logger := sl.Logger.Timed().With(bot.LogContext{
-		"Location":   "AddRotation",
-		"ActingUser": sl.actingUser.MattermostUsername(),
-		"RotationID": r.RotationID,
-	})
+	defer sl.popLogger()
+
 	if sl.activeRotations.Contains(r.RotationID) {
 		return ErrAlreadyExists
 	}
@@ -56,15 +51,12 @@ func (sl *sl) AddRotation(r *Rotation) error {
 		return err
 	}
 
-	logger.Infof("New rotation %s added", r.Markdown())
+	sl.Infof("New rotation %s added", r.Markdown())
 	return nil
 }
 
 func (sl *sl) LoadActiveRotations() (*types.IDIndex, error) {
-	err := sl.Filter(
-		withActingUser,
-		withActiveRotations,
-	)
+	err := sl.Setup(withActiveRotations)
 	if err != nil {
 		return nil, err
 	}
@@ -72,9 +64,7 @@ func (sl *sl) LoadActiveRotations() (*types.IDIndex, error) {
 }
 
 func (sl *sl) ResolveRotation(pattern string) (types.ID, error) {
-	err := sl.Filter(
-		withActiveRotations,
-	)
+	err := sl.Setup(withActiveRotations)
 	if err != nil {
 		return "", err
 	}
@@ -107,17 +97,11 @@ func (sl *sl) ResolveRotation(pattern string) (types.ID, error) {
 }
 
 func (sl *sl) ArchiveRotation(r *Rotation) error {
-	err := sl.Filter(
-		withActingUserExpanded,
-	)
+	err := sl.Setup(pushLogger("ArchiveRotation", bot.LogContext{ctxRotationID: r.RotationID}))
 	if err != nil {
 		return err
 	}
-	logger := sl.Logger.Timed().With(bot.LogContext{
-		"Location":   "sl.ArchiveRotation",
-		"ActingUser": sl.actingUser.MattermostUsername(),
-		"RotationID": r.RotationID,
-	})
+	defer sl.popLogger()
 
 	r.IsArchived = true
 
@@ -131,22 +115,16 @@ func (sl *sl) ArchiveRotation(r *Rotation) error {
 	}
 	sl.activeRotations.Delete(r.RotationID)
 
-	logger.Infof("%s archived rotation %s.", sl.actingUser.Markdown(), r.Markdown())
+	sl.Infof("%s archived rotation %s.", sl.actingUser.Markdown(), r.Markdown())
 	return nil
 }
 
 func (sl *sl) DebugDeleteRotation(rotationID types.ID) error {
-	err := sl.Filter(
-		withActingUserExpanded,
-	)
+	err := sl.Setup(pushLogger("DebugDeleteRotation", bot.LogContext{ctxRotationID: rotationID}))
 	if err != nil {
 		return err
 	}
-	logger := sl.Logger.Timed().With(bot.LogContext{
-		"Location":   "DebugDeleteRotation",
-		"ActingUser": sl.actingUser.MattermostUsername(),
-		"RotationID": rotationID,
-	})
+	defer sl.popLogger()
 
 	err = sl.Store.Entity(KeyRotation).Delete(rotationID)
 	if err != nil {
@@ -158,14 +136,12 @@ func (sl *sl) DebugDeleteRotation(rotationID types.ID) error {
 	}
 	sl.activeRotations.Delete(rotationID)
 
-	logger.Infof("%s deleted rotation %s.", sl.actingUser.Markdown(), rotationID)
+	sl.Infof("%s deleted rotation %s.", sl.actingUser.Markdown(), rotationID)
 	return nil
 }
 
 func (sl *sl) LoadRotation(rotationID types.ID) (*Rotation, error) {
-	err := sl.Filter(
-		withActiveRotations,
-	)
+	err := sl.Setup(withActiveRotations)
 	if err != nil {
 		return nil, err
 	}
@@ -195,116 +171,83 @@ func (sl *sl) MakeRotation(rotationName string) (*Rotation, error) {
 }
 
 func (sl *sl) ExpandRotation(r *Rotation) error {
-	if r.MattermostUserIDs != nil && len(r.users) != r.MattermostUserIDs.Len() {
-		users, err := sl.loadStoredUsers(r.MattermostUserIDs)
-		if err != nil {
-			return err
-		}
-		err = sl.ExpandUserMap(users)
-		if err != nil {
-			return err
-		}
-		r.users = users
+	if r.MattermostUserIDs == nil || r.MattermostUserIDs.Len() == len(r.users) {
+		return nil
 	}
 
-	return nil
-}
-
-func (sl *sl) UpdateRotation(r *Rotation, updatef func(*Rotation) error) error {
-	err := sl.Filter(
-		withActingUserExpanded,
-		withRotationExpanded(r),
-	)
+	r.init()
+	users, err := sl.loadStoredUsers(r.MattermostUserIDs)
 	if err != nil {
 		return err
 	}
-	logger := sl.Logger.Timed().With(bot.LogContext{
-		"Location":   "UpdateRotation",
-		"ActingUser": sl.actingUser.MattermostUsername(),
-		"RotationID": r.RotationID,
-	})
-
-	err = updatef(r)
+	err = sl.ExpandUserMap(users)
 	if err != nil {
 		return err
 	}
-
-	err = sl.Store.Entity(KeyRotation).Store(r.RotationID, r)
-	if err != nil {
-		return err
-	}
-
-	logger.Infof("%s updated rotation %s.", sl.actingUser.Markdown(), r.Markdown())
+	r.users = users
 	return nil
 }
 
 func (sl *sl) JoinRotation(r *Rotation, users UserMap, starting types.Time) (UserMap, error) {
-	err := sl.Filter(
-		withActingUserExpanded,
-	)
+	err := sl.Setup(pushLogger("JoinRotation", bot.LogContext{
+		ctxRotationID: r.RotationID,
+		ctxUsers:      users.String(),
+		ctxStarting:   starting,
+	}))
 	if err != nil {
 		return nil, err
 	}
-	logger := sl.Logger.Timed().With(bot.LogContext{
-		"Location":   "Join",
-		"ActingUser": sl.actingUser.MattermostUsername(),
-		"RotationID": r.RotationID,
-		"Users":      users.String(),
-		"Starting":   starting,
-	})
+	defer sl.popLogger()
 
 	added := UserMap{}
-	for _, user := range users {
-		if r.MattermostUserIDs.Contains(user.MattermostUserID) {
-			logger.Debugf("%s is already in rotation %s.",
-				added.MarkdownWithSkills(), r.Markdown())
-			continue
+
+	err = sl.updateExpandedRotation(r, func(r *Rotation) error {
+		for _, user := range users {
+			if r.MattermostUserIDs.Contains(user.MattermostUserID) {
+				sl.Debugf("%s is already in rotation %s.",
+					added.MarkdownWithSkills(), r.Markdown())
+				continue
+			}
+
+			// A new person may be given some slack - setting starting in the
+			// future all but guarantees they won't be selected until then.
+			user.LastServed.Set(r.RotationID, starting.Unix())
+
+			user, err = sl.storeUserWelcomeNew(user)
+			if err != nil {
+				return err
+			}
+
+			if r.MattermostUserIDs == nil {
+				r.MattermostUserIDs = types.NewIDIndex()
+			}
+			r.MattermostUserIDs.Set(user.MattermostUserID)
+			sl.messageWelcomeToRotation(user, r)
+			added[user.MattermostUserID] = user
 		}
+		return nil
+	})
 
-		// A new person may be given some slack - setting starting in the
-		// future all but guarantees they won't be selected until then.
-		user.LastServed.Set(r.RotationID, starting.Unix())
-
-		user, err = sl.storeUserWelcomeNew(user)
-		if err != nil {
-			return added, err
-		}
-
-		if r.MattermostUserIDs == nil {
-			r.MattermostUserIDs = types.NewIDIndex()
-		}
-		r.MattermostUserIDs.Set(user.MattermostUserID)
-		sl.messageWelcomeToRotation(user, r)
-		added[user.MattermostUserID] = user
-	}
-
-	err = sl.Store.Entity(KeyRotation).Store(r.RotationID, r)
-	if err != nil {
-		return added, errors.WithMessagef(err, "failed to store rotation %s", r.RotationID)
-	}
-	logger.Infof("%s added %s to %s.",
+	sl.Infof("%s added %s to %s.",
 		sl.actingUser.Markdown(), added.MarkdownWithSkills(), r.Markdown())
 	return added, nil
 }
 
 func (sl *sl) LeaveRotation(r *Rotation, users UserMap) (UserMap, error) {
-	err := sl.Filter(
-		withActingUserExpanded,
-	)
+	err := sl.Setup(pushLogger("LeaveRotation",
+		bot.LogContext{
+			ctxRotationID: r.RotationID,
+			ctxUsers:      users.String(),
+		}))
 	if err != nil {
 		return nil, err
 	}
-	logger := sl.Logger.Timed().With(bot.LogContext{
-		"Location":       "LeaveFromRotation",
-		"ActingUsername": sl.actingUser.MattermostUsername(),
-		"Users":          users.String(),
-		"RotationID":     r.RotationID,
-	})
+	defer sl.popLogger()
 
 	deleted := UserMap{}
 	for _, user := range users {
 		if !r.MattermostUserIDs.Contains(user.MattermostUserID) {
-			logger.Debugf("%s is not found in rotation %s", user.Markdown(), r.Markdown())
+			sl.Debugf("%s is not found in rotation %s", user.Markdown(), r.Markdown())
 			continue
 		}
 
@@ -326,6 +269,30 @@ func (sl *sl) LeaveRotation(r *Rotation, users UserMap) (UserMap, error) {
 		return deleted, err
 	}
 
-	logger.Infof("%s removed from %s.", deleted.Markdown(), r.Markdown())
+	sl.Infof("%s removed from %s.", deleted.Markdown(), r.Markdown())
 	return deleted, nil
+}
+
+func (sl *sl) updateExpandedRotation(r *Rotation, updatef func(*Rotation) error) error {
+	err := sl.Setup(
+		pushLogger("updateRotation", bot.LogContext{ctxRotationID: r.RotationID}),
+		withRotationExpanded(r),
+	)
+	if err != nil {
+		return err
+	}
+	defer sl.popLogger()
+
+	err = updatef(r)
+	if err != nil {
+		return err
+	}
+
+	err = sl.Store.Entity(KeyRotation).Store(r.RotationID, r)
+	if err != nil {
+		return err
+	}
+
+	sl.Debugf("%s updated rotation %s.", sl.actingUser.Markdown(), r.Markdown())
+	return nil
 }

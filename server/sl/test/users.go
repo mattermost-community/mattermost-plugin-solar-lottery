@@ -73,7 +73,7 @@ func SkilledUser(mattermostUserID types.ID, skillLevels ...interface{}) *sl.User
 func Usermap(in ...*sl.User) sl.UserMap {
 	users := sl.UserMap{}
 	for _, u := range in {
-		users[u.MattermostUserID] = u.Clone(true).(*sl.User)
+		users[u.MattermostUserID] = u
 	}
 	return users
 }

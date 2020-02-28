@@ -10,26 +10,17 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
+// Needs is a map of SkillLevel to an int64 headcount needed.
+type Needs struct {
+	*types.IntIndex
+}
+
 type Need struct {
 	SkillLevel
 	Count int
 }
 
-func (need Need) GetID() string {
-	return need.SkillLevel.String()
-}
-
-func (need Need) Clone(bool) types.Cloneable {
-	return need
-}
-
-type Needs struct {
-	*types.IntIndex
-}
-
-type NeedSetProto []*Need
-
-func NewNeeds(needs ...*Need) Needs {
+func NewNeeds() Needs {
 	return Needs{
 		IntIndex: types.NewIntIndex(),
 	}
@@ -44,10 +35,13 @@ func (needs Needs) Markdown() string {
 }
 
 func (needs Needs) UnmetRequirements(users UserMap) Needs {
-	work := needs.Clone(false).(Needs)
+	work := NewNeeds()
+	for _, id := range needs.IDs() {
+		work.Set(id, needs.Get(id))
+	}
+
 	for _, id := range work.IDs() {
-		skillLevel := SkillLevel{}
-		_ = skillLevel.Set(string(id))
+		skillLevel := ParseSkillLevel(id)
 		for _, user := range users {
 			if user.IsQualified(skillLevel) {
 				work.Set(id, work.Get(id)-1)
@@ -71,6 +65,10 @@ func NewNeed(count int, skillLevel SkillLevel) *Need {
 		Count:      count,
 		SkillLevel: skillLevel,
 	}
+}
+
+func (need Need) GetID() string {
+	return need.SkillLevel.String()
 }
 
 func (need Need) String() string {

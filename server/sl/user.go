@@ -35,31 +35,14 @@ func NewUser(mattermostUserID types.ID) *User {
 	}
 }
 
-func (u *User) CloneUser(deep bool) *User {
-	return u.Clone(deep).(*User)
-}
-
-func (u *User) Clone(deep bool) types.Cloneable {
-	clone := *u
-	clone.SkillLevels = u.SkillLevels.Clone(deep).(*types.IntIndex)
-	clone.LastServed = u.LastServed.Clone(deep).(*types.IntIndex)
-	clone.Calendar = append([]*Unavailable{}, u.Calendar...)
-	return &clone
-}
-
 func (user *User) WithLastServed(rotationID types.ID, finishTime types.Time) *User {
-	newUser := user.CloneUser(false)
-	newUser.LastServed.Set(rotationID, finishTime.Unix())
-	return newUser
+	user.LastServed.Set(rotationID, finishTime.Unix())
+	return user
 }
 
-func (user *User) WithSkills(skillsLevels *types.IntIndex) *User {
-	newUser := user.Clone(false).(*User)
-	newUser.SkillLevels = types.NewIntIndex()
-	for _, s := range skillsLevels.IDs() {
-		newUser.SkillLevels.Set(s, skillsLevels.Get(s))
-	}
-	return newUser
+func (user *User) WithSkills(skillLevels *types.IntIndex) *User {
+	user.SkillLevels = skillLevels
+	return user
 }
 
 func (user *User) String() string {

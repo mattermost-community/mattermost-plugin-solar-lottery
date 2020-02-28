@@ -15,7 +15,7 @@ type Rotation struct {
 	RotationID    types.ID
 	AutofillType  string
 	IsArchived    bool
-	IssueSources  []*IssueSource
+	IssueSources  *types.Index // of *IssueSource
 	// ShiftSource *ShiftSource
 	Pending           []*Task
 	InProgress        []*Task
@@ -39,17 +39,8 @@ func (r *Rotation) init() {
 	}
 }
 
-func (r *Rotation) Clone(deep bool) *Rotation {
-	newR := *r
-	if deep {
-		newR.MattermostUserIDs = r.MattermostUserIDs.Clone(deep).(*types.IDIndex)
-		newR.users = r.users.Clone(deep)
-	}
-	return &newR
-}
-
 func (rotation *Rotation) WithMattermostUserIDs(pool UserMap) *Rotation {
-	newRotation := rotation.Clone(false)
+	newRotation := *rotation
 	newRotation.MattermostUserIDs = types.NewIDIndex()
 	for id := range pool {
 		newRotation.MattermostUserIDs.Set(id)
@@ -58,7 +49,7 @@ func (rotation *Rotation) WithMattermostUserIDs(pool UserMap) *Rotation {
 		pool = UserMap{}
 	}
 	newRotation.users = pool
-	return newRotation
+	return &newRotation
 }
 
 func (r *Rotation) String() string {
@@ -98,21 +89,11 @@ func (r *Rotation) MapUsers(ids *types.IDIndex) UserMap {
 	return users
 }
 
-func (r *Rotation) IssueSource(sourceName string) (*IssueSource, int) {
-	for i, is := range r.IssueSources {
-		if is.Name == sourceName {
-			return is, i
+func (r *Rotation) IssueSource(sourceName types.ID) (*IssueSource, int) {
+	for i, id := range r.IssueSources.IDs() {
+		if id == sourceName {
+			return r.IssueSources.Get(id).(*IssueSource), i
 		}
 	}
 	return nil, -1
-}
-
-func (r *Rotation) PutIssueSource(newIS *IssueSource) {
-	for i, is := range r.IssueSources {
-		if is.Name == newIS.Name {
-			r.IssueSources[i] = is
-			return
-		}
-	}
-	r.IssueSources = append(r.IssueSources, newIS)
 }

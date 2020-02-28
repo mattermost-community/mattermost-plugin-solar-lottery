@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 // lotto rotation issue-source delete ROT KEY
@@ -39,7 +40,7 @@ func (c *Command) rotationIssueSourceDelete(parameters []string) (string, error)
 		return "", err
 	}
 
-	err = c.SL.DeleteIssueSource(r, fs.Arg(1))
+	err = c.SL.DeleteIssueSource(r, types.ID(fs.Arg(1)))
 	if err != nil {
 		return "", err
 	}
@@ -51,8 +52,8 @@ func (c *Command) rotationIssueSourceDelete(parameters []string) (string, error)
 }
 
 func (c *Command) rotationIssueSourceRequire(parameters []string) (string, error) {
-	fs := newFS()
-	fRotation(fs)
+	// fs := newFS()
+	// fRotation(fs)
 	// jsonOut := fJSON(fs)
 	// clear := fClear(fs)
 	// count := fCount(fs)
@@ -66,9 +67,8 @@ func (c *Command) rotationIssueSourceRequire(parameters []string) (string, error
 	// 	return "", err
 	// }
 
-	// r.AddIssueSource()
-
-	// err = c.SL.DeleteIssueSource(r, fs.Arg(1))
+	// r.
+	// 	err = c.SL.DeleteIssueSource(r, fs.Arg(1))
 	// if err != nil {
 	// 	return "", err
 	// }

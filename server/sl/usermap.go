@@ -12,18 +12,6 @@ import (
 
 type UserMap map[types.ID]*User
 
-func (m UserMap) Clone(deep bool) UserMap {
-	users := UserMap{}
-	for id, user := range m {
-		if deep {
-			users[id] = user.Clone(deep).(*User)
-		} else {
-			users[id] = user
-		}
-	}
-	return users
-}
-
 func (sl *sl) ExpandUserMap(users UserMap) error {
 	for _, user := range users {
 		err := sl.ExpandUser(user)

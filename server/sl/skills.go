@@ -15,10 +15,7 @@ type Skills interface {
 }
 
 func (sl *sl) ListKnownSkills() (*types.IDIndex, error) {
-	err := sl.Filter(
-		withKnownSkills,
-		withActingUser,
-	)
+	err := sl.Setup(withKnownSkills)
 	if err != nil {
 		return nil, err
 	}
@@ -26,45 +23,33 @@ func (sl *sl) ListKnownSkills() (*types.IDIndex, error) {
 }
 
 func (sl *sl) AddKnownSkill(skillName types.ID) error {
-	err := sl.Filter(
-		withActingUserExpanded,
-	)
+	err := sl.Setup(pushLogger("AddKnownSkill", bot.LogContext{ctxSkill: skillName}))
 	if err != nil {
 		return err
 	}
-	logger := sl.Logger.Timed().With(bot.LogContext{
-		"Location":       "sl.AddKnownSkill",
-		"ActingUsername": sl.actingUser.MattermostUsername(),
-		"Skill":          skillName,
-	})
+	defer sl.popLogger()
 
 	err = sl.Store.IDIndex(KeyKnownSkills).Set(skillName)
 	if err != nil {
 		return err
 	}
 
-	logger.Infof("%s added known skill %s.", sl.actingUser.Markdown(), skillName)
+	sl.Infof("%s added known skill %s.", sl.actingUser.Markdown(), skillName)
 	return nil
 }
 
 func (sl *sl) DeleteKnownSkill(skillName types.ID) error {
-	err := sl.Filter(
-		withActingUserExpanded,
-	)
+	err := sl.Setup(pushLogger("DeleteKnownSkill", bot.LogContext{ctxSkill: skillName}))
 	if err != nil {
 		return err
 	}
-	logger := sl.Logger.Timed().With(bot.LogContext{
-		"Location":       "sl.DeleteKnownSkill",
-		"ActingUsername": sl.actingUser.MattermostUsername(),
-		"Skill":          skillName,
-	})
+	defer sl.popLogger()
 
 	err = sl.Store.IDIndex(KeyKnownSkills).Delete(skillName)
 	if err != nil {
 		return err
 	}
 
-	logger.Infof("%s deleted skill %s.", sl.actingUser.Markdown(), skillName)
+	sl.Infof("%s deleted skill %s.", sl.actingUser.Markdown(), skillName)
 	return nil
 }

@@ -6,13 +6,14 @@ package sl
 import (
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 type filterf func(*sl) error
 
-func (sl *sl) Filter(filters ...filterf) error {
+func (sl *sl) Setup(filters ...filterf) error {
 	for _, filter := range filters {
 		err := filter(sl)
 		if err != nil {
@@ -112,7 +113,7 @@ func withKnownSkills(sl *sl) error {
 
 func withValidSkillName(skillName types.ID) func(sl *sl) error {
 	return func(sl *sl) error {
-		err := sl.Filter(withKnownSkills)
+		err := sl.Setup(withKnownSkills)
 		if err != nil {
 			return err
 		}
@@ -138,4 +139,37 @@ func withActiveRotations(sl *sl) error {
 	}
 	sl.activeRotations = rotations
 	return nil
+}
+
+func pushLogger(apiName string, logContext bot.LogContext) func(*sl) error {
+	return func(sl *sl) error {
+		err := withActingUserExpanded(sl)
+		if err != nil {
+			return err
+		}
+
+		logger := sl.Logger
+		logger = logger.With(logContext)
+		logger = logger.With(bot.LogContext{
+			ctxActingUsername: sl.actingUser.MattermostUsername(),
+			ctxAPI:            apiName,
+		})
+
+		if sl.loggers == nil {
+			sl.loggers = []bot.Logger{logger}
+		} else {
+			sl.loggers = append(sl.loggers, logger)
+		}
+		sl.Logger = logger
+		return nil
+	}
+}
+
+func (sl *sl) popLogger() {
+	l := len(sl.loggers)
+	if l == 0 {
+		return
+	}
+	sl.Logger = sl.loggers[l-1]
+	sl.loggers = sl.loggers[:l-1]
 }

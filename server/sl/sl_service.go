@@ -36,7 +36,7 @@ func (s *Service) ActingAs(mattermostUserID types.ID) SL {
 		conf:                   s.Config.Get(),
 		actingMattermostUserID: mattermostUserID,
 		Logger: s.Logger.With(bot.LogContext{
-			"ActingUserID": mattermostUserID,
+			ctxActingUserID: mattermostUserID,
 		}),
 	}
 }

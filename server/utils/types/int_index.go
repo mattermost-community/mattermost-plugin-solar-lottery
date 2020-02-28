@@ -17,20 +17,18 @@ func NewIDInt(id ID, value int64) IDInt {
 	}
 }
 
-func (ii IDInt) GetID() ID            { return ii.ID }
-func (ii IDInt) Clone(bool) Cloneable { return ii }
+func (ii IDInt) GetID() ID { return ii.ID }
 
 type intArrayProto []IDInt
 
 func (p intArrayProto) Len() int                 { return len(p) }
 func (p intArrayProto) GetAt(n int) IndexCard    { return p[n] }
 func (p intArrayProto) SetAt(n int, v IndexCard) { p[n] = v.(IDInt) }
-
+func (p *intArrayProto) Ref() interface{}        { return p }
 func (p intArrayProto) InstanceOf() IndexCardArray {
 	inst := make(intArrayProto, 0)
 	return &inst
 }
-func (p *intArrayProto) Ref() interface{} { return p }
 func (p *intArrayProto) Resize(n int) {
 	*p = make(intArrayProto, n)
 }
@@ -59,12 +57,6 @@ func (index *IntIndex) Get(id ID) int64 {
 		return 0
 	}
 	return v.(IDInt).V
-}
-
-func (index *IntIndex) Clone(deep bool) Cloneable {
-	c := *index
-	c.Index = index.Index.Clone(deep).(*Index)
-	return &c
 }
 
 func (index *IntIndex) MarshalJSON() ([]byte, error) {

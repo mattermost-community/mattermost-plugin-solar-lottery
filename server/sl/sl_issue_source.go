@@ -5,19 +5,19 @@ package sl
 
 import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
-	"github.com/pkg/errors"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 type Issues interface {
-	DeleteIssueSource(r *Rotation, sourceName string) error
+	DeleteIssueSource(r *Rotation, sourceName types.ID) error
 	PutIssueSource(r *Rotation, source *IssueSource) error
-	MakeIssue(r *Rotation, sourceName string) (*Task, error)
+	MakeIssue(r *Rotation, sourceName types.ID) (*Task, error)
 }
 
-func (sl *sl) MakeIssue(r *Rotation, sourceName string) (*Task, error) {
+func (sl *sl) MakeIssue(r *Rotation, sourceName types.ID) (*Task, error) {
 	source, _ := r.IssueSource(sourceName)
 	if source == nil {
-		return nil, errors.New("Not found: " + sourceName)
+		return nil, kvstore.ErrNotFound
 	}
 
 	t := source.NewTask()
@@ -36,28 +36,20 @@ func (sl *sl) MakeIssue(r *Rotation, sourceName string) (*Task, error) {
 	return t, nil
 }
 
-func (sl *sl) DeleteIssueSource(r *Rotation, sourceName string) error {
-	source, i := r.IssueSource(sourceName)
+func (sl *sl) DeleteIssueSource(r *Rotation, sourceName types.ID) error {
+	source, _ := r.IssueSource(sourceName)
 	if source == nil {
 		return kvstore.ErrNotFound
 	}
-	return sl.UpdateRotation(r, func(r *Rotation) error {
-		updated := r.IssueSources[:i]
-		if i+1 < len(r.IssueSources) {
-			updated = append(updated, r.IssueSources[i+1:]...)
-		}
+	return sl.updateExpandedRotation(r, func(r *Rotation) error {
+		r.IssueSources.Delete(sourceName)
 		return nil
 	})
 }
 
 func (sl *sl) PutIssueSource(r *Rotation, source *IssueSource) error {
-	found, i := r.IssueSource(source.Name)
-	return sl.UpdateRotation(r, func(r *Rotation) error {
-		if found == nil {
-			r.IssueSources = append(r.IssueSources, source)
-		} else {
-			r.IssueSources[i] = source
-		}
+	return sl.updateExpandedRotation(r, func(r *Rotation) error {
+		r.IssueSources.Set(source)
 		return nil
 	})
 }

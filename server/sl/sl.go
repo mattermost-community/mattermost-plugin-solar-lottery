@@ -9,6 +9,20 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
+const (
+	ctxAPI            = "API"
+	ctxActingUserID   = "ActingUserID"
+	ctxActingUsername = "ActingUsername"
+	ctxRotationID     = "RotationID"
+	ctxUsers          = "Users"
+	ctxSkill          = "Skill"
+	ctxSkillLevel     = "SkillLevel"
+	ctxStarting       = "Starting"
+	ctxUsernames      = "Usernames"
+	ctxUnavailable    = "Unavailable"
+	ctxInterval       = "Interval"
+)
+
 type SL interface {
 	Calendar
 	Rotations
@@ -38,6 +52,7 @@ type sl struct {
 	// Common indices (set by withXXX).
 	knownSkills     *types.IDIndex
 	activeRotations *types.IDIndex
+	loggers         []bot.Logger
 }
 
 func (sl *sl) Config() *config.Config {

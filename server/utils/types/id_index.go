@@ -9,20 +9,18 @@ import (
 
 type ID string
 
-func (id ID) GetID() ID            { return id }
-func (id ID) Clone(bool) Cloneable { return id }
+func (id ID) GetID() ID { return id }
 
 type idIndexProto []ID
 
 func (p idIndexProto) Len() int                 { return len(p) }
 func (p idIndexProto) GetAt(n int) IndexCard    { return p[n] }
 func (p idIndexProto) SetAt(n int, v IndexCard) { p[n] = v.(ID) }
-
+func (p *idIndexProto) Ref() interface{}        { return p }
 func (p idIndexProto) InstanceOf() IndexCardArray {
 	inst := make(idIndexProto, 0)
 	return &inst
 }
-func (p *idIndexProto) Ref() interface{} { return p }
 func (p *idIndexProto) Resize(n int) {
 	*p = make(idIndexProto, n)
 }
@@ -45,12 +43,6 @@ func NewIDIndex(vv ...ID) *IDIndex {
 
 func (i *IDIndex) Set(v ID) {
 	i.Index.Set(v)
-}
-
-func (i *IDIndex) Clone(deep bool) Cloneable {
-	c := *i
-	c.Index = i.Index.Clone(deep).(*Index)
-	return &c
 }
 
 func (i *IDIndex) MarshalJSON() ([]byte, error) {

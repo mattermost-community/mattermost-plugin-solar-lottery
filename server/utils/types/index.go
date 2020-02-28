@@ -8,12 +8,7 @@ import (
 	"sort"
 )
 
-type Cloneable interface {
-	Clone(deep bool) Cloneable
-}
-
 type IndexCard interface {
-	Cloneable
 	GetID() ID
 }
 
@@ -50,14 +45,6 @@ func NewIndex(proto IndexCardArray, vv ...IndexCard) *Index {
 		i.Set(v)
 	}
 	return i
-}
-
-func (index *Index) Clone(deep bool) Cloneable {
-	n := NewIndex(index.proto)
-	for _, id := range index.ids {
-		n.Set(index.m[id].Clone(deep).(IndexCard))
-	}
-	return n
 }
 
 func (index *Index) Contains(id ID) bool {

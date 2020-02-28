@@ -23,6 +23,12 @@ func NewSkillLevel(s types.ID, l Level) SkillLevel {
 	}
 }
 
+func ParseSkillLevel(in types.ID) SkillLevel {
+	skillLevel := SkillLevel{}
+	_ = skillLevel.Set(string(in))
+	return skillLevel
+}
+
 func (skillLevel SkillLevel) String() string {
 	return fmt.Sprintf("%s-%s", skillLevel.Skill, skillLevel.Level)
 }
@@ -52,9 +58,3 @@ func (skillLevel *SkillLevel) Set(in string) error {
 func (skillLevel SkillLevel) GetID() types.ID {
 	return skillLevel.Skill
 }
-
-func (skillLevel SkillLevel) Clone(bool) types.Cloneable {
-	return skillLevel
-}
-
-type skillLevelArray []*SkillLevel

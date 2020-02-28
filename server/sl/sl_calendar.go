@@ -15,44 +15,39 @@ type Calendar interface {
 }
 
 func (sl *sl) AddToCalendar(users UserMap, u *Unavailable) error {
-	err := sl.Filter(
-		withActingUserExpanded,
-	)
+	err := sl.Setup(pushLogger("AddToCalendar",
+		bot.LogContext{
+			ctxUsernames:   users.String(),
+			ctxUnavailable: u,
+		}))
 	if err != nil {
 		return err
 	}
-	logger := sl.Logger.Timed().With(bot.LogContext{
-		"Location":            "AddToCalendar",
-		"ActingUsername":      sl.actingUser.MattermostUsername(),
-		"MattermostUsernames": users.String(),
-		"Unavailable":         u,
-	})
+	defer sl.popLogger()
 
 	for _, user := range users {
 		user.AddUnavailable(u)
-		_, err := sl.storeUser(user)
+		err = sl.storeUser(user)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to update user %s", user.Markdown())
 		}
 	}
 
-	logger.Infof("%s added event %s to %s.",
+	sl.Infof("%s added event %s to %s.",
 		sl.actingUser.Markdown(), sl.actingUser.MarkdownUnavailable(u), users.MarkdownWithSkills())
 	return nil
 }
 
 func (sl *sl) ClearCalendar(users UserMap, interval types.Interval) error {
-	err := sl.Filter(
-		withActingUserExpanded,
-	)
+	err := sl.Setup(pushLogger("CkearCalendar",
+		bot.LogContext{
+			ctxUsernames: users.String(),
+			ctxInterval:  interval,
+		}))
 	if err != nil {
 		return err
 	}
-	logger := sl.Logger.Timed().With(bot.LogContext{
-		"Location":       "ClearCalendar",
-		"ActingUsername": sl.actingUser.MattermostUsername(),
-		"Interval":       interval,
-	})
+	defer sl.popLogger()
 
 	for _, user := range users {
 		_ = user.findUnavailable(interval, true)
@@ -66,7 +61,7 @@ func (sl *sl) ClearCalendar(users UserMap, interval types.Interval) error {
 		}
 	}
 
-	logger.Infof("%s deleted events %v from users %s.",
+	sl.Infof("%s deleted events %v from users %s.",
 		sl.actingUser.Markdown(), interval, users.MarkdownWithSkills())
 	return nil
 }

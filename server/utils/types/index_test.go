@@ -15,8 +15,7 @@ type testCard struct {
 	Data string
 }
 
-func (si testCard) GetID() ID            { return si.ID }
-func (si testCard) Clone(bool) Cloneable { return si }
+func (si testCard) GetID() ID { return si.ID }
 
 type testIndexProto []testCard
 

@@ -11,20 +11,29 @@ import (
 )
 
 type IssueSource struct {
-	Name     string        `json:"name"`
+	Name     types.ID      `json:"name"`
 	Seq      int           `json:"seq"`
 	Requires Needs         `json:"requires,omitempty"`
 	Limits   Needs         `json:"limits,omitempty"`
 	Grace    time.Duration `json:"grace,omitempty"`
 }
 
-func NewIssueSource(name string) *IssueSource {
+func NewIssueSource(name types.ID) *IssueSource {
 	return &IssueSource{
-		Name: name,
-		Seq:  1,
+		Name:     name,
+		Seq:      1,
+		Limits:   NewNeeds(),
+		Requires: NewNeeds(),
 	}
 }
 
+func (is *IssueSource) GetID() types.ID { return is.Name }
+
+// func (is *IssueSource) Clone(deep bool) Cloneable {
+// 	n := *is
+// 	n.Requires = n.Requires.Clone().(Needs)
+// 	n.Limits = n.Limits.Clone().(Needs)
+// }
 func (is *IssueSource) NewTask() *Task {
 	id := fmt.Sprintf("%s-%v", is.Name, is.Seq)
 	is.Seq++
@@ -51,3 +60,5 @@ func (is IssueSource) MarkdownBullets() string {
 func (is IssueSource) Markdown() string {
 	return fmt.Sprintf("%s", is.Name)
 }
+
+type issueSources []*IssueSource

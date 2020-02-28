@@ -23,28 +23,15 @@ type Users interface {
 }
 
 func (sl *sl) ActingUser() (*User, error) {
-	err := sl.Filter(withActingUser)
+	err := sl.Setup(withActingUser)
 	if err != nil {
 		return nil, err
 	}
 	return sl.actingUser, nil
 }
 
-func (sl *sl) loadStoredUsers(ids *types.IDIndex) (UserMap, error) {
-	users := UserMap{}
-	for _, id := range ids.IDs() {
-		var user User
-		err := sl.Store.Entity(KeyUser).Load(id, &user)
-		if err != nil {
-			return nil, err
-		}
-		users[id] = &user
-	}
-	return users, nil
-}
-
 func (sl *sl) LoadMattermostUsername(username string) (*User, error) {
-	err := sl.Filter(withActingUserExpanded)
+	err := sl.Setup(withActingUserExpanded)
 	if err != nil {
 		return nil, err
 	}
@@ -65,18 +52,15 @@ func (sl *sl) LoadMattermostUsername(username string) (*User, error) {
 }
 
 func (sl *sl) Qualify(users UserMap, skillLevel SkillLevel) error {
-	err := sl.Filter(
-		withActingUserExpanded,
-	)
+	err := sl.Setup(pushLogger("Qualify",
+		bot.LogContext{
+			ctxUsers:      users.String(),
+			ctxSkillLevel: skillLevel,
+		}))
 	if err != nil {
 		return err
 	}
-	logger := sl.Logger.Timed().With(bot.LogContext{
-		"Location":       "Qualify",
-		"ActingUsername": sl.actingUser.MattermostUsername(),
-		"Users":          users.String(),
-		"SkillLevel":     skillLevel,
-	})
+	defer sl.popLogger()
 
 	err = sl.AddKnownSkill(skillLevel.Skill)
 	if err != nil {
@@ -89,25 +73,24 @@ func (sl *sl) Qualify(users UserMap, skillLevel SkillLevel) error {
 		}
 	}
 
-	logger.Infof("%s added skill %s to %s.",
+	sl.Infof("%s added skill %s to %s.",
 		sl.actingUser.Markdown(), skillLevel, users.Markdown())
 	return nil
 }
 
 func (sl *sl) Disqualify(users UserMap, skillName types.ID) error {
-	err := sl.Filter(
-		withActingUserExpanded,
+	err := sl.Setup(
+		pushLogger("Disqualify",
+			bot.LogContext{
+				ctxUsers: users.String(),
+				ctxSkill: skillName,
+			}),
 		withValidSkillName(skillName),
 	)
 	if err != nil {
 		return err
 	}
-	logger := sl.Logger.Timed().With(bot.LogContext{
-		"Location":   "sl.AddSkillToUsers",
-		"ActingUser": sl.actingUser.MattermostUsername(),
-		"Users":      users.String(),
-		"Skill":      skillName,
-	})
+	defer sl.popLogger()
 
 	for _, user := range users {
 		err = sl.updateUserSkill(user, NewSkillLevel(skillName, 0))
@@ -116,7 +99,7 @@ func (sl *sl) Disqualify(users UserMap, skillName types.ID) error {
 		}
 	}
 
-	logger.Infof("%s removed skill %s from %s.",
+	sl.Infof("%s removed skill %s from %s.",
 		sl.actingUser.Markdown(), skillName, users.Markdown())
 	return nil
 }
@@ -155,32 +138,31 @@ func (sl *sl) loadOrMakeUser(mattermostUserID types.ID) (*User, bool, error) {
 // storeUserWelcomeNew checks if the user being stored is new, and welcomes the user.
 // note that it can be used inside of filters, so it must not use filters itself,
 //  nor assume that any runtime values have been filled.
-func (sl *sl) storeUserWelcomeNew(orig *User) (*User, error) {
-	user, err := sl.storeUser(orig)
+func (sl *sl) storeUserWelcomeNew(user *User) (*User, error) {
+	if user.PluginVersion == "" {
+		sl.messageWelcomeNewUser(user)
+	}
+	err := sl.storeUser(user)
 	if err != nil {
 		return nil, err
-	}
-	if orig.PluginVersion == "" {
-		sl.messageWelcomeNewUser(user)
 	}
 	return user, nil
 }
 
-func (sl *sl) storeUser(orig *User) (*User, error) {
-	user := orig.Clone(false).(*User)
+func (sl *sl) storeUser(user *User) error {
 	user.PluginVersion = sl.Config().PluginVersion
 	err := sl.Store.Entity(KeyUser).Store(user.MattermostUserID, user)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return user, nil
+	return nil
 }
 
 func (sl *sl) updateUserSkill(user *User, skillLevel SkillLevel) error {
 	s, l := skillLevel.Skill, skillLevel.Level
 	if user.SkillLevels.Contains(s) && Level(user.SkillLevels.Get(s)) == l {
 		// nothing to do
-		sl.Logger.Debugf("nothing to do for user %s, already is %s", user.Markdown(), skillLevel)
+		sl.Debugf("nothing to do for user %s, already is %s", user.Markdown(), skillLevel)
 		return nil
 	}
 
@@ -193,6 +175,19 @@ func (sl *sl) updateUserSkill(user *User, skillLevel SkillLevel) error {
 	if err != nil {
 		return err
 	}
-	sl.Logger.Debugf("%s updated to %s", user.Markdown(), skillLevel)
+	sl.Debugf("%s updated to %s", user.Markdown(), skillLevel)
 	return nil
+}
+
+func (sl *sl) loadStoredUsers(ids *types.IDIndex) (UserMap, error) {
+	users := UserMap{}
+	for _, id := range ids.IDs() {
+		var user User
+		err := sl.Store.Entity(KeyUser).Load(id, &user)
+		if err != nil {
+			return nil, err
+		}
+		users[id] = &user
+	}
+	return users, nil
 }
