@@ -9,7 +9,8 @@ import (
 )
 
 func (c *Command) archiveRotation(parameters []string) (string, error) {
-	fs := newRotationFS()
+	fs := newFS()
+	fRotation(fs)
 	jsonOut := fJSON(fs)
 	err := fs.Parse(parameters)
 	if err != nil {
@@ -33,7 +34,8 @@ func (c *Command) archiveRotation(parameters []string) (string, error) {
 }
 
 func (c *Command) debugDeleteRotation(parameters []string) (string, error) {
-	fs := newRotationFS()
+	fs := newFS()
+	fRotation(fs)
 	jsonOut := fJSON(fs)
 	err := fs.Parse(parameters)
 	if err != nil {

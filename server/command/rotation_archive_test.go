@@ -25,29 +25,25 @@ func TestCommandRotationArchive(t *testing.T) {
 			/lotto rotation new test-345
 			`)
 
-		activeRotations, err := store.Index(sl.KeyActiveRotations).Load()
+		activeRotations, err := store.IDIndex(sl.KeyActiveRotations).Load()
 		require.NoError(t, err)
-		require.Equal(t, types.NewSet("test", "test-123", "test-345"), activeRotations)
+		require.Equal(t, types.NewIDIndex("test", "test-123", "test-345"), activeRotations)
 
 		r := &sl.Rotation{}
 		_, err = runJSONCommand(t, SL, `
 			/lotto rotation archive test-123`, &r)
 		require.NoError(t, err)
-		require.Equal(t, &sl.Rotation{
-			RotationID: "test-123",
-			IsArchived: true,
-		}, r)
+		require.Equal(t, types.ID("test-123"), r.RotationID)
+		require.True(t, r.IsArchived)
 
-		activeRotations, err = store.Index(sl.KeyActiveRotations).Load()
+		activeRotations, err = store.IDIndex(sl.KeyActiveRotations).Load()
 		require.NoError(t, err)
-		require.Equal(t, types.NewSet("test", "test-345"), activeRotations)
+		require.Equal(t, []string{"test", "test-345"}, activeRotations.TestIDs())
 
 		err = store.Entity(sl.KeyRotation).Load("test-123", &r)
 		require.NoError(t, err)
-		require.Equal(t, &sl.Rotation{
-			RotationID: "test-123",
-			IsArchived: true,
-		}, r)
+		require.Equal(t, types.ID("test-123"), r.RotationID)
+		require.True(t, r.IsArchived)
 
 		rr := []string{}
 		_, err = runJSONCommand(t, SL, `
@@ -78,13 +74,11 @@ func TestCommandRotationDelete(t *testing.T) {
 		_, err := runJSONCommand(t, SL, `
 			/lotto rotation debug-delete test-123`, &r)
 		require.NoError(t, err)
-		require.Equal(t, &sl.Rotation{
-			RotationID: "test-123",
-		}, r)
+		require.Equal(t, types.ID("test-123"), r.RotationID)
 
-		activeRotations, err := store.Index(sl.KeyActiveRotations).Load()
+		activeRotations, err := store.IDIndex(sl.KeyActiveRotations).Load()
 		require.NoError(t, err)
-		require.Equal(t, types.NewSet("test", "test-345"), activeRotations)
+		require.Equal(t, types.NewIDIndex("test", "test-345"), activeRotations)
 
 		err = store.Entity(sl.KeyRotation).Load("test-123", &r)
 		require.Equal(t, kvstore.ErrNotFound, err)

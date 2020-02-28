@@ -18,7 +18,7 @@ const eUser = "user_"
 
 type Users interface {
 	LoadMattermostUsername(username string) (*User, error)
-	Disqualify(users UserMap, skillName string) error
+	Disqualify(users UserMap, skillName types.ID) error
 	Qualify(users UserMap, skillLevel SkillLevel) error
 }
 
@@ -30,19 +30,15 @@ func (sl *sl) ActingUser() (*User, error) {
 	return sl.actingUser, nil
 }
 
-func (sl *sl) loadStoredUsers(ids *types.Set) (UserMap, error) {
+func (sl *sl) loadStoredUsers(ids *types.IDIndex) (UserMap, error) {
 	users := UserMap{}
-	err := ids.ForEachWithError(func(id string) error {
+	for _, id := range ids.IDs() {
 		var user User
 		err := sl.Store.Entity(KeyUser).Load(id, &user)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		users[id] = &user
-		return nil
-	})
-	if err != nil {
-		return nil, err
 	}
 	return users, nil
 }
@@ -60,7 +56,7 @@ func (sl *sl) LoadMattermostUsername(username string) (*User, error) {
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to load %s", username)
 	}
-	user, _, err := sl.loadOrMakeUser(mmuser.Id)
+	user, _, err := sl.loadOrMakeUser(types.ID(mmuser.Id))
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to load User %s", username)
 	}
@@ -98,7 +94,7 @@ func (sl *sl) Qualify(users UserMap, skillLevel SkillLevel) error {
 	return nil
 }
 
-func (sl *sl) Disqualify(users UserMap, skillName string) error {
+func (sl *sl) Disqualify(users UserMap, skillName types.ID) error {
 	err := sl.Filter(
 		withActingUserExpanded,
 		withValidSkillName(skillName),
@@ -114,10 +110,7 @@ func (sl *sl) Disqualify(users UserMap, skillName string) error {
 	})
 
 	for _, user := range users {
-		err = sl.updateUserSkill(user, SkillLevel{
-			Skill: skillName,
-			Level: Level(0),
-		})
+		err = sl.updateUserSkill(user, NewSkillLevel(skillName, 0))
 		if err != nil {
 			return err
 		}
@@ -132,7 +125,7 @@ func (sl *sl) ExpandUser(user *User) error {
 	if user.mattermostUser != nil {
 		return nil
 	}
-	mattermostUser, err := sl.PluginAPI.GetMattermostUser(user.MattermostUserID)
+	mattermostUser, err := sl.PluginAPI.GetMattermostUser(string(user.MattermostUserID))
 	if err != nil {
 		return err
 	}
@@ -146,7 +139,7 @@ func (sl *sl) ExpandUser(user *User) error {
 	return nil
 }
 
-func (sl *sl) loadOrMakeUser(mattermostUserID string) (*User, bool, error) {
+func (sl *sl) loadOrMakeUser(mattermostUserID types.ID) (*User, bool, error) {
 	var user User
 	err := sl.Store.Entity(KeyUser).Load(mattermostUserID, &user)
 	if err == kvstore.ErrNotFound {
@@ -174,7 +167,7 @@ func (sl *sl) storeUserWelcomeNew(orig *User) (*User, error) {
 }
 
 func (sl *sl) storeUser(orig *User) (*User, error) {
-	user := orig.Clone()
+	user := orig.Clone(false).(*User)
 	user.PluginVersion = sl.Config().PluginVersion
 	err := sl.Store.Entity(KeyUser).Store(user.MattermostUserID, user)
 	if err != nil {
@@ -185,19 +178,16 @@ func (sl *sl) storeUser(orig *User) (*User, error) {
 
 func (sl *sl) updateUserSkill(user *User, skillLevel SkillLevel) error {
 	s, l := skillLevel.Skill, skillLevel.Level
-	if user.SkillLevels[s] == int64(l) {
+	if user.SkillLevels.Contains(s) && Level(user.SkillLevels.Get(s)) == l {
 		// nothing to do
 		sl.Logger.Debugf("nothing to do for user %s, already is %s", user.Markdown(), skillLevel)
 		return nil
 	}
 
 	if l == 0 {
-		_, ok := user.SkillLevels[s]
-		if ok {
-			delete(user.SkillLevels, s)
-		}
+		user.SkillLevels.Delete(s)
 	} else {
-		user.SkillLevels[s] = int64(l)
+		user.SkillLevels.Set(s, int64(l))
 	}
 	user, err := sl.storeUserWelcomeNew(user)
 	if err != nil {

@@ -8,10 +8,10 @@ import (
 )
 
 type IDIndexStore interface {
-	Load() (*types.StringSet, error)
-	Store(*types.StringSet) error
-	Delete(string) error
-	StoreValue(string) error
+	Load() (*types.IDIndex, error)
+	Store(*types.IDIndex) error
+	Delete(types.ID) error
+	Set(types.ID) error
 }
 
 type idIndexStore struct {
@@ -26,8 +26,8 @@ func (s *store) IDIndex(key string) IDIndexStore {
 	}
 }
 
-func (s *idIndexStore) Load() (*types.StringSet, error) {
-	set := types.NewStringSet()
+func (s *idIndexStore) Load() (*types.IDIndex, error) {
+	set := types.NewIDIndex()
 	err := LoadJSON(s.kv, s.key, &set)
 	if err != nil {
 		return nil, err
@@ -35,32 +35,37 @@ func (s *idIndexStore) Load() (*types.StringSet, error) {
 	return set, nil
 }
 
-func (s *idIndexStore) Store(set *types.StringSet) error {
-	err := StoreJSON(s.kv, s.key, set)
+func (s *idIndexStore) Store(index *types.IDIndex) error {
+	err := StoreJSON(s.kv, s.key, index)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *idIndexStore) Delete(id string) error {
-	set, err := s.Load()
+func (s *idIndexStore) Delete(id types.ID) error {
+	index, err := s.Load()
 	if err != nil {
 		return err
 	}
 
-	set.Delete(id)
-
-	return s.Store(set)
+	index.Delete(id)
+	return s.Store(index)
 }
 
-func (s *idIndexStore) StoreValue(v string) error {
-	set, err := s.Load()
-	if err != nil {
+func (s *idIndexStore) Set(v types.ID) error {
+	index, err := s.Load()
+	switch err {
+	case nil:
+
+	case ErrNotFound:
+		index = types.NewIDIndex()
+
+	default:
 		return err
 	}
 
-	set.Set(v)
+	index.Set(v)
 
-	return s.Store(set)
+	return s.Store(index)
 }

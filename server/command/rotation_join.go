@@ -14,7 +14,8 @@ import (
 
 func (c *Command) joinRotation(parameters []string) (string, error) {
 	var starting types.Time
-	fs := newRotationFS()
+	fs := newFS()
+	fRotation(fs)
 	jsonOut := fJSON(fs)
 	fs.Var(&starting, flagStart, fmt.Sprintf("time for user to start participating"))
 	err := fs.Parse(parameters)

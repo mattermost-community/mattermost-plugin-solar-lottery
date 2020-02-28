@@ -28,6 +28,6 @@ func TestCommandRotationJoin(t *testing.T) {
 		_, err = runJSONCommand(t, SL, `
 			/lotto rotation show test-rotation`, &r)
 		require.NoError(t, err)
-		require.Equal(t, []string{"id1", "id2", "id3", "id4"}, r.MattermostUserIDs.Sorted())
+		require.Equal(t, []string{"id1", "id2", "id3", "id4"}, r.MattermostUserIDs.TestIDs())
 	})
 }

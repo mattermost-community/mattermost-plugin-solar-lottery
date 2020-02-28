@@ -27,12 +27,12 @@ func TestCommandRotationLeave(t *testing.T) {
 		_, err = runJSONCommand(t, SL, `
 			/lotto rotation leave test-rotation @id2-username @id3-username @id5-username`, &deleted)
 		require.NoError(t, err)
-		require.Equal(t, []string{"id2", "id3"}, deleted.IDs().Sorted())
+		require.Equal(t, []string{"id2", "id3"}, deleted.IDs().TestIDs())
 
 		r := sl.NewRotation()
 		_, err = runJSONCommand(t, SL, `
 			/lotto rotation show test-rotation`, &r)
 		require.NoError(t, err)
-		require.Equal(t, []string{"id1", "id4"}, r.MattermostUserIDs.Sorted())
+		require.Equal(t, []string{"id1", "id4"}, r.MattermostUserIDs.TestIDs())
 	})
 }

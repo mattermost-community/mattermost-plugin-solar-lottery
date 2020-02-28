@@ -22,32 +22,37 @@ import (
 )
 
 const (
-	commandAdd         = "add"
-	commandNew         = "new"
+	// commandAdd         = "add"
+	// commandAutopilot   = "autopilot"
+	// commandFill        = "fill"
+	// commandForecast    = "forecast"
+	// commandGuess       = "guess"
+	// commandNeed        = "need"
+	// commandShift       = "shift"
+	// commandUpdate      = "update"
 	commandArchive     = "archive"
-	commandAutopilot   = "autopilot"
 	commandDebugDelete = "debug-delete"
 	commandDelete      = "delete"
 	commandDisqualify  = "disqualify"
-	commandFill        = "fill"
 	commandFinish      = "finish"
-	commandForecast    = "forecast"
-	commandGuess       = "guess"
 	commandInfo        = "info"
+	commandIssue       = "issue"
+	commandIssueSource = "issue-source"
 	commandJoin        = "join"
 	commandLeave       = "leave"
+	commandLimit       = "limit"
 	commandList        = "list"
 	commandLog         = "log"
-	commandNeed        = "need"
+	commandNew         = "new"
 	commandOpen        = "open"
+	commandPut         = "put"
 	commandQualify     = "qualify"
+	commandRequire     = "require"
 	commandRotation    = "rotation"
-	commandShift       = "shift"
 	commandShow        = "show"
 	commandSkill       = "skill"
 	commandStart       = "start"
 	commandUnavailable = "unavailable"
-	commandUpdate      = "update"
 	commandUser        = "user"
 )
 
@@ -62,28 +67,29 @@ const (
 )
 
 const (
-	flagClear      = "clear"
-	flagDebugRun   = "debug-run"
-	flagDeleteNeed = "delete-need"
-	flagFinish     = "finish"
-	flagFill       = "fill"
-	flagFillDays   = "fill-before"
-	flagGrace      = "grace"
-	flagJSON       = "json"
-	flagMax        = "max"
-	flagMin        = "min"
-	flagNotifyDays = "notify"
-	flagNumber     = "number"
-	flagOff        = "off"
-	flagPeriod     = "period"
-	flagRotation   = "rotation"
-	flagSampleSize = "sample"
-	flagShift      = "shift"
-	flagSize       = "size"
-	flagSkill      = "skill"
-	flagStart      = "start"
-	flagType       = "type"
-	flagUsers      = "users"
+	// flagDebugRun   = "debug-run"
+	// flagFill       = "fill"
+	// flagFillDays   = "fill-before"
+	// flagMax        = "max"
+	// flagMin        = "min"
+	// flagNotifyDays = "notify"
+	// flagNumber     = "number"
+	// flagOff        = "off"
+	// flagSampleSize = "sample"
+	// flagShift      = "shift"
+	// flagSize       = "size"
+	// flagType       = "type"
+	// flagUsers      = "users"
+	flagClear    = "clear"
+	flagCount    = "count"
+	flagDelete   = "delete"
+	flagFinish   = "finish"
+	flagGrace    = "grace"
+	flagJSON     = "json"
+	flagPeriod   = "period"
+	flagRotation = "rotation"
+	flagSkill    = "skill"
+	flagStart    = "start"
 )
 
 // Command handles commands
@@ -118,7 +124,7 @@ func (c *Command) commands() map[string]func([]string) (string, error) {
 	return map[string]func([]string) (string, error){
 		commandInfo:     c.info,
 		commandRotation: c.rotation,
-		// commandShift:    c.shift,
+		// commandTask:     c.task,
 		commandSkill: c.skill,
 		commandUser:  c.user,
 		commandLog:   c.log,
@@ -205,12 +211,6 @@ func newFS() *pflag.FlagSet {
 	return pflag.NewFlagSet("", pflag.ContinueOnError)
 }
 
-func newRotationFS() *pflag.FlagSet {
-	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
-	fRotation(fs)
-	return fs
-}
-
 func fJSON(fs *pflag.FlagSet) *bool {
 	return fs.Bool(flagJSON, false, "output as JSON")
 }
@@ -229,6 +229,10 @@ func fStartFinish(fs *pflag.FlagSet, actingUser *sl.User) (*types.Time, *types.T
 
 func fClear(fs *pflag.FlagSet) *bool {
 	return fs.Bool(flagClear, false, "mark as available by clearing all overlapping unavailability events")
+}
+
+func fCount(fs *pflag.FlagSet) *int {
+	return fs.Int(flagCount, 1, "number of users")
 }
 
 func fSkill(fs *pflag.FlagSet) *string {
@@ -270,17 +274,17 @@ func (c *Command) loadUsernames(args []string) (users sl.UserMap, err error) {
 
 func (c *Command) loadRotationUsernames(fs *pflag.FlagSet) (*sl.Rotation, sl.UserMap, error) {
 	ref, _ := fs.GetString(flagRotation)
-	usernames := types.NewSet()
-	rid := ref
+	usernames := []string{}
+	rid := types.ID(ref)
 
 	for _, arg := range fs.Args() {
 		if strings.HasPrefix(arg, "@") {
-			usernames.Add(arg)
+			usernames = append(usernames, arg)
 		} else {
 			if rid != "" {
 				return nil, nil, errors.Errorf("rotation %s is already specified, cant't interpret %s", rid, arg)
 			}
-			rid = arg
+			rid = types.ID(arg)
 		}
 	}
 
@@ -291,7 +295,7 @@ func (c *Command) loadRotationUsernames(fs *pflag.FlagSet) (*sl.Rotation, sl.Use
 	}
 	// explicit ref is used as is
 	if ref == "" {
-		rid, err = c.SL.ResolveRotation(rid)
+		rid, err = c.SL.ResolveRotation(string(rid))
 		if err != nil {
 			return nil, nil, err
 		}
@@ -301,9 +305,25 @@ func (c *Command) loadRotationUsernames(fs *pflag.FlagSet) (*sl.Rotation, sl.Use
 		return nil, nil, err
 	}
 
-	users, err := c.loadUsernames(usernames.Array())
+	users, err := c.loadUsernames(usernames)
 	if err != nil {
 		return nil, nil, err
 	}
 	return r, users, nil
+}
+
+func (c *Command) loadRotation(fs *pflag.FlagSet) (*sl.Rotation, error) {
+	var err error
+	ref, _ := fs.GetString(flagRotation)
+	rid := types.ID(ref)
+	if ref == "" {
+		if len(fs.Args()) < 1 {
+			return nil, errors.New("no rotation specified")
+		}
+		rid, err = c.SL.ResolveRotation(fs.Arg(0))
+		if err != nil {
+			return nil, err
+		}
+	}
+	return c.SL.LoadRotation(rid)
 }

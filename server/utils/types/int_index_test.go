@@ -12,21 +12,21 @@ import (
 
 func TestIntIndex(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
-		in := NewIntSet()
+		in := NewIntIndex()
 		in.Set("b", 2)
 		in.Set("c", 1000)
 		in.Set("a", 1)
 
 		data, err := json.Marshal(in)
 		require.NoError(t, err)
-		require.Equal(t, `[{"ID":"b","V":2},{"ID":"c","V":1000},{"ID":"a","V":1}]`, string(data))
+		require.Equal(t, `{"a":1,"b":2,"c":1000}`, string(data))
 
-		out := NewIntSet()
+		out := NewIntIndex()
 		err = json.Unmarshal(data, &out)
 		require.NoError(t, err)
-		var ain, aout intArrayProto
-		in.TestAsArray(&ain)
-		out.TestAsArray(&aout)
-		require.EqualValues(t, ain, aout)
+
+		outdata, err := json.Marshal(in)
+		require.NoError(t, err)
+		require.EqualValues(t, data, outdata)
 	})
 }

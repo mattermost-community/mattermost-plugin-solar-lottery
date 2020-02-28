@@ -9,16 +9,11 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-type Tasker interface {
-	// FillTask(*Rotation, *Task) (added UserMap, err error)
-	// PostTask(*Rotation, *Task) error
-}
-
 type SL interface {
 	Calendar
 	Rotations
 	Skills
-	Tasker
+	Issues
 	Users
 
 	PluginAPI
@@ -35,14 +30,14 @@ type sl struct {
 	conf *config.Config
 
 	// set by Service.ActingAs.
-	actingMattermostUserID string
+	actingMattermostUserID types.ID
 
 	// set by withActingUser or withActingUserExpanded.
 	actingUser *User
 
 	// Common indices (set by withXXX).
-	knownSkills     *types.Set
-	activeRotations *types.Set
+	knownSkills     *types.IDIndex
+	activeRotations *types.IDIndex
 }
 
 func (sl *sl) Config() *config.Config {

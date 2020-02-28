@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 func (c *Command) disqualifyUsers(parameters []string) (string, error) {
@@ -23,7 +24,7 @@ func (c *Command) disqualifyUsers(parameters []string) (string, error) {
 		return "", err
 	}
 
-	err = c.SL.Disqualify(users, *skill)
+	err = c.SL.Disqualify(users, types.ID(*skill))
 	if err != nil {
 		return "", err
 	}

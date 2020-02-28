@@ -12,7 +12,8 @@ import (
 )
 
 func (c *Command) leaveRotation(parameters []string) (string, error) {
-	fs := newRotationFS()
+	fs := newFS()
+	fRotation(fs)
 	jsonOut := fJSON(fs)
 	err := fs.Parse(parameters)
 	if err != nil {

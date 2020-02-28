@@ -10,13 +10,13 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-type UserMap map[string]*User
+type UserMap map[types.ID]*User
 
 func (m UserMap) Clone(deep bool) UserMap {
 	users := UserMap{}
 	for id, user := range m {
 		if deep {
-			users[id] = user.Clone()
+			users[id] = user.Clone(deep).(*User)
 		} else {
 			users[id] = user
 		}
@@ -58,10 +58,10 @@ func (m UserMap) String() string {
 	return strings.Join(out, ", ")
 }
 
-func (m UserMap) IDs() *types.Set {
-	set := types.NewSet()
+func (m UserMap) IDs() *types.IDIndex {
+	set := types.NewIDIndex()
 	for id := range m {
-		set.Add(id)
+		set.Set(id)
 	}
 	return set
 }
@@ -69,18 +69,18 @@ func (m UserMap) IDs() *types.Set {
 // Sorted returns all users, sorted by ID. It is used in testing, so it returns
 // []User rather than a []*User to make it easier to compare with expected
 // results.
-func (m UserMap) Sorted() []User {
+func (m UserMap) TestSorted() []User {
 	out := []User{}
-	for _, id := range m.IDs().Sorted() {
-		out = append(out, *m[id])
+	for _, id := range m.IDs().TestIDs() {
+		out = append(out, *m[types.ID(id)])
 	}
 	return out
 }
 
-func (users UserMap) Qualified(need *Need) UserMap {
+func (users UserMap) Qualified(skillLevel SkillLevel) UserMap {
 	qualified := UserMap{}
 	for id, user := range users {
-		if user.IsQualified(need) {
+		if user.IsQualified(skillLevel) {
 			qualified[id] = user
 		}
 	}

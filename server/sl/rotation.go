@@ -11,11 +11,15 @@ import (
 )
 
 type Rotation struct {
-	PluginVersion     string
-	RotationID        string
-	AutofillType      string
-	IsArchived        bool
-	MattermostUserIDs *types.Set `json:",omitempty"`
+	PluginVersion string
+	RotationID    types.ID
+	AutofillType  string
+	IsArchived    bool
+	IssueSources  []*IssueSource
+	// ShiftSource *ShiftSource
+	Pending           []*Task
+	InProgress        []*Task
+	MattermostUserIDs *types.IDIndex `json:",omitempty"`
 
 	users UserMap
 }
@@ -28,7 +32,7 @@ func NewRotation() *Rotation {
 
 func (r *Rotation) init() {
 	if r.MattermostUserIDs == nil {
-		r.MattermostUserIDs = types.NewSet()
+		r.MattermostUserIDs = types.NewIDIndex()
 	}
 	if r.users == nil {
 		r.users = UserMap{}
@@ -38,7 +42,7 @@ func (r *Rotation) init() {
 func (r *Rotation) Clone(deep bool) *Rotation {
 	newR := *r
 	if deep {
-		newR.MattermostUserIDs = r.MattermostUserIDs.Clone()
+		newR.MattermostUserIDs = r.MattermostUserIDs.Clone(deep).(*types.IDIndex)
 		newR.users = r.users.Clone(deep)
 	}
 	return &newR
@@ -46,9 +50,9 @@ func (r *Rotation) Clone(deep bool) *Rotation {
 
 func (rotation *Rotation) WithMattermostUserIDs(pool UserMap) *Rotation {
 	newRotation := rotation.Clone(false)
-	newRotation.MattermostUserIDs = types.NewSet()
+	newRotation.MattermostUserIDs = types.NewIDIndex()
 	for id := range pool {
-		newRotation.MattermostUserIDs.Add(id)
+		newRotation.MattermostUserIDs.Set(id)
 	}
 	if pool == nil {
 		pool = UserMap{}
@@ -86,10 +90,29 @@ func (r *Rotation) MarkdownBullets() string {
 	return out
 }
 
-func (r *Rotation) MapUsers(ids *types.Set) UserMap {
+func (r *Rotation) MapUsers(ids *types.IDIndex) UserMap {
 	users := UserMap{}
-	ids.ForEach(func(id string) {
+	for _, id := range r.MattermostUserIDs.IDs() {
 		users[id] = r.users[id]
-	})
+	}
 	return users
+}
+
+func (r *Rotation) IssueSource(sourceName string) (*IssueSource, int) {
+	for i, is := range r.IssueSources {
+		if is.Name == sourceName {
+			return is, i
+		}
+	}
+	return nil, -1
+}
+
+func (r *Rotation) PutIssueSource(newIS *IssueSource) {
+	for i, is := range r.IssueSources {
+		if is.Name == newIS.Name {
+			r.IssueSources[i] = is
+			return
+		}
+	}
+	r.IssueSources = append(r.IssueSources, newIS)
 }

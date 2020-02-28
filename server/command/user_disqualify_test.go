@@ -28,14 +28,9 @@ func TestCommandUserDisqualify(t *testing.T) {
 		_, err = runJSONCommand(t, SL, `
 			/lotto user disqualify -k webapp`, &uu)
 		require.NoError(t, err)
-		require.EqualValues(t, []sl.User{
-			sl.User{
-				PluginVersion:    "test-plugin-version",
-				MattermostUserID: "test-user",
-				SkillLevels: types.IntMap{
-					"somethingelse": 3,
-				},
-			},
-		}, uu.Sorted())
+		require.Equal(t, 1, len(uu.TestSorted()))
+		u := uu.TestSorted()[0]
+		require.Equal(t, types.ID("test-user"), u.MattermostUserID)
+		require.EqualValues(t, types.NewIntIndex(types.NewIDInt("somethingelse", 3)), u.SkillLevels)
 	})
 }

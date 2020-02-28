@@ -22,34 +22,26 @@ func TestCommandUserQualify(t *testing.T) {
 		_, err := runJSONCommand(t, SL, `
 			/lotto user qualify @uid1-username -k webapp-▣ @uid2-username`, &qualified)
 		require.NoError(t, err)
-		require.Equal(t, []string{"uid1", "uid2"}, qualified.IDs().Sorted())
+		require.Equal(t, []string{"uid1", "uid2"}, qualified.IDs().TestIDs())
 
 		uu := sl.UserMap{}
 		_, err = runJSONCommand(t, SL, `
 			/lotto user show @uid1-username @uid2-username`, &uu)
 		require.NoError(t, err)
-		require.EqualValues(t, []sl.User{
-			sl.User{
-				PluginVersion:    "test-plugin-version",
-				MattermostUserID: "uid1",
-				SkillLevels: types.IntMap{
-					"webapp": 2,
-				},
-			},
-			sl.User{
-				PluginVersion:    "test-plugin-version",
-				MattermostUserID: "uid2",
-				SkillLevels: types.IntMap{
-					"webapp": 2,
-				},
-			},
-		}, uu.Sorted())
+		require.Equal(t, 2, len(uu.TestSorted()))
+		u1 := uu.TestSorted()[0]
+		require.Equal(t, types.ID("uid1"), u1.MattermostUserID)
+		require.EqualValues(t, types.NewIntIndex(types.NewIDInt("webapp", 2)), u1.SkillLevels)
+
+		u2 := uu.TestSorted()[1]
+		require.Equal(t, types.ID("uid2"), u2.MattermostUserID)
+		require.EqualValues(t, types.NewIntIndex(types.NewIDInt("webapp", 2)), u2.SkillLevels)
 
 		qualified = sl.UserMap{}
 		_, err = runJSONCommand(t, SL, `
 			/lotto user qualify -k somethingelse-3`, &qualified)
 		require.NoError(t, err)
-		require.Equal(t, []string{"test-user"}, qualified.IDs().Sorted())
+		require.Equal(t, []string{"test-user"}, qualified.IDs().TestIDs())
 
 	})
 }

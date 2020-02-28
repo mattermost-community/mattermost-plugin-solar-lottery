@@ -10,58 +10,58 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type structIdentifiable struct {
-	ID   string
+type testCard struct {
+	ID   ID
 	Data string
 }
 
-func (si structIdentifiable) GetID() string        { return si.ID }
-func (si structIdentifiable) Clone(bool) Cloneable { return si }
+func (si testCard) GetID() ID            { return si.ID }
+func (si testCard) Clone(bool) Cloneable { return si }
 
-type structArrayProto []structIdentifiable
+type testIndexProto []testCard
 
-func (p structArrayProto) Len() int                 { return len(p) }
-func (p structArrayProto) GetAt(n int) IndexCard    { return p[n] }
-func (p structArrayProto) SetAt(n int, v IndexCard) { p[n] = v.(structIdentifiable) }
+func (p testIndexProto) Len() int                 { return len(p) }
+func (p testIndexProto) GetAt(n int) IndexCard    { return p[n] }
+func (p testIndexProto) SetAt(n int, v IndexCard) { p[n] = v.(testCard) }
 
-func (p structArrayProto) InstanceOf() IndexCardArray {
-	inst := make(structArrayProto, 0)
+func (p testIndexProto) InstanceOf() IndexCardArray {
+	inst := make(testIndexProto, 0)
 	return &inst
 }
-func (p *structArrayProto) Ref() interface{} { return &p }
-func (p *structArrayProto) Resize(n int) {
-	*p = make(structArrayProto, n)
+func (p *testIndexProto) Ref() interface{} { return &p }
+func (p *testIndexProto) Resize(n int) {
+	*p = make(testIndexProto, n)
 }
 
 func TestIndexJSON(t *testing.T) {
 	t.Run("strings", func(t *testing.T) {
-		in := NewIndex(StringSetProto, stringIdentifiable("test1"), stringIdentifiable("test2"))
+		in := NewIndex(IDIndexProto, ID("test1"), ID("test2"))
 
 		data, err := json.Marshal(in)
 		require.NoError(t, err)
 		require.Equal(t, `["test1","test2"]`, string(data))
 
-		out := NewIndex(StringSetProto)
+		out := NewIndex(IDIndexProto)
 		err = json.Unmarshal(data, &out)
 		require.NoError(t, err)
 
-		var ain, aout stringSetProto
+		var ain, aout idIndexProto
 		in.TestAsArray(&ain)
 		out.TestAsArray(&aout)
 		require.EqualValues(t, ain, aout)
 	})
 	t.Run("structs", func(t *testing.T) {
-		proto := &structArrayProto{}
+		proto := &testIndexProto{}
 		in := NewIndex(proto,
-			structIdentifiable{
+			testCard{
 				ID:   "id2",
 				Data: "data2",
 			},
-			structIdentifiable{
+			testCard{
 				ID:   "id3",
 				Data: "data3",
 			},
-			structIdentifiable{
+			testCard{
 				ID:   "id1",
 				Data: "data1",
 			},
@@ -75,7 +75,7 @@ func TestIndexJSON(t *testing.T) {
 		err = json.Unmarshal(data, &out)
 		require.NoError(t, err)
 
-		var ain, aout structArrayProto
+		var ain, aout testIndexProto
 		in.TestAsArray(&ain)
 		out.TestAsArray(&aout)
 		require.EqualValues(t, ain, aout)

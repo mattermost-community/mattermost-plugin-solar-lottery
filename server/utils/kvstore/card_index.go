@@ -10,7 +10,7 @@ import (
 type CardIndexStore interface {
 	Load() (*types.Index, error)
 	Store(*types.Index) error
-	Delete(id string) error
+	Delete(id types.ID) error
 	StoreCard(v types.IndexCard) error
 }
 
@@ -45,7 +45,7 @@ func (s *cardIndexStore) Store(index *types.Index) error {
 	return nil
 }
 
-func (s *cardIndexStore) Delete(id string) error {
+func (s *cardIndexStore) Delete(id types.ID) error {
 	index, err := s.Load()
 	if err != nil {
 		return err

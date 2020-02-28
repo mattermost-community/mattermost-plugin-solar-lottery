@@ -51,7 +51,7 @@ func TestCommandUserUnavailable(t *testing.T) {
 				/lotto user unavailable --clear -s 2025-01-30T10:00 -f 2025-02-08T11:00
 				`, &users)
 		require.NoError(t, err)
-		require.EqualValues(t, []string{"test-user"}, users.IDs().Sorted())
+		require.EqualValues(t, []string{"test-user"}, users.IDs().TestIDs())
 		require.Len(t, users["test-user"].Calendar, 2)
 		require.EqualValues(t,
 			sl.Unavailable{

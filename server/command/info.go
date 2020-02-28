@@ -42,11 +42,11 @@ func (c *Command) info(parameters []string) (string, error) {
 	- [x] unavailable: --start --finish [--clear] 
 
 - [ ] task
+	- [ ] new issue
 	- [ ] assign [--auto aka fill]
 	- [ ] close
 	- [ ] debug-delete
 	- [ ] list (by rotation, by task queue)
-	- [ ] new issue
 	- [ ] new shift 
 	- [ ] show
 	- [ ] start

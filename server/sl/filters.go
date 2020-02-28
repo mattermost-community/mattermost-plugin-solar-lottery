@@ -98,9 +98,9 @@ func withKnownSkills(sl *sl) error {
 		return nil
 	}
 
-	skills, err := sl.Store.Index(KeyKnownSkills).Load()
+	skills, err := sl.Store.IDIndex(KeyKnownSkills).Load()
 	if err == kvstore.ErrNotFound {
-		sl.knownSkills = types.NewSet()
+		sl.knownSkills = types.NewIDIndex()
 		return nil
 	}
 	if err != nil {
@@ -110,7 +110,7 @@ func withKnownSkills(sl *sl) error {
 	return nil
 }
 
-func withValidSkillName(skillName string) func(sl *sl) error {
+func withValidSkillName(skillName types.ID) func(sl *sl) error {
 	return func(sl *sl) error {
 		err := sl.Filter(withKnownSkills)
 		if err != nil {
@@ -124,13 +124,13 @@ func withValidSkillName(skillName string) func(sl *sl) error {
 }
 
 func withActiveRotations(sl *sl) error {
-	if sl.activeRotations != nil {
+	if sl.activeRotations != nil && sl.activeRotations.Len() > 0 {
 		return nil
 	}
 
-	rotations, err := sl.Store.Index(KeyActiveRotations).Load()
+	rotations, err := sl.Store.IDIndex(KeyActiveRotations).Load()
 	if err == kvstore.ErrNotFound {
-		sl.activeRotations = types.NewSet()
+		sl.activeRotations = types.NewIDIndex()
 		return nil
 	}
 	if err != nil {

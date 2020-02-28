@@ -3,26 +3,28 @@
 
 package types
 
-type idInt struct {
-	ID string
+import "encoding/json"
+
+type IDInt struct {
+	ID ID
 	V  int64
 }
 
-func NewIDInt(id string, value int64) IndexCard {
-	return idInt{
+func NewIDInt(id ID, value int64) IDInt {
+	return IDInt{
 		ID: id,
 		V:  value,
 	}
 }
 
-func (ii idInt) GetID() string        { return ii.ID }
-func (ii idInt) Clone(bool) Cloneable { return ii }
+func (ii IDInt) GetID() ID            { return ii.ID }
+func (ii IDInt) Clone(bool) Cloneable { return ii }
 
-type intArrayProto []idInt
+type intArrayProto []IDInt
 
 func (p intArrayProto) Len() int                 { return len(p) }
 func (p intArrayProto) GetAt(n int) IndexCard    { return p[n] }
-func (p intArrayProto) SetAt(n int, v IndexCard) { p[n] = v.(idInt) }
+func (p intArrayProto) SetAt(n int, v IndexCard) { p[n] = v.(IDInt) }
 
 func (p intArrayProto) InstanceOf() IndexCardArray {
 	inst := make(intArrayProto, 0)
@@ -37,16 +39,53 @@ type IntIndex struct {
 	*Index
 }
 
-func NewIntSet() *IntIndex {
-	return &IntIndex{
+func NewIntIndex(vv ...IDInt) *IntIndex {
+	i := &IntIndex{
 		Index: NewIndex(&intArrayProto{}),
 	}
+	for _, v := range vv {
+		i.Set(v.ID, v.V)
+	}
+	return i
 }
 
-func (s *IntIndex) Set(id string, v int64) {
-	s.Index.Set(NewIDInt(id, v))
+func (index *IntIndex) Set(id ID, v int64) {
+	index.Index.Set(NewIDInt(id, v))
 }
 
-func (s *IntIndex) Get(id string) int64 {
-	return s.Index.Get(id).(idInt).V
+func (index *IntIndex) Get(id ID) int64 {
+	v := index.Index.Get(id)
+	if v == nil {
+		return 0
+	}
+	return v.(IDInt).V
+}
+
+func (index *IntIndex) Clone(deep bool) Cloneable {
+	c := *index
+	c.Index = index.Index.Clone(deep).(*Index)
+	return &c
+}
+
+func (index *IntIndex) MarshalJSON() ([]byte, error) {
+	m := map[ID]int64{}
+	for _, id := range index.ids {
+		m[id] = index.Get(id)
+	}
+	return json.Marshal(m)
+}
+
+func (index *IntIndex) UnmarshalJSON(data []byte) error {
+	m := map[ID]int64{}
+	err := json.Unmarshal(data, &m)
+	if err != nil {
+		return err
+	}
+
+	n := NewIntIndex()
+	*index = *n
+	for k, v := range m {
+		index.Set(k, v)
+	}
+	return nil
 }

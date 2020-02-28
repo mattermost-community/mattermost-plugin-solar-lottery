@@ -10,7 +10,7 @@ import (
 )
 
 func (sl *sl) dmUser(user *User, message string) {
-	sl.Poster.DM(user.MattermostUserID, message)
+	sl.Poster.DM(string(user.MattermostUserID), message)
 	sl.Debugf("DM bot to %s:\n%s", user.Markdown(), message)
 }
 

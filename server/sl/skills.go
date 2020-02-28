@@ -9,12 +9,12 @@ import (
 )
 
 type Skills interface {
-	ListKnownSkills() (*types.Set, error)
-	AddKnownSkill(string) error
-	DeleteKnownSkill(string) error
+	ListKnownSkills() (*types.IDIndex, error)
+	AddKnownSkill(types.ID) error
+	DeleteKnownSkill(types.ID) error
 }
 
-func (sl *sl) ListKnownSkills() (*types.Set, error) {
+func (sl *sl) ListKnownSkills() (*types.IDIndex, error) {
 	err := sl.Filter(
 		withKnownSkills,
 		withActingUser,
@@ -25,9 +25,8 @@ func (sl *sl) ListKnownSkills() (*types.Set, error) {
 	return sl.knownSkills, nil
 }
 
-func (sl *sl) AddKnownSkill(skillName string) error {
+func (sl *sl) AddKnownSkill(skillName types.ID) error {
 	err := sl.Filter(
-		withKnownSkills,
 		withActingUserExpanded,
 	)
 	if err != nil {
@@ -39,19 +38,17 @@ func (sl *sl) AddKnownSkill(skillName string) error {
 		"Skill":          skillName,
 	})
 
-	err = sl.Store.Index(KeyKnownSkills).AddTo(skillName)
+	err = sl.Store.IDIndex(KeyKnownSkills).Set(skillName)
 	if err != nil {
 		return err
 	}
-	sl.knownSkills.Add(skillName)
 
 	logger.Infof("%s added known skill %s.", sl.actingUser.Markdown(), skillName)
 	return nil
 }
 
-func (sl *sl) DeleteKnownSkill(skillName string) error {
+func (sl *sl) DeleteKnownSkill(skillName types.ID) error {
 	err := sl.Filter(
-		withKnownSkills,
 		withActingUserExpanded,
 	)
 	if err != nil {
@@ -63,11 +60,10 @@ func (sl *sl) DeleteKnownSkill(skillName string) error {
 		"Skill":          skillName,
 	})
 
-	err = sl.Store.Index(KeyKnownSkills).DeleteFrom(skillName)
+	err = sl.Store.IDIndex(KeyKnownSkills).Delete(skillName)
 	if err != nil {
 		return err
 	}
-	sl.knownSkills.Delete(skillName)
 
 	logger.Infof("%s deleted skill %s.", sl.actingUser.Markdown(), skillName)
 	return nil

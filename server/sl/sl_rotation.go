@@ -21,12 +21,12 @@ type Rotations interface {
 	LeaveRotation(*Rotation, UserMap) (deleted UserMap, err error)
 	AddRotation(*Rotation) error
 	ArchiveRotation(*Rotation) error
-	DebugDeleteRotation(string) error
-	LoadRotation(string) (*Rotation, error)
+	DebugDeleteRotation(types.ID) error
+	LoadRotation(types.ID) (*Rotation, error)
 	MakeRotation(rotationName string) (*Rotation, error)
-	ResolveRotation(string) (string, error)
+	ResolveRotation(string) (types.ID, error)
 	UpdateRotation(*Rotation, func(*Rotation) error) error
-	LoadActiveRotations() (*types.Set, error)
+	LoadActiveRotations() (*types.IDIndex, error)
 }
 
 func (sl *sl) AddRotation(r *Rotation) error {
@@ -46,20 +46,21 @@ func (sl *sl) AddRotation(r *Rotation) error {
 		return ErrAlreadyExists
 	}
 
-	sl.activeRotations.Add(r.RotationID)
-	err = sl.Store.Index(KeyActiveRotations).Store(sl.activeRotations)
+	err = sl.Store.IDIndex(KeyActiveRotations).Set(r.RotationID)
 	if err != nil {
 		return err
 	}
+	sl.activeRotations.Set(r.RotationID)
 	err = sl.Store.Entity(KeyRotation).Store(r.RotationID, r)
 	if err != nil {
 		return err
 	}
+
 	logger.Infof("New rotation %s added", r.Markdown())
 	return nil
 }
 
-func (sl *sl) LoadActiveRotations() (*types.Set, error) {
+func (sl *sl) LoadActiveRotations() (*types.IDIndex, error) {
 	err := sl.Filter(
 		withActingUser,
 		withActiveRotations,
@@ -70,7 +71,7 @@ func (sl *sl) LoadActiveRotations() (*types.Set, error) {
 	return sl.activeRotations, nil
 }
 
-func (sl *sl) ResolveRotation(pattern string) (string, error) {
+func (sl *sl) ResolveRotation(pattern string) (types.ID, error) {
 	err := sl.Filter(
 		withActiveRotations,
 	)
@@ -78,21 +79,22 @@ func (sl *sl) ResolveRotation(pattern string) (string, error) {
 		return "", err
 	}
 
-	if sl.activeRotations.Contains(pattern) {
+	if sl.activeRotations.Contains(types.ID(pattern)) {
 		// Exact match
-		return pattern, nil
+		return types.ID(pattern), nil
 	}
 
-	ids := []string{}
+	ids := []types.ID{}
 	re, err := regexp.Compile(`.*` + pattern + `.*`)
 	if err != nil {
 		return "", err
 	}
-	sl.activeRotations.ForEach(func(id string) {
-		if re.MatchString(id) {
+
+	for _, id := range sl.activeRotations.IDs() {
+		if re.MatchString(string(id)) {
 			ids = append(ids, id)
 		}
-	})
+	}
 
 	switch len(ids) {
 	case 0:
@@ -123,17 +125,17 @@ func (sl *sl) ArchiveRotation(r *Rotation) error {
 	if err != nil {
 		return err
 	}
-	sl.activeRotations.Delete(r.RotationID)
-	err = sl.Store.Index(KeyActiveRotations).Store(sl.activeRotations)
+	err = sl.Store.IDIndex(KeyActiveRotations).Delete(r.RotationID)
 	if err != nil {
 		return errors.WithMessagef(err, "failed to store rotation %s", r.RotationID)
 	}
+	sl.activeRotations.Delete(r.RotationID)
 
 	logger.Infof("%s archived rotation %s.", sl.actingUser.Markdown(), r.Markdown())
 	return nil
 }
 
-func (sl *sl) DebugDeleteRotation(rotationID string) error {
+func (sl *sl) DebugDeleteRotation(rotationID types.ID) error {
 	err := sl.Filter(
 		withActingUserExpanded,
 	)
@@ -150,18 +152,17 @@ func (sl *sl) DebugDeleteRotation(rotationID string) error {
 	if err != nil {
 		return err
 	}
-
-	sl.activeRotations.Delete(rotationID)
-	err = sl.Store.Index(KeyActiveRotations).Store(sl.activeRotations)
+	err = sl.Store.IDIndex(KeyActiveRotations).Delete(rotationID)
 	if err != nil {
 		return err
 	}
+	sl.activeRotations.Delete(rotationID)
 
 	logger.Infof("%s deleted rotation %s.", sl.actingUser.Markdown(), rotationID)
 	return nil
 }
 
-func (sl *sl) LoadRotation(rotationID string) (*Rotation, error) {
+func (sl *sl) LoadRotation(rotationID types.ID) (*Rotation, error) {
 	err := sl.Filter(
 		withActiveRotations,
 	)
@@ -262,7 +263,7 @@ func (sl *sl) JoinRotation(r *Rotation, users UserMap, starting types.Time) (Use
 
 		// A new person may be given some slack - setting starting in the
 		// future all but guarantees they won't be selected until then.
-		user.LastServed[r.RotationID] = starting.Unix()
+		user.LastServed.Set(r.RotationID, starting.Unix())
 
 		user, err = sl.storeUserWelcomeNew(user)
 		if err != nil {
@@ -270,9 +271,9 @@ func (sl *sl) JoinRotation(r *Rotation, users UserMap, starting types.Time) (Use
 		}
 
 		if r.MattermostUserIDs == nil {
-			r.MattermostUserIDs = types.NewSet()
+			r.MattermostUserIDs = types.NewIDIndex()
 		}
-		r.MattermostUserIDs.Add(user.MattermostUserID)
+		r.MattermostUserIDs.Set(user.MattermostUserID)
 		sl.messageWelcomeToRotation(user, r)
 		added[user.MattermostUserID] = user
 	}
@@ -307,7 +308,7 @@ func (sl *sl) LeaveRotation(r *Rotation, users UserMap) (UserMap, error) {
 			continue
 		}
 
-		delete(user.LastServed, r.RotationID)
+		user.LastServed.Delete(r.RotationID)
 		_, err = sl.storeUserWelcomeNew(user)
 		if err != nil {
 			return deleted, err

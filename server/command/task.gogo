@@ -12,22 +12,42 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) shift(parameters []string) (string, error) {
+func (c *Command) task(parameters []string) (string, error) {
 	subcommands := map[string]func([]string) (string, error){
-		commandOpen:        c.openShift,
-		commandDebugDelete: c.debugDeleteShift,
-		commandFill:        c.fillShift,
-		commandJoin:        c.joinShift,
-		commandList:        c.listShifts,
-		commandStart:       c.startShift,
-		commandFinish:      c.finishShift,
+		commandNew: c.newTask,
+		// commandDebugDelete: c.debugDeleteShift,
+		// commandFill:        c.fillShift,
+		// commandJoin:        c.joinShift,
+		// commandList:        c.listShifts,
+		// commandStart:       c.startShift,
+		// commandFinish:      c.finishShift,
 		// commandLeave:       c.leaveShift,
 	}
 
 	return c.handleCommand(subcommands, parameters)
 }
 
-func (c *Command) doShift(parameters []string,
+func (c *Command) newTask(parameters []string) (string, error) {
+	subcommands := map[string]func([]string) (string, error){
+		commandIssue: c.newIssue,
+	}
+
+	return c.handleCommand(subcommands, parameters)
+}
+
+func (c *Command) newIssue(parameters []string) (string, error) {
+
+	return c.doShift(parameters, nil,
+		func(fs *pflag.FlagSet, rotation *sl.Rotation, shiftNumber int) (string, error) {
+			shift, err := c.SL.OpenShift(rotation, shiftNumber)
+			if err != nil {
+				return "", err
+			}
+			return md.JSONBlock(shift), nil
+		})
+}
+
+func (c *Command) doTask(parameters []string,
 	initF func(fs *pflag.FlagSet),
 	doF func(*pflag.FlagSet, *sl.Rotation, int) (string, error)) (string, error) {
 	var rotationID, rotationName string

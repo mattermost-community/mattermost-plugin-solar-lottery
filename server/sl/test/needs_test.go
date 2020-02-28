@@ -23,31 +23,31 @@ func TestQualifiedForNeed(t *testing.T) {
 	}{
 		{
 			name:     "Guru server 2",
-			need:     sl.NewNeed(SkillServer, 2, 0),
+			need:     C1_Server_L2(),
 			user:     UserGuru(),
 			expected: true,
 		},
 		{
 			name:     "Guru other",
-			need:     sl.NewNeed("other", 2, 0),
+			need:     sl.NewNeed(0, sl.NewSkillLevel("other", 2)),
 			user:     UserGuru(),
 			expected: false,
 		},
 		{
 			name:     "Webapp1 server 1",
-			need:     sl.NewNeed(SkillServer, 1, 0),
+			need:     C1_Server_L1(),
 			user:     UserWebapp1(),
 			expected: true,
 		},
 		{
 			name:     "Webapp1 server 2",
-			need:     sl.NewNeed(SkillServer, 2, 0),
+			need:     C1_Server_L2(),
 			user:     UserWebapp1(),
 			expected: false,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			result := tc.user.IsQualified(tc.need)
+			result := tc.user.IsQualified(tc.need.SkillLevel)
 			require.Equal(t, tc.expected, result)
 		})
 	}
@@ -61,24 +61,24 @@ func TestUsersQualifiedForNeed(t *testing.T) {
 	}{
 		{
 			name:              "empty users",
-			need:              sl.NewNeed(SkillServer, 2, 0),
+			need:              C1_Server_L2(),
 			expectedQualified: sl.UserMap{},
 		},
 		{
 			name:              "happy server3",
-			need:              sl.NewNeed(SkillServer, 3, 0),
+			need:              C1_Server_L3(),
 			users:             Usermap(UserGuru(), UserServer1(), UserServer2(), UserServer3(), UserMobile1()),
 			expectedQualified: Usermap(UserGuru(), UserServer1(), UserServer2(), UserServer3()),
 		},
 		{
 			name:              "happy server4",
-			need:              sl.NewNeed(SkillServer, 4, 0),
+			need:              C1_Server_L4(),
 			users:             Usermap(UserGuru(), UserServer1(), UserServer2(), UserServer3(), UserMobile1()),
 			expectedQualified: Usermap(UserGuru()),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			qualified := tc.users.Qualified(tc.need)
+			qualified := tc.users.Qualified(tc.need.SkillLevel)
 			require.Equal(t, tc.expectedQualified, qualified)
 		})
 	}

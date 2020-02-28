@@ -9,6 +9,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 type PluginAPI interface {
@@ -29,7 +30,7 @@ type Service struct {
 	Store  kvstore.Store
 }
 
-func (s *Service) ActingAs(mattermostUserID string) SL {
+func (s *Service) ActingAs(mattermostUserID types.ID) SL {
 	return &sl{
 		Service:                s,
 		conf:                   s.Config.Get(),

@@ -6,7 +6,8 @@ package command
 import "github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 
 func (c *Command) showRotation(parameters []string) (string, error) {
-	fs := newRotationFS()
+	fs := newFS()
+	fRotation(fs)
 	jsonOut := fJSON(fs)
 	err := fs.Parse(parameters)
 	if err != nil {

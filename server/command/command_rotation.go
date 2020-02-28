@@ -6,6 +6,7 @@ package command
 func (c *Command) rotation(parameters []string) (string, error) {
 	subcommands := map[string]func([]string) (string, error){
 		// commandAutopilot:   c.autopilotRotation,
+		commandIssueSource: c.rotationIssueSource,
 		commandNew:         c.newRotation,
 		commandArchive:     c.archiveRotation,
 		commandDebugDelete: c.debugDeleteRotation,

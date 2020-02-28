@@ -15,10 +15,10 @@ import (
 
 type User struct {
 	PluginVersion    string `json:",omitempty"`
-	MattermostUserID string
-	SkillLevels      types.IntMap   `json:",omitempty"`
-	LastServed       types.IntMap   `json:",omitempty"` // Last time completed a task, per rotation ID; Unix time.
-	Calendar         []*Unavailable `json:",omitempty"` // Sorted by start date of the events.
+	MattermostUserID types.ID
+	SkillLevels      *types.IntIndex `json:",omitempty"` // skill (id) -> level
+	LastServed       *types.IntIndex `json:",omitempty"` // Last time completed a task, rotationID -> Unix time.
+	Calendar         []*Unavailable  `json:",omitempty"` // Sorted by start date of the events.
 
 	// private fields
 	loaded         bool
@@ -26,36 +26,38 @@ type User struct {
 	location       *time.Location
 }
 
-func NewUser(mattermostUserID string) *User {
+func NewUser(mattermostUserID types.ID) *User {
 	return &User{
 		MattermostUserID: mattermostUserID,
-		SkillLevels:      types.IntMap{},
-		LastServed:       types.IntMap{},
+		SkillLevels:      types.NewIntIndex(),
+		LastServed:       types.NewIntIndex(),
 		Calendar:         []*Unavailable{},
 	}
 }
 
-func (u *User) Clone() *User {
+func (u *User) CloneUser(deep bool) *User {
+	return u.Clone(deep).(*User)
+}
+
+func (u *User) Clone(deep bool) types.Cloneable {
 	clone := *u
-	clone.SkillLevels = u.SkillLevels.Clone()
-	clone.LastServed = u.LastServed.Clone()
+	clone.SkillLevels = u.SkillLevels.Clone(deep).(*types.IntIndex)
+	clone.LastServed = u.LastServed.Clone(deep).(*types.IntIndex)
 	clone.Calendar = append([]*Unavailable{}, u.Calendar...)
 	return &clone
 }
 
-func (user *User) WithLastServed(rotationID string, finishTime types.Time) *User {
-	newUser := user.Clone()
-	newUser.LastServed[rotationID] = finishTime.Unix()
+func (user *User) WithLastServed(rotationID types.ID, finishTime types.Time) *User {
+	newUser := user.CloneUser(false)
+	newUser.LastServed.Set(rotationID, finishTime.Unix())
 	return newUser
 }
 
-func (user *User) WithSkills(skillsLevels types.IntMap) *User {
-	newUser := user.Clone()
-	if newUser.SkillLevels != nil {
-		newUser.SkillLevels = types.IntMap{}
-	}
-	for s, l := range skillsLevels {
-		newUser.SkillLevels[s] = l
+func (user *User) WithSkills(skillsLevels *types.IntIndex) *User {
+	newUser := user.Clone(false).(*User)
+	newUser.SkillLevels = types.NewIntIndex()
+	for _, s := range skillsLevels.IDs() {
+		newUser.SkillLevels.Set(s, skillsLevels.Get(s))
 	}
 	return newUser
 }
@@ -95,8 +97,8 @@ func (user *User) MarkdownWithSkills() string {
 
 func (user *User) MarkdownSkills() string {
 	skillLevels := []string{}
-	for s, l := range user.SkillLevels {
-		skillLevels = append(skillLevels, SkillLevel{Skill: s, Level: Level(l)}.String())
+	for _, s := range user.SkillLevels.IDs() {
+		skillLevels = append(skillLevels, NewSkillLevel(s, Level(user.SkillLevels.Get(s))).String())
 	}
 	if len(skillLevels) == 0 {
 		return "(none)"
@@ -107,7 +109,7 @@ func (user *User) MarkdownSkills() string {
 
 func (user User) MattermostUsername() string {
 	if user.mattermostUser == nil {
-		return user.MattermostUserID
+		return string(user.MattermostUserID)
 	}
 	return user.mattermostUser.Username
 }
@@ -150,7 +152,7 @@ func (user *User) findUnavailable(interval types.Interval, remove bool) []*Unava
 	return found
 }
 
-func (user *User) IsQualified(need *Need) bool {
-	skillLevel, _ := user.SkillLevels[need.Skill]
-	return skillLevel >= int64(need.Level)
+func (user *User) IsQualified(skillLevel SkillLevel) bool {
+	level := user.SkillLevels.Get(skillLevel.Skill)
+	return level >= int64(skillLevel.Level)
 }

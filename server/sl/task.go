@@ -20,16 +20,17 @@ const (
 
 type Task struct {
 	PluginVersion string
-	TaskID        string
+	TaskID        types.ID
 	Status        TaskStatus
 	Created       types.Time
+	Summary       string
 
 	Scheduled         *types.Interval `json:",omitempty"`
-	Requires          []Need          `json:",omitempty"`
-	Limits            []Need          `json:",omitempty"`
+	Requires          Needs           `json:",omitempty"`
+	Limits            Needs           `json:",omitempty"`
 	Actual            *types.Interval `json:",omitempty"`
 	Grace             time.Duration   `json:",omitempty"`
-	MattermostUserIDs *types.Set      `json:",omitempty"`
+	MattermostUserIDs *types.IDIndex  `json:",omitempty"`
 
 	users UserMap
 }
@@ -38,7 +39,7 @@ func NewTask() *Task {
 	return &Task{
 		Status:            TaskStatusPending,
 		Created:           types.NewTime(),
-		MattermostUserIDs: types.NewSet(),
+		MattermostUserIDs: types.NewIDIndex(),
 		users:             UserMap{},
 	}
 }

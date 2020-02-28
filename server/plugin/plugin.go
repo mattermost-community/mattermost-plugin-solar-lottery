@@ -21,6 +21,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 	// "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery/autofill/queue"
 	// "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery/autofill/solarlottery"
 )
@@ -90,7 +91,7 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 		Context:   c,
 		Args:      args,
 		ChannelID: args.ChannelId,
-		SL:        p.sl.ActingAs(args.UserId),
+		SL:        p.sl.ActingAs(types.ID(args.UserId)),
 	}
 
 	out, _ := command.Handle()

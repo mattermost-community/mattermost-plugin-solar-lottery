@@ -30,8 +30,8 @@ func (c *Command) listRotations(parameters []string) (string, error) {
 		return "*none*", nil
 	}
 	out := ""
-	rotations.ForEach(func(id string) {
+	for _, id := range rotations.IDs() {
 		out += fmt.Sprintf("- %s\n", id)
-	})
+	}
 	return out, nil
 }

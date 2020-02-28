@@ -19,7 +19,7 @@ type Unavailable struct {
 	types.Interval
 	Reason string
 
-	TaskID string
+	TaskID types.ID
 }
 
 func NewUnavailable(reason string, interval types.Interval) *Unavailable {

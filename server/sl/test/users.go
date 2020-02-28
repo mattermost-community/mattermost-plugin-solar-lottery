@@ -25,31 +25,31 @@ const (
 )
 
 func UserGuru() *sl.User {
-	return SkilledUser(UserIDGuru, SkillWebapp, 4, SkillMobile, 4, SkillServer, 4, SkillPlugins, 4)
+	return SkilledUser(UserIDGuru, Webapp, 4, Mobile, 4, Server, 4, Plugins, 4)
 }
 func UserServer1() *sl.User {
-	return SkilledUser(UserIDServer1, SkillWebapp, 1, SkillServer, 3, SkillPlugins, 1)
+	return SkilledUser(UserIDServer1, Webapp, 1, Server, 3, Plugins, 1)
 }
 func UserServer2() *sl.User {
-	return SkilledUser(UserIDServer2, SkillWebapp, 2, SkillServer, 3, SkillPlugins, 1)
+	return SkilledUser(UserIDServer2, Webapp, 2, Server, 3, Plugins, 1)
 }
 func UserServer3() *sl.User {
-	return SkilledUser(UserIDServer3, SkillWebapp, 1, SkillServer, 3, SkillPlugins, 1)
+	return SkilledUser(UserIDServer3, Webapp, 1, Server, 3, Plugins, 1)
 }
 func UserWebapp1() *sl.User {
-	return SkilledUser(UserIDWebapp1, SkillWebapp, 3, SkillServer, 1)
+	return SkilledUser(UserIDWebapp1, Webapp, 3, Server, 1)
 }
 func UserWebapp2() *sl.User {
-	return SkilledUser(UserIDWebapp2, SkillWebapp, 2, SkillServer, 1)
+	return SkilledUser(UserIDWebapp2, Webapp, 2, Server, 1)
 }
 func UserWebapp3() *sl.User {
-	return SkilledUser(UserIDWebapp3, SkillWebapp, 3, SkillServer, 1)
+	return SkilledUser(UserIDWebapp3, Webapp, 3, Server, 1)
 }
 func UserMobile1() *sl.User {
-	return SkilledUser(UserIDMobile1, SkillWebapp, 1, SkillMobile, 3)
+	return SkilledUser(UserIDMobile1, Webapp, 1, Mobile, 3)
 }
 func UserMobile2() *sl.User {
-	return SkilledUser(UserIDMobile2, SkillWebapp, 1, SkillMobile, 3)
+	return SkilledUser(UserIDMobile2, Webapp, 1, Mobile, 3)
 }
 
 func AllUsers() sl.UserMap {
@@ -66,14 +66,14 @@ func AllUsers() sl.UserMap {
 	)
 }
 
-func SkilledUser(mattermostUserID string, skillLevels ...interface{}) *sl.User {
+func SkilledUser(mattermostUserID types.ID, skillLevels ...interface{}) *sl.User {
 	return sl.NewUser(mattermostUserID).WithSkills(Skillmap(skillLevels...))
 }
 
 func Usermap(in ...*sl.User) sl.UserMap {
 	users := sl.UserMap{}
 	for _, u := range in {
-		users[u.MattermostUserID] = u.Clone()
+		users[u.MattermostUserID] = u.Clone(true).(*sl.User)
 	}
 	return users
 }
@@ -91,22 +91,12 @@ func TestUsermap(t *testing.T) {
 	)
 }
 
-func Skillmap(skillLevels ...interface{}) types.IntMap {
-	m := types.IntMap{}
+func Skillmap(skillLevels ...interface{}) *types.IntIndex {
+	m := types.NewIntIndex()
 	for i := 0; i < len(skillLevels); i += 2 {
 		skill, _ := skillLevels[i].(string)
 		level, _ := skillLevels[i+1].(int)
-		m[skill] = int64(level)
+		m.Set(types.ID(skill), int64(level))
 	}
 	return m
-}
-
-func TestSkillmap(t *testing.T) {
-	require.Equal(t,
-		types.IntMap{
-			"t": 1,
-			"z": 2,
-		},
-		Skillmap("t", 1, "z", 2),
-	)
 }

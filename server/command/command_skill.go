@@ -9,11 +9,12 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 func (c *Command) skill(parameters []string) (string, error) {
 	subcommands := map[string]func([]string) (string, error){
-		commandAdd:    c.addSkill,
+		commandNew:    c.newSkill,
 		commandDelete: c.deleteSkill,
 		commandList:   c.listSkills,
 	}
@@ -21,7 +22,7 @@ func (c *Command) skill(parameters []string) (string, error) {
 	return c.handleCommand(subcommands, parameters)
 }
 
-func (c *Command) addSkill(parameters []string) (string, error) {
+func (c *Command) newSkill(parameters []string) (string, error) {
 	fs := newFS()
 	jsonOut := fJSON(fs)
 	err := fs.Parse(parameters)
@@ -31,7 +32,7 @@ func (c *Command) addSkill(parameters []string) (string, error) {
 	if len(fs.Args()) != 1 {
 		return c.flagUsage(fs), errors.New("must specify skill")
 	}
-	skill := fs.Arg(0)
+	skill := types.ID(fs.Arg(0))
 
 	err = c.SL.AddKnownSkill(skill)
 	if err != nil {
@@ -54,7 +55,7 @@ func (c *Command) deleteSkill(parameters []string) (string, error) {
 	if len(fs.Args()) != 1 {
 		return c.flagUsage(fs), errors.New("must specify skill")
 	}
-	skill := fs.Arg(0)
+	skill := types.ID(fs.Arg(0))
 
 	err = c.SL.DeleteKnownSkill(skill)
 	if err != nil {

@@ -14,7 +14,7 @@ type Cloneable interface {
 
 type IndexCard interface {
 	Cloneable
-	GetID() string
+	GetID() ID
 }
 
 type IndexSetter interface {
@@ -36,14 +36,14 @@ type IndexCardArray interface {
 
 type Index struct {
 	proto IndexCardArray
-	keys  []string
-	m     map[string]IndexCard
+	ids   []ID
+	m     map[ID]IndexCard
 }
 
 func NewIndex(proto IndexCardArray, vv ...IndexCard) *Index {
 	i := &Index{
-		keys:  []string{},
-		m:     map[string]IndexCard{},
+		ids:   []ID{},
+		m:     map[ID]IndexCard{},
 		proto: proto,
 	}
 	for _, v := range vv {
@@ -52,104 +52,107 @@ func NewIndex(proto IndexCardArray, vv ...IndexCard) *Index {
 	return i
 }
 
-func (i *Index) Clone(deep bool) Cloneable {
-	n := NewIndex(i.proto)
-	for _, key := range i.keys {
-		n.Set(i.m[key].Clone(deep).(IndexCard))
+func (index *Index) Clone(deep bool) Cloneable {
+	n := NewIndex(index.proto)
+	for _, id := range index.ids {
+		n.Set(index.m[id].Clone(deep).(IndexCard))
 	}
 	return n
 }
 
-func (i *Index) Contains(id string) bool {
-	_, ok := i.m[id]
+func (index *Index) Contains(id ID) bool {
+	_, ok := index.m[id]
 	return ok
 }
 
-func (i *Index) Delete(keyToDelete string) {
-	if !i.Contains(keyToDelete) {
+func (index *Index) Delete(toDelete ID) {
+	if !index.Contains(toDelete) {
 		return
 	}
 
-	for n, key := range i.keys {
-		if key != keyToDelete {
-			updated := i.keys[:n]
-			if n+1 < len(i.keys) {
-				updated = append(updated, i.keys[:n+1]...)
+	for n, key := range index.ids {
+		if key == toDelete {
+			updated := index.ids[:n]
+			if n+1 < len(index.ids) {
+				updated = append(updated, index.ids[n+1:]...)
 			}
-			i.keys = updated
+			index.ids = updated
 		}
 	}
-	delete(i.m, keyToDelete)
+	delete(index.m, toDelete)
 }
 
-func (i *Index) Get(key string) IndexCard {
-	return i.m[key]
+func (index *Index) Get(id ID) IndexCard {
+	return index.m[id]
 }
 
-func (i *Index) GetAt(n int) IndexCard {
-	return i.m[i.keys[n]]
+func (index *Index) GetAt(n int) IndexCard {
+	return index.m[index.ids[n]]
 }
 
-func (i *Index) Len() int {
-	return len(i.keys)
+func (index *Index) Len() int {
+	return len(index.ids)
 }
 
-func (i *Index) Keys() []string {
-	n := make([]string, len(i.keys))
-	copy(n, i.keys)
+func (index *Index) IDs() []ID {
+	n := make([]ID, len(index.ids))
+	copy(n, index.ids)
 	return n
 }
 
-func (i *Index) Set(v IndexCard) {
+func (index *Index) Set(v IndexCard) {
 	id := v.GetID()
-	if !i.Contains(id) {
-		i.keys = append(i.keys, id)
+	if !index.Contains(id) {
+		index.ids = append(index.ids, id)
 	}
-	i.m[id] = v
+	index.m[id] = v
 }
 
-func (i *Index) SetAt(n int, v IndexCard) {
+func (index *Index) SetAt(n int, v IndexCard) {
 	id := v.GetID()
-	if !i.Contains(id) {
-		i.keys = append(i.keys, id)
+	if !index.Contains(id) {
+		index.ids = append(index.ids, id)
 	}
-	i.m[id] = v
+	index.m[id] = v
 }
 
-func (i *Index) MarshalJSON() ([]byte, error) {
-	proto := i.proto.InstanceOf()
-	proto.Resize(len(i.keys))
-	for n, key := range i.keys {
-		proto.SetAt(n, i.m[key])
+func (index *Index) MarshalJSON() ([]byte, error) {
+	proto := index.proto.InstanceOf()
+	proto.Resize(len(index.ids))
+	for n, id := range index.ids {
+		proto.SetAt(n, index.m[id])
 	}
 	return json.Marshal(proto)
 }
 
-func (i *Index) UnmarshalJSON(data []byte) error {
-	proto := i.proto.InstanceOf()
+func (index *Index) UnmarshalJSON(data []byte) error {
+	proto := index.proto.InstanceOf()
 	err := json.Unmarshal(data, proto.Ref())
 	if err != nil {
 		return err
 	}
 
-	i.keys = []string{}
-	i.m = map[string]IndexCard{}
+	index.ids = []ID{}
+	index.m = map[ID]IndexCard{}
 
 	for n := 0; n < proto.Len(); n++ {
-		i.Set(proto.GetAt(n))
+		index.Set(proto.GetAt(n))
 	}
 	return nil
 }
 
-func (i *Index) TestAsArray(out IndexCardArray) {
-	out.Resize(len(i.keys))
-	for n, key := range i.keys {
-		out.SetAt(n, i.m[key])
+func (index *Index) TestAsArray(out IndexCardArray) {
+	out.Resize(len(index.ids))
+	for n, key := range index.ids {
+		out.SetAt(n, index.m[key])
 	}
 }
 
-func (i *Index) TestSortedKeys() []string {
-	n := i.Keys()
+func (index *Index) TestIDs() []string {
+	n := []string{}
+	for _, id := range index.IDs() {
+		n = append(n, string(id))
+	}
 	sort.Strings(n)
 	return n
 }
