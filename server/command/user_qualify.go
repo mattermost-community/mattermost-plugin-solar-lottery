@@ -23,18 +23,18 @@ func (c *Command) qualifyUsers(parameters []string) (string, error) {
 		return c.flagUsage(fs), errors.New("must provide --level and --skill values")
 	}
 
-	users, err := c.loadUsernames(fs.Args())
+	mattermostUserIDs, err := c.resolveUsernames(fs.Args())
 	if err != nil {
 		return "", err
 	}
 
-	err = c.SL.Qualify(users, *skillLevel)
+	qualified, err := c.SL.Qualify(mattermostUserIDs, *skillLevel)
 	if err != nil {
 		return "", err
 	}
 
 	if *jsonOut {
-		return md.JSONBlock(users), nil
+		return md.JSONBlock(qualified), nil
 	}
-	return fmt.Sprintf("Qualified %s as %s", users.Markdown(), skillLevel.String()), nil
+	return fmt.Sprintf("Qualified %s as %s", qualified.Markdown(), skillLevel.String()), nil
 }

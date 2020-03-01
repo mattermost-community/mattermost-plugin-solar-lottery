@@ -4,10 +4,6 @@
 package test
 
 import (
-	"testing"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
@@ -52,8 +48,8 @@ func UserMobile2() *sl.User {
 	return SkilledUser(UserIDMobile2, Webapp, 1, Mobile, 3)
 }
 
-func AllUsers() sl.UserMap {
-	return Usermap(
+func AllUsers() sl.Users {
+	return sl.NewUsers(
 		UserGuru(),
 		UserServer1(),
 		UserServer2(),
@@ -68,27 +64,6 @@ func AllUsers() sl.UserMap {
 
 func SkilledUser(mattermostUserID types.ID, skillLevels ...interface{}) *sl.User {
 	return sl.NewUser(mattermostUserID).WithSkills(Skillmap(skillLevels...))
-}
-
-func Usermap(in ...*sl.User) sl.UserMap {
-	users := sl.UserMap{}
-	for _, u := range in {
-		users[u.MattermostUserID] = u
-	}
-	return users
-}
-
-func TestUsermap(t *testing.T) {
-	require.EqualValues(t,
-		sl.UserMap{
-			UserIDGuru:    UserGuru(),
-			UserIDMobile1: UserMobile1(),
-		},
-		Usermap(
-			UserGuru(),
-			UserMobile1(),
-		),
-	)
 }
 
 func Skillmap(skillLevels ...interface{}) *types.IntIndex {

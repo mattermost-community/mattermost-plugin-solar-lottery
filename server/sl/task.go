@@ -26,13 +26,13 @@ type Task struct {
 	Summary       string
 
 	Scheduled         *types.Interval `json:",omitempty"`
-	Requires          Needs           `json:",omitempty"`
-	Limits            Needs           `json:",omitempty"`
+	Min               Needs           `json:",omitempty"`
+	Max               Needs           `json:",omitempty"`
 	Actual            *types.Interval `json:",omitempty"`
 	Grace             time.Duration   `json:",omitempty"`
 	MattermostUserIDs *types.IDIndex  `json:",omitempty"`
 
-	users UserMap
+	users Users
 }
 
 func NewTask() *Task {
@@ -40,7 +40,7 @@ func NewTask() *Task {
 		Status:            TaskStatusPending,
 		Created:           types.NewTime(),
 		MattermostUserIDs: types.NewIDIndex(),
-		users:             UserMap{},
+		users:             NewUsers(),
 	}
 }
 

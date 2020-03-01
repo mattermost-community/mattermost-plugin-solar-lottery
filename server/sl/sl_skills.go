@@ -8,18 +8,19 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-type Skills interface {
+type SkillService interface {
 	ListKnownSkills() (*types.IDIndex, error)
 	AddKnownSkill(types.ID) error
 	DeleteKnownSkill(types.ID) error
 }
 
 func (sl *sl) ListKnownSkills() (*types.IDIndex, error) {
-	err := sl.Setup(withKnownSkills)
+	var knownSkills *types.IDIndex
+	err := sl.Setup(withKnownSkills(&knownSkills))
 	if err != nil {
 		return nil, err
 	}
-	return sl.knownSkills, nil
+	return knownSkills, nil
 }
 
 func (sl *sl) AddKnownSkill(skillName types.ID) error {

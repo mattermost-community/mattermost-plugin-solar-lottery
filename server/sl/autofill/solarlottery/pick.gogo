@@ -13,7 +13,7 @@ import (
 	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 )
 
-func (af *fill) pickUser(from sl.UserMap) *sl.User {
+func (af *fill) pickUser(from sl.Users) *sl.User {
 	if len(from) == 0 {
 		return nil
 	}
@@ -50,7 +50,7 @@ func (af *fill) userWeight(user *sl.User) float64 {
 	return math.Pow(2.0, float64(af.shiftNumber-lastServed))
 }
 
-func (af *fill) pickNeed(requiredNeeds store.Needs, needPools map[string]sl.UserMap) (*store.Need, sl.UserMap) {
+func (af *fill) pickNeed(requiredNeeds store.Needs, needPools map[string]sl.Users) (*store.Need, sl.Users) {
 	if len(requiredNeeds) == 0 {
 		return nil, nil
 	}

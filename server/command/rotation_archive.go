@@ -17,20 +17,20 @@ func (c *Command) archiveRotation(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	r, _, err := c.loadRotationUsernames(fs)
+	rotationID, err := c.resolveRotation(fs)
 	if err != nil {
 		return "", err
 	}
 
-	err = c.SL.ArchiveRotation(r)
+	r, err := c.SL.ArchiveRotation(rotationID)
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed to archive %s", r.Name())
+		return "", errors.WithMessagef(err, "failed to archive %s", rotationID)
 	}
 
 	if *jsonOut {
 		return md.JSONBlock(r), nil
 	}
-	return "Archived rotation " + r.Name(), nil
+	return "Archived rotation " + r.Markdown(), nil
 }
 
 func (c *Command) debugDeleteRotation(parameters []string) (string, error) {
@@ -42,18 +42,18 @@ func (c *Command) debugDeleteRotation(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	r, _, err := c.loadRotationUsernames(fs)
+	rotationID, err := c.resolveRotation(fs)
 	if err != nil {
 		return "", err
 	}
 
-	err = c.SL.DebugDeleteRotation(r.RotationID)
+	err = c.SL.DebugDeleteRotation(rotationID)
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed to delete %s", r.Markdown())
+		return "", errors.WithMessagef(err, "failed to delete %s", rotationID)
 	}
 
 	if *jsonOut {
-		return md.JSONBlock(r), nil
+		return md.JSONBlock(rotationID), nil
 	}
-	return "Deleted rotation " + r.Markdown(), nil
+	return "Deleted rotation " + string(rotationID), nil
 }

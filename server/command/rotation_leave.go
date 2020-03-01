@@ -20,12 +20,12 @@ func (c *Command) leaveRotation(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	r, users, err := c.loadRotationUsernames(fs)
+	rotationID, mattermostUserIDs, err := c.resolveRotationUsernames(fs)
 	if err != nil {
 		return "", err
 	}
 
-	deleted, err := c.SL.LeaveRotation(r, users)
+	deleted, err := c.SL.LeaveRotation(mattermostUserIDs, rotationID)
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed, %s might have been updated", deleted.Markdown())
 	}
@@ -33,5 +33,5 @@ func (c *Command) leaveRotation(parameters []string) (string, error) {
 	if *jsonOut {
 		return md.JSONBlock(deleted), nil
 	}
-	return fmt.Sprintf("%s removed from rotation %s", deleted.Markdown(), r.Markdown()), nil
+	return fmt.Sprintf("%s removed from rotation %s", deleted.Markdown(), rotationID), nil
 }

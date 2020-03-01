@@ -24,7 +24,7 @@ func New(logger bot.Logger) sl.Autofiller {
 // map intact, but when called for a sequence of shifts, it relies on the caller
 // to carry the users from one call to the next, presumably by using the same
 // rotation object.
-func (*autofiller) FillShift(rotation *sl.Rotation, shiftNumber int, shift *sl.Shift, logger bot.Logger) (sl.UserMap, error) {
+func (*autofiller) FillShift(rotation *sl.Rotation, shiftNumber int, shift *sl.Shift, logger bot.Logger) (sl.Users, error) {
 	af, err := makeAutofill(
 		rotation.RotationID,
 		rotation.Size,

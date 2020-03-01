@@ -21,7 +21,7 @@ type Rotation struct {
 	InProgress        []*Task
 	MattermostUserIDs *types.IDIndex `json:",omitempty"`
 
-	users UserMap
+	users Users
 }
 
 func NewRotation() *Rotation {
@@ -34,19 +34,19 @@ func (r *Rotation) init() {
 	if r.MattermostUserIDs == nil {
 		r.MattermostUserIDs = types.NewIDIndex()
 	}
-	if r.users == nil {
-		r.users = UserMap{}
+	if r.users.IsEmpty() {
+		r.users = NewUsers()
 	}
 }
 
-func (rotation *Rotation) WithMattermostUserIDs(pool UserMap) *Rotation {
+func (rotation *Rotation) WithMattermostUserIDs(pool Users) *Rotation {
 	newRotation := *rotation
 	newRotation.MattermostUserIDs = types.NewIDIndex()
-	for id := range pool {
+	for _, id := range pool.IDs() {
 		newRotation.MattermostUserIDs.Set(id)
 	}
-	if pool == nil {
-		pool = UserMap{}
+	if pool.IsEmpty() {
+		pool = NewUsers()
 	}
 	newRotation.users = pool
 	return &newRotation
@@ -81,12 +81,12 @@ func (r *Rotation) MarkdownBullets() string {
 	return out
 }
 
-func (r *Rotation) MapUsers(ids *types.IDIndex) UserMap {
-	users := UserMap{}
+func (r *Rotation) FindUsers(mattermostUserIDs *types.IDIndex) []*User {
+	uu := []*User{}
 	for _, id := range r.MattermostUserIDs.IDs() {
-		users[id] = r.users[id]
+		uu = append(uu, r.users.Get(id))
 	}
-	return users
+	return uu
 }
 
 func (r *Rotation) IssueSource(sourceName types.ID) (*IssueSource, int) {

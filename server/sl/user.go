@@ -35,6 +35,10 @@ func NewUser(mattermostUserID types.ID) *User {
 	}
 }
 
+func (user *User) GetID() types.ID {
+	return user.MattermostUserID
+}
+
 func (user *User) WithLastServed(rotationID types.ID, finishTime types.Time) *User {
 	user.LastServed.Set(rotationID, finishTime.Unix())
 	return user

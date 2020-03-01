@@ -35,20 +35,20 @@ func (c *Command) rotationIssueSourceDelete(parameters []string) (string, error)
 	if err != nil {
 		return c.flagUsage(fs), err
 	}
-	r, err := c.loadRotation(fs)
+	rotationID, err := c.resolveRotation(fs)
 	if err != nil {
 		return "", err
 	}
 
-	err = c.SL.DeleteIssueSource(r, types.ID(fs.Arg(1)))
+	err = c.SL.DeleteIssueSource(rotationID, types.ID(fs.Arg(1)))
 	if err != nil {
 		return "", err
 	}
 
 	if *jsonOut {
-		return md.JSONBlock(r), nil
+		return md.JSONBlock(rotationID), nil
 	}
-	return fmt.Sprintf("%s deleted from rotation %s", fs.Arg(1), r.Markdown()), nil
+	return fmt.Sprintf("%s deleted from rotation %s", fs.Arg(1), rotationID), nil
 }
 
 func (c *Command) rotationIssueSourceRequire(parameters []string) (string, error) {
@@ -67,8 +67,7 @@ func (c *Command) rotationIssueSourceRequire(parameters []string) (string, error
 	// 	return "", err
 	// }
 
-	// r.
-	// 	err = c.SL.DeleteIssueSource(r, fs.Arg(1))
+	// r.DeleteIssueSource(r, fs.Arg(1))
 	// if err != nil {
 	// 	return "", err
 	// }

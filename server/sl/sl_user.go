@@ -16,14 +16,19 @@ import (
 
 const eUser = "user_"
 
-type Users interface {
+type UserService interface {
 	LoadMattermostUsername(username string) (*User, error)
-	Disqualify(users UserMap, skillName types.ID) error
-	Qualify(users UserMap, skillLevel SkillLevel) error
+	AddToCalendar(mattermostUserIDs *types.IDIndex, u *Unavailable) (Users, error)
+	ClearCalendar(mattermostUserIDs *types.IDIndex, interval types.Interval) (Users, error)
+	Disqualify(mattermostUserIDs *types.IDIndex, skillName types.ID) (Users, error)
+	Qualify(mattermostUserIDs *types.IDIndex, skillLevel SkillLevel) (Users, error)
+	JoinRotation(mattermostUserIDs *types.IDIndex, rotationID types.ID, starting types.Time) (Users, error)
+	LeaveRotation(mattermostUserIDs *types.IDIndex, rotationID types.ID) (Users, error)
+	LoadUsers(mattermostUserIDs *types.IDIndex) (Users, error)
 }
 
 func (sl *sl) ActingUser() (*User, error) {
-	err := sl.Setup(withActingUser)
+	err := sl.Setup(withExpandedActingUser)
 	if err != nil {
 		return nil, err
 	}
@@ -31,11 +36,6 @@ func (sl *sl) ActingUser() (*User, error) {
 }
 
 func (sl *sl) LoadMattermostUsername(username string) (*User, error) {
-	err := sl.Setup(withActingUserExpanded)
-	if err != nil {
-		return nil, err
-	}
-
 	if strings.HasPrefix(username, "@") {
 		username = username[1:]
 	}
@@ -51,75 +51,150 @@ func (sl *sl) LoadMattermostUsername(username string) (*User, error) {
 	return user, nil
 }
 
-func (sl *sl) Qualify(users UserMap, skillLevel SkillLevel) error {
-	err := sl.Setup(pushLogger("Qualify",
-		bot.LogContext{
-			ctxUsers:      users.String(),
-			ctxSkillLevel: skillLevel,
-		}))
+func (sl *sl) LoadUsers(mattermostUserIDs *types.IDIndex) (Users, error) {
+	users, err := sl.loadStoredUsers(mattermostUserIDs)
 	if err != nil {
-		return err
+		return users, err
+	}
+	err = sl.expandUsers(users)
+	return users, err
+}
+
+func (sl *sl) Qualify(mattermostUserIDs *types.IDIndex, skillLevel SkillLevel) (Users, error) {
+	var users Users
+	err := sl.Setup(
+		pushLogger("Qualify", bot.LogContext{ctxSkillLevel: skillLevel}),
+		withExpandedUsers(mattermostUserIDs, &users),
+	)
+	if err != nil {
+		return users, err
 	}
 	defer sl.popLogger()
 
 	err = sl.AddKnownSkill(skillLevel.Skill)
 	if err != nil {
-		return err
+		return users, err
 	}
-	for _, user := range users {
+	for _, user := range users.AsArray() {
 		err = sl.updateUserSkill(user, skillLevel)
 		if err != nil {
-			return err
+			return users, err
 		}
 	}
 
 	sl.Infof("%s added skill %s to %s.",
 		sl.actingUser.Markdown(), skillLevel, users.Markdown())
-	return nil
+	return users, nil
 }
 
-func (sl *sl) Disqualify(users UserMap, skillName types.ID) error {
+func (sl *sl) Disqualify(mattermostUserIDs *types.IDIndex, skillName types.ID) (Users, error) {
+	var users Users
 	err := sl.Setup(
-		pushLogger("Disqualify",
-			bot.LogContext{
-				ctxUsers: users.String(),
-				ctxSkill: skillName,
-			}),
+		pushLogger("Disqualify", bot.LogContext{ctxSkill: skillName}),
 		withValidSkillName(skillName),
+		withExpandedUsers(mattermostUserIDs, &users),
 	)
 	if err != nil {
-		return err
+		return users, err
 	}
 	defer sl.popLogger()
 
-	for _, user := range users {
+	for _, user := range users.AsArray() {
 		err = sl.updateUserSkill(user, NewSkillLevel(skillName, 0))
 		if err != nil {
-			return err
+			return users, err
 		}
 	}
 
 	sl.Infof("%s removed skill %s from %s.",
 		sl.actingUser.Markdown(), skillName, users.Markdown())
-	return nil
+	return users, nil
 }
 
-func (sl *sl) ExpandUser(user *User) error {
-	if user.mattermostUser != nil {
-		return nil
-	}
-	mattermostUser, err := sl.PluginAPI.GetMattermostUser(string(user.MattermostUserID))
+func (sl *sl) JoinRotation(mattermostUserIDs *types.IDIndex, rotationID types.ID, starting types.Time) (Users, error) {
+	var r *Rotation
+	var users Users
+	err := sl.Setup(
+		pushLogger("JoinRotation", bot.LogContext{ctxStarting: starting}),
+		withRotation(rotationID, &r),
+		withExpandedUsers(mattermostUserIDs, &users),
+	)
 	if err != nil {
-		return err
+		return NewUsers(), err
 	}
-	user.mattermostUser = mattermostUser
+	defer sl.popLogger()
 
-	loc, err := time.LoadLocation(mattermostUser.GetPreferredTimezone())
+	added := NewUsers()
+
+	err = sl.updateRotation(r, func() error {
+		for _, user := range users.AsArray() {
+			if r.MattermostUserIDs.Contains(user.MattermostUserID) {
+				sl.Debugf("%s is already in rotation %s.",
+					added.MarkdownWithSkills(), r.Markdown())
+				continue
+			}
+
+			// A new person may be given some slack - setting starting in the
+			// future all but guarantees they won't be selected until then.
+			user.LastServed.Set(r.RotationID, starting.Unix())
+
+			user, err = sl.storeUserWelcomeNew(user)
+			if err != nil {
+				return err
+			}
+
+			if r.MattermostUserIDs == nil {
+				r.MattermostUserIDs = types.NewIDIndex()
+			}
+			r.MattermostUserIDs.Set(user.MattermostUserID)
+			sl.messageWelcomeToRotation(user, r)
+			added.Set(user)
+		}
+		return nil
+	})
+
+	sl.Infof("%s added %s to %s.",
+		sl.actingUser.Markdown(), added.MarkdownWithSkills(), r.Markdown())
+	return added, nil
+}
+
+func (sl *sl) LeaveRotation(mattermostUserIDs *types.IDIndex, rotationID types.ID) (Users, error) {
+	var r *Rotation
+	var users Users
+	err := sl.Setup(
+		pushLogger("LeaveRotation", nil),
+		withRotation(rotationID, &r),
+		withExpandedUsers(mattermostUserIDs, &users),
+	)
 	if err != nil {
-		return err
+		return users, err
 	}
-	user.location = loc
-	return nil
+	defer sl.popLogger()
+
+	deleted := NewUsers()
+	for _, user := range users.AsArray() {
+		if !r.MattermostUserIDs.Contains(user.MattermostUserID) {
+			sl.Debugf("%s is not found in rotation %s", user.Markdown(), r.Markdown())
+			continue
+		}
+
+		user.LastServed.Delete(r.RotationID)
+		_, err = sl.storeUserWelcomeNew(user)
+		if err != nil {
+			return deleted, err
+		}
+		r.MattermostUserIDs.Delete(user.MattermostUserID)
+		sl.messageLeftRotation(user, r)
+		deleted.Set(user)
+	}
+
+	err = sl.Store.Entity(KeyRotation).Store(r.RotationID, r)
+	if err != nil {
+		return deleted, err
+	}
+
+	sl.Infof("%s removed from %s.", deleted.Markdown(), r.Markdown())
+	return deleted, nil
 }
 
 func (sl *sl) loadOrMakeUser(mattermostUserID types.ID) (*User, bool, error) {
@@ -132,7 +207,35 @@ func (sl *sl) loadOrMakeUser(mattermostUserID types.ID) (*User, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}
+	user.loaded = true
 	return &user, false, nil
+}
+
+func (sl *sl) expandUser(user *User) error {
+	if user == nil || user.MattermostUserID == "" {
+		return errors.New("unreachable: expandUser: nil or no ID")
+	}
+	if !user.loaded {
+		err := sl.Store.Entity(KeyUser).Load(user.MattermostUserID, user)
+		if err != nil {
+			return err
+		}
+		user.loaded = true
+	}
+	if user.mattermostUser == nil {
+		mattermostUser, err := sl.PluginAPI.GetMattermostUser(string(user.MattermostUserID))
+		if err != nil {
+			return err
+		}
+		user.mattermostUser = mattermostUser
+
+		loc, err := time.LoadLocation(mattermostUser.GetPreferredTimezone())
+		if err != nil {
+			return err
+		}
+		user.location = loc
+	}
+	return nil
 }
 
 // storeUserWelcomeNew checks if the user being stored is new, and welcomes the user.
@@ -179,15 +282,15 @@ func (sl *sl) updateUserSkill(user *User, skillLevel SkillLevel) error {
 	return nil
 }
 
-func (sl *sl) loadStoredUsers(ids *types.IDIndex) (UserMap, error) {
-	users := UserMap{}
+func (sl *sl) loadStoredUsers(ids *types.IDIndex) (Users, error) {
+	users := NewUsers()
 	for _, id := range ids.IDs() {
 		var user User
 		err := sl.Store.Entity(KeyUser).Load(id, &user)
 		if err != nil {
-			return nil, err
+			return NewUsers(), err
 		}
-		users[id] = &user
+		users.Set(&user)
 	}
 	return users, nil
 }

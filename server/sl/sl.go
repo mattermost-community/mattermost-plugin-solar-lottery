@@ -10,25 +10,26 @@ import (
 )
 
 const (
-	ctxAPI            = "API"
 	ctxActingUserID   = "ActingUserID"
 	ctxActingUsername = "ActingUsername"
+	ctxAPI            = "API"
+	ctxInterval       = "Interval"
 	ctxRotationID     = "RotationID"
-	ctxUsers          = "Users"
 	ctxSkill          = "Skill"
 	ctxSkillLevel     = "SkillLevel"
+	ctxSourceName     = "SourceName"
 	ctxStarting       = "Starting"
-	ctxUsernames      = "Usernames"
 	ctxUnavailable    = "Unavailable"
-	ctxInterval       = "Interval"
+	ctxUserIDs        = "UserIDs"
+	ctxUsernames      = "Usernames"
+	ctxUsers          = "Users"
 )
 
 type SL interface {
-	Calendar
-	Rotations
-	Skills
-	Issues
-	Users
+	RotationService
+	SkillService
+	IssueService
+	UserService
 
 	PluginAPI
 	bot.Logger
@@ -49,10 +50,8 @@ type sl struct {
 	// set by withActingUser or withActingUserExpanded.
 	actingUser *User
 
-	// Common indices (set by withXXX).
-	knownSkills     *types.IDIndex
-	activeRotations *types.IDIndex
-	loggers         []bot.Logger
+	// Stack of loggers
+	loggers []bot.Logger
 }
 
 func (sl *sl) Config() *config.Config {

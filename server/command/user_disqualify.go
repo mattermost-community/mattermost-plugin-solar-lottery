@@ -19,17 +19,16 @@ func (c *Command) disqualifyUsers(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	users, err := c.loadUsernames(fs.Args())
+	mattermostUserIDs, err := c.resolveUsernames(fs.Args())
 	if err != nil {
 		return "", err
 	}
-
-	err = c.SL.Disqualify(users, types.ID(*skill))
+	disqualified, err := c.SL.Disqualify(mattermostUserIDs, types.ID(*skill))
 	if err != nil {
 		return "", err
 	}
 	if *jsonOut {
-		return md.JSONBlock(users), nil
+		return md.JSONBlock(disqualified), nil
 	}
-	return fmt.Sprintf("Disqualified %s from %s", users.Markdown(), *skill), nil
+	return fmt.Sprintf("Disqualified %s from %s", disqualified.Markdown(), *skill), nil
 }

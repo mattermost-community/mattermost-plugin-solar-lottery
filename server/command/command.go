@@ -245,16 +245,16 @@ func fSkillLevel(fs *pflag.FlagSet) *sl.SkillLevel {
 	return &skillLevel
 }
 
-func (c *Command) loadUsernames(args []string) (users sl.UserMap, err error) {
-	users = sl.UserMap{}
+func (c *Command) resolveUsernames(args []string) (mattermostUserIDs *types.IDIndex, err error) {
+	mattermostUserIDs = types.NewIDIndex()
 	// if no args provided, return the acting user
 	if len(args) == 0 {
 		user, err := c.SL.ActingUser()
 		if err != nil {
 			return nil, err
 		}
-		users[user.MattermostUserID] = user
-		return users, nil
+		mattermostUserIDs.Set(user.MattermostUserID)
+		return mattermostUserIDs, nil
 	}
 
 	for _, arg := range args {
@@ -266,64 +266,59 @@ func (c *Command) loadUsernames(args []string) (users sl.UserMap, err error) {
 		if err != nil {
 			return nil, err
 		}
-		users[user.MattermostUserID] = user
+		mattermostUserIDs.Set(user.MattermostUserID)
 	}
 
-	return users, nil
+	return mattermostUserIDs, nil
 }
 
-func (c *Command) loadRotationUsernames(fs *pflag.FlagSet) (*sl.Rotation, sl.UserMap, error) {
+func (c *Command) resolveRotationUsernames(fs *pflag.FlagSet) (types.ID, *types.IDIndex, error) {
 	ref, _ := fs.GetString(flagRotation)
 	usernames := []string{}
-	rid := types.ID(ref)
+	rotationID := types.ID(ref)
 
 	for _, arg := range fs.Args() {
 		if strings.HasPrefix(arg, "@") {
 			usernames = append(usernames, arg)
 		} else {
-			if rid != "" {
-				return nil, nil, errors.Errorf("rotation %s is already specified, cant't interpret %s", rid, arg)
+			if rotationID != "" {
+				return "", nil, errors.Errorf("rotation %s is already specified, cant't interpret %s", rotationID, arg)
 			}
-			rid = types.ID(arg)
+			rotationID = types.ID(arg)
 		}
 	}
 
 	var err error
-	var r *sl.Rotation
-	if rid == "" {
-		return nil, nil, errors.New("rotation must be specified")
+	if rotationID == "" {
+		return "", nil, errors.New("rotation must be specified")
 	}
 	// explicit ref is used as is
 	if ref == "" {
-		rid, err = c.SL.ResolveRotation(string(rid))
+		rotationID, err = c.SL.ResolveRotationName(string(rotationID))
 		if err != nil {
-			return nil, nil, err
+			return "", nil, err
 		}
 	}
-	r, err = c.SL.LoadRotation(rid)
-	if err != nil {
-		return nil, nil, err
-	}
 
-	users, err := c.loadUsernames(usernames)
+	mattermostUserIDs, err := c.resolveUsernames(usernames)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, err
 	}
-	return r, users, nil
+	return rotationID, mattermostUserIDs, nil
 }
 
-func (c *Command) loadRotation(fs *pflag.FlagSet) (*sl.Rotation, error) {
+func (c *Command) resolveRotation(fs *pflag.FlagSet) (types.ID, error) {
 	var err error
 	ref, _ := fs.GetString(flagRotation)
-	rid := types.ID(ref)
+	rotationID := types.ID(ref)
 	if ref == "" {
 		if len(fs.Args()) < 1 {
-			return nil, errors.New("no rotation specified")
+			return "", errors.New("no rotation specified")
 		}
-		rid, err = c.SL.ResolveRotation(fs.Arg(0))
+		rotationID, err = c.SL.ResolveRotationName(fs.Arg(0))
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 	}
-	return c.SL.LoadRotation(rid)
+	return rotationID, nil
 }

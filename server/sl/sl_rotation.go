@@ -15,29 +15,28 @@ import (
 
 var ErrMultipleResults = errors.New("multiple resolts found")
 
-type Rotations interface {
-	ExpandRotation(*Rotation) error
-	JoinRotation(*Rotation, UserMap, types.Time) (added UserMap, err error)
-	LeaveRotation(*Rotation, UserMap) (deleted UserMap, err error)
+type RotationService interface {
 	AddRotation(*Rotation) error
-	ArchiveRotation(*Rotation) error
-	DebugDeleteRotation(types.ID) error
-	LoadRotation(types.ID) (*Rotation, error)
-	MakeRotation(rotationName string) (*Rotation, error)
-	ResolveRotation(string) (types.ID, error)
+	ArchiveRotation(rotationID types.ID) (*Rotation, error)
+	DebugDeleteRotation(rotationID types.ID) error
 	LoadActiveRotations() (*types.IDIndex, error)
+	LoadRotation(rotationID types.ID) (*Rotation, error)
+	MakeRotation(rotationName string) (*Rotation, error)
+	ResolveRotationName(string) (types.ID, error)
 }
 
 func (sl *sl) AddRotation(r *Rotation) error {
-	err := sl.Setup(pushLogger("AddRotation", bot.LogContext{ctxRotationID: r.RotationID}),
-		withActiveRotations,
+	var active *types.IDIndex
+	err := sl.Setup(
+		pushLogger("AddRotation", bot.LogContext{ctxRotationID: r.RotationID}),
+		withActiveRotations(&active),
 	)
 	if err != nil {
 		return err
 	}
 	defer sl.popLogger()
 
-	if sl.activeRotations.Contains(r.RotationID) {
+	if active.Contains(r.RotationID) {
 		return ErrAlreadyExists
 	}
 
@@ -45,7 +44,7 @@ func (sl *sl) AddRotation(r *Rotation) error {
 	if err != nil {
 		return err
 	}
-	sl.activeRotations.Set(r.RotationID)
+	active.Set(r.RotationID)
 	err = sl.Store.Entity(KeyRotation).Store(r.RotationID, r)
 	if err != nil {
 		return err
@@ -56,20 +55,22 @@ func (sl *sl) AddRotation(r *Rotation) error {
 }
 
 func (sl *sl) LoadActiveRotations() (*types.IDIndex, error) {
-	err := sl.Setup(withActiveRotations)
+	var active *types.IDIndex
+	err := sl.Setup(withActiveRotations(&active))
 	if err != nil {
 		return nil, err
 	}
-	return sl.activeRotations, nil
+	return active, nil
 }
 
-func (sl *sl) ResolveRotation(pattern string) (types.ID, error) {
-	err := sl.Setup(withActiveRotations)
+func (sl *sl) ResolveRotationName(pattern string) (types.ID, error) {
+	var active *types.IDIndex
+	err := sl.Setup(withActiveRotations(&active))
 	if err != nil {
 		return "", err
 	}
 
-	if sl.activeRotations.Contains(types.ID(pattern)) {
+	if active.Contains(types.ID(pattern)) {
 		// Exact match
 		return types.ID(pattern), nil
 	}
@@ -80,7 +81,7 @@ func (sl *sl) ResolveRotation(pattern string) (types.ID, error) {
 		return "", err
 	}
 
-	for _, id := range sl.activeRotations.IDs() {
+	for _, id := range active.IDs() {
 		if re.MatchString(string(id)) {
 			ids = append(ids, id)
 		}
@@ -96,10 +97,14 @@ func (sl *sl) ResolveRotation(pattern string) (types.ID, error) {
 	return "", errors.Errorf("ambiguous results: %v", ids)
 }
 
-func (sl *sl) ArchiveRotation(r *Rotation) error {
-	err := sl.Setup(pushLogger("ArchiveRotation", bot.LogContext{ctxRotationID: r.RotationID}))
+func (sl *sl) ArchiveRotation(rotationID types.ID) (*Rotation, error) {
+	var r *Rotation
+	err := sl.Setup(
+		pushLogger("ArchiveRotation", nil),
+		withRotation(rotationID, &r),
+	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer sl.popLogger()
 
@@ -107,16 +112,15 @@ func (sl *sl) ArchiveRotation(r *Rotation) error {
 
 	err = sl.Store.Entity(KeyRotation).Store(r.RotationID, r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = sl.Store.IDIndex(KeyActiveRotations).Delete(r.RotationID)
 	if err != nil {
-		return errors.WithMessagef(err, "failed to store rotation %s", r.RotationID)
+		return nil, errors.WithMessagef(err, "failed to store rotation %s", r.RotationID)
 	}
-	sl.activeRotations.Delete(r.RotationID)
 
 	sl.Infof("%s archived rotation %s.", sl.actingUser.Markdown(), r.Markdown())
-	return nil
+	return r, nil
 }
 
 func (sl *sl) DebugDeleteRotation(rotationID types.ID) error {
@@ -134,19 +138,19 @@ func (sl *sl) DebugDeleteRotation(rotationID types.ID) error {
 	if err != nil {
 		return err
 	}
-	sl.activeRotations.Delete(rotationID)
 
 	sl.Infof("%s deleted rotation %s.", sl.actingUser.Markdown(), rotationID)
 	return nil
 }
 
-func (sl *sl) LoadRotation(rotationID types.ID) (*Rotation, error) {
-	err := sl.Setup(withActiveRotations)
+func (sl *sl) loadRotation(rotationID types.ID) (*Rotation, error) {
+	var active *types.IDIndex
+	err := sl.Setup(withActiveRotations(&active))
 	if err != nil {
 		return nil, err
 	}
 
-	if !sl.activeRotations.Contains(rotationID) {
+	if !active.Contains(rotationID) {
 		return nil, errors.Errorf("rotationID %s not found", rotationID)
 	}
 
@@ -170,8 +174,9 @@ func (sl *sl) MakeRotation(rotationName string) (*Rotation, error) {
 	return r, nil
 }
 
-func (sl *sl) ExpandRotation(r *Rotation) error {
-	if r.MattermostUserIDs == nil || r.MattermostUserIDs.Len() == len(r.users) {
+func (sl *sl) expandRotation(r *Rotation) error {
+	if r.MattermostUserIDs.IsEmpty() ||
+		(!r.users.IsEmpty() && r.users.Len() == r.MattermostUserIDs.Len()) {
 		return nil
 	}
 
@@ -180,7 +185,7 @@ func (sl *sl) ExpandRotation(r *Rotation) error {
 	if err != nil {
 		return err
 	}
-	err = sl.ExpandUserMap(users)
+	err = sl.expandUsers(users)
 	if err != nil {
 		return err
 	}
@@ -188,102 +193,28 @@ func (sl *sl) ExpandRotation(r *Rotation) error {
 	return nil
 }
 
-func (sl *sl) JoinRotation(r *Rotation, users UserMap, starting types.Time) (UserMap, error) {
-	err := sl.Setup(pushLogger("JoinRotation", bot.LogContext{
-		ctxRotationID: r.RotationID,
-		ctxUsers:      users.String(),
-		ctxStarting:   starting,
-	}))
-	if err != nil {
-		return nil, err
-	}
-	defer sl.popLogger()
-
-	added := UserMap{}
-
-	err = sl.updateExpandedRotation(r, func(r *Rotation) error {
-		for _, user := range users {
-			if r.MattermostUserIDs.Contains(user.MattermostUserID) {
-				sl.Debugf("%s is already in rotation %s.",
-					added.MarkdownWithSkills(), r.Markdown())
-				continue
-			}
-
-			// A new person may be given some slack - setting starting in the
-			// future all but guarantees they won't be selected until then.
-			user.LastServed.Set(r.RotationID, starting.Unix())
-
-			user, err = sl.storeUserWelcomeNew(user)
-			if err != nil {
-				return err
-			}
-
-			if r.MattermostUserIDs == nil {
-				r.MattermostUserIDs = types.NewIDIndex()
-			}
-			r.MattermostUserIDs.Set(user.MattermostUserID)
-			sl.messageWelcomeToRotation(user, r)
-			added[user.MattermostUserID] = user
-		}
-		return nil
-	})
-
-	sl.Infof("%s added %s to %s.",
-		sl.actingUser.Markdown(), added.MarkdownWithSkills(), r.Markdown())
-	return added, nil
-}
-
-func (sl *sl) LeaveRotation(r *Rotation, users UserMap) (UserMap, error) {
-	err := sl.Setup(pushLogger("LeaveRotation",
-		bot.LogContext{
-			ctxRotationID: r.RotationID,
-			ctxUsers:      users.String(),
-		}))
-	if err != nil {
-		return nil, err
-	}
-	defer sl.popLogger()
-
-	deleted := UserMap{}
-	for _, user := range users {
-		if !r.MattermostUserIDs.Contains(user.MattermostUserID) {
-			sl.Debugf("%s is not found in rotation %s", user.Markdown(), r.Markdown())
-			continue
-		}
-
-		user.LastServed.Delete(r.RotationID)
-		_, err = sl.storeUserWelcomeNew(user)
-		if err != nil {
-			return deleted, err
-		}
-		r.MattermostUserIDs.Delete(user.MattermostUserID)
-		if len(r.users) > 0 {
-			delete(r.users, user.MattermostUserID)
-		}
-		sl.messageLeftRotation(user, r)
-		deleted[user.MattermostUserID] = user
-	}
-
-	err = sl.Store.Entity(KeyRotation).Store(r.RotationID, r)
-	if err != nil {
-		return deleted, err
-	}
-
-	sl.Infof("%s removed from %s.", deleted.Markdown(), r.Markdown())
-	return deleted, nil
-}
-
-func (sl *sl) updateExpandedRotation(r *Rotation, updatef func(*Rotation) error) error {
+func (sl *sl) LoadRotation(rotationID types.ID) (*Rotation, error) {
+	var r *Rotation
 	err := sl.Setup(
-		pushLogger("updateRotation", bot.LogContext{ctxRotationID: r.RotationID}),
-		withRotationExpanded(r),
+		// pushLogger("LoadRotation", nil),
+		withExpandedRotation(rotationID, &r),
 	)
+	if err != nil {
+		return nil, err
+	}
+	defer sl.popLogger()
+
+	return r, nil
+}
+
+func (sl *sl) updateRotation(r *Rotation, updatef func() error) error {
+	err := sl.Setup(pushLogger("updateRotation", bot.LogContext{ctxRotationID: r.RotationID}))
 	if err != nil {
 		return err
 	}
 	defer sl.popLogger()
 
-	err = updatef(r)
+	err = updatef()
 	if err != nil {
 		return err
 	}

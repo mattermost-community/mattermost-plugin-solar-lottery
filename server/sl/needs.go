@@ -34,7 +34,7 @@ func (needs Needs) Markdown() string {
 	return strings.Join(ss, ", ")
 }
 
-func (needs Needs) UnmetRequirements(users UserMap) Needs {
+func (needs Needs) UnmetRequirements(users Users) Needs {
 	work := NewNeeds()
 	for _, id := range needs.IDs() {
 		work.Set(id, needs.Get(id))
@@ -42,7 +42,7 @@ func (needs Needs) UnmetRequirements(users UserMap) Needs {
 
 	for _, id := range work.IDs() {
 		skillLevel := ParseSkillLevel(id)
-		for _, user := range users {
+		for _, user := range users.AsArray() {
 			if user.IsQualified(skillLevel) {
 				work.Set(id, work.Get(id)-1)
 			}
@@ -67,8 +67,8 @@ func NewNeed(count int, skillLevel SkillLevel) *Need {
 	}
 }
 
-func (need Need) GetID() string {
-	return need.SkillLevel.String()
+func (need Need) GetID() types.ID {
+	return types.ID(need.SkillLevel.String())
 }
 
 func (need Need) String() string {

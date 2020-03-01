@@ -43,7 +43,7 @@ func (sl *sl) Guess(rotation *Rotation, startingShiftNumber int, numShifts int) 
 			if autofiller == nil {
 				return nil, errors.Errorf("unsupported rotation type %s", rotation.Type)
 			}
-			var added UserMap
+			var added Users
 			added, err = autofiller.FillShift(rotation, shiftNumber, shift, logger)
 			if err != nil {
 				return nil, err

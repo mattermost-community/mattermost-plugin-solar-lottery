@@ -15,7 +15,7 @@ func (sl *sl) dmUser(user *User, message string) {
 }
 
 func (sl *sl) messageWelcomeNewUser(user *User) {
-	sl.ExpandUser(user)
+	sl.expandUser(user)
 
 	// There is the special case when a user uses the plugin for the first time,
 	// in which case the actingUser is not yet set. Default to the "subject" user.
@@ -51,7 +51,7 @@ func (sl *sl) messageLeftRotation(user *User, rotation *Rotation) {
 }
 
 func (sl *sl) messageAddedSkill(user *User, skillName string, level int) {
-	sl.ExpandUser(user)
+	sl.expandUser(user)
 	if level == 0 {
 		sl.dmUser(user,
 			fmt.Sprintf("%s added skill %s, level %s to your profile.\n"+
@@ -71,9 +71,9 @@ func (sl *sl) messageAddedSkill(user *User, skillName string, level int) {
 }
 
 func (sl *sl) messageNewTask(rotation *Rotation, t *Task) {
-	sl.ExpandRotation(rotation)
+	sl.expandRotation(rotation)
 
-	for _, user := range rotation.users {
+	for _, user := range rotation.users.AsArray() {
 		sl.dmUser(user,
 			fmt.Sprintf("%s opened %s.\n"+
 				"Use `TODO` if you would like to participate.\n",
@@ -83,9 +83,9 @@ func (sl *sl) messageNewTask(rotation *Rotation, t *Task) {
 }
 
 func (sl *sl) messageTaskStarted(rotation *Rotation, t *Task) {
-	sl.ExpandRotation(rotation)
+	sl.expandRotation(rotation)
 
-	for _, user := range rotation.MapUsers(t.MattermostUserIDs) {
+	for _, user := range rotation.FindUsers(t.MattermostUserIDs) {
 		sl.dmUser(user,
 			fmt.Sprintf("###### Your %s started!\n"+
 				"%s started %s.\n\nTODO runbook URL/channel",
@@ -96,9 +96,9 @@ func (sl *sl) messageTaskStarted(rotation *Rotation, t *Task) {
 }
 
 func (sl *sl) messageTaskWillStart(rotation *Rotation, t *Task) {
-	sl.ExpandRotation(rotation)
+	sl.expandRotation(rotation)
 
-	for _, user := range rotation.MapUsers(t.MattermostUserIDs) {
+	for _, user := range rotation.FindUsers(t.MattermostUserIDs) {
 		sl.dmUser(user,
 			fmt.Sprintf("Your %s will start on TODO\n\nTODO runbook URL/channel",
 				t.Markdown()))
@@ -106,9 +106,9 @@ func (sl *sl) messageTaskWillStart(rotation *Rotation, t *Task) {
 }
 
 func (sl *sl) messageTaskFinished(rotation *Rotation, t *Task) {
-	sl.ExpandRotation(rotation)
+	sl.expandRotation(rotation)
 
-	for _, user := range rotation.MapUsers(t.MattermostUserIDs) {
+	for _, user := range rotation.FindUsers(t.MattermostUserIDs) {
 		sl.dmUser(user,
 			fmt.Sprintf("###### Done with %s!\n"+
 				"%s finished %s. Details:\n%s",
@@ -120,21 +120,21 @@ func (sl *sl) messageTaskFinished(rotation *Rotation, t *Task) {
 }
 
 func (sl *sl) messageTaskWillFinish(rotation *Rotation, t *Task) {
-	sl.ExpandRotation(rotation)
+	sl.expandRotation(rotation)
 
-	for _, user := range rotation.MapUsers(t.MattermostUserIDs) {
+	for _, user := range rotation.FindUsers(t.MattermostUserIDs) {
 		sl.dmUser(user,
 			fmt.Sprintf("Your %s will finish on TODO\n\nTODO runbook URL/channel",
 				t.Markdown()))
 	}
 }
 
-func (sl *sl) messageAddedUsersToTask(added UserMap, rotation *Rotation, t *Task) {
-	sl.ExpandRotation(rotation)
+func (sl *sl) messageAddedUsersToTask(added Users, rotation *Rotation, t *Task) {
+	sl.expandRotation(rotation)
 
 	// Notify the previous shift users that new volunteers have been added
-	for _, user := range rotation.MapUsers(t.MattermostUserIDs) {
-		if added[user.MattermostUserID] != nil {
+	for _, user := range rotation.FindUsers(t.MattermostUserIDs) {
+		if !added.Contains(user.MattermostUserID) {
 			continue
 		}
 		sl.dmUser(user,
@@ -144,7 +144,7 @@ func (sl *sl) messageAddedUsersToTask(added UserMap, rotation *Rotation, t *Task
 				t.Markdown()))
 	}
 
-	for _, user := range added {
+	for _, user := range added.AsArray() {
 		sl.dmUser(user,
 			fmt.Sprintf("%s assigned you to %s",
 				sl.actingUser.Markdown(),

@@ -152,7 +152,7 @@ func (sl *sl) autopilotStartShift(rotation *Rotation, now time.Time, currentShif
 	return currentShiftNumber, currentShift, nil
 }
 
-func (sl *sl) autopilotFill(rotation *Rotation, now time.Time, currentShiftNumber int, logger bot.Logger) ([]int, []*Shift, []UserMap, error) {
+func (sl *sl) autopilotFill(rotation *Rotation, now time.Time, currentShiftNumber int, logger bot.Logger) ([]int, []*Shift, []Users, error) {
 	if !rotation.Autopilot.Fill {
 		return nil, nil, nil, errors.New("not configured to auto-fill")
 	}
@@ -174,7 +174,7 @@ func (sl *sl) autopilotFill(rotation *Rotation, now time.Time, currentShiftNumbe
 	return sl.fillShifts(rotation, startingShiftNumber, numShifts, now, logger)
 }
 
-func (sl *sl) autopilotNotifyCurrent(rotation *Rotation, now time.Time, currentShiftNumber int) (UserMap, error) {
+func (sl *sl) autopilotNotifyCurrent(rotation *Rotation, now time.Time, currentShiftNumber int) (Users, error) {
 	if !rotation.Autopilot.Notify {
 		return nil, errors.New("not configured")
 	}
@@ -208,7 +208,7 @@ func (sl *sl) autopilotNotifyCurrent(rotation *Rotation, now time.Time, currentS
 	return rotation.ShiftUsers(currentShift), nil
 }
 
-func (sl *sl) autopilotNotifyNext(rotation *Rotation, now time.Time, currentShiftNumber int) (UserMap, error) {
+func (sl *sl) autopilotNotifyNext(rotation *Rotation, now time.Time, currentShiftNumber int) (Users, error) {
 	if !rotation.Autopilot.Notify {
 		return nil, errors.New("not configured to notify")
 	}
@@ -240,7 +240,7 @@ func (sl *sl) autopilotNotifyNext(rotation *Rotation, now time.Time, currentShif
 	return rotation.ShiftUsers(nextShift), nil
 }
 
-func (sl *sl) fillShifts(rotation *Rotation, startingShiftNumber, numShifts int, now time.Time, logger bot.Logger) ([]int, []*Shift, []UserMap, error) {
+func (sl *sl) fillShifts(rotation *Rotation, startingShiftNumber, numShifts int, now time.Time, logger bot.Logger) ([]int, []*Shift, []Users, error) {
 	// Guess' logs are too verbose - suppress
 	prevLogger := sl.Logger
 	sl.Logger = &bot.NilLogger{}
@@ -255,9 +255,9 @@ func (sl *sl) fillShifts(rotation *Rotation, startingShiftNumber, numShifts int,
 
 	var filledShiftNumbers []int
 	var filledShifts []*Shift
-	var addedUsers []UserMap
+	var addedUsers []Users
 
-	appendShift := func(shiftNumber int, shift *Shift, added UserMap) {
+	appendShift := func(shiftNumber int, shift *Shift, added Users) {
 		filledShiftNumbers = append(filledShiftNumbers, shiftNumber)
 		filledShifts = append(filledShifts, shift)
 		addedUsers = append(addedUsers, added)
@@ -285,7 +285,7 @@ func (sl *sl) fillShifts(rotation *Rotation, startingShiftNumber, numShifts int,
 		// shifts coming from Guess are either loaded with their respective
 		// status, or are Open. (in reality should always be Open).
 		shift := shifts[n]
-		added := UserMap{}
+		added := NewUsers()
 		for id, user := range rotation.ShiftUsers(shift) {
 			if before[id] == nil {
 				added[id] = user

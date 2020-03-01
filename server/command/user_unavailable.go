@@ -29,7 +29,7 @@ func (c *Command) userUnavailable(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	users, err := c.loadUsernames(fs.Args())
+	mattermostUserIDs, err := c.resolveUsernames(fs.Args())
 	if err != nil {
 		return "", err
 	}
@@ -38,25 +38,26 @@ func (c *Command) userUnavailable(parameters []string) (string, error) {
 		Finish: *finish,
 	}
 
+	var affected sl.Users
 	if *clear {
-		err = c.SL.ClearCalendar(users, interval)
+		affected, err = c.SL.ClearCalendar(mattermostUserIDs, interval)
 		if err != nil {
 			return "", err
 		}
 		if *jsonOut {
-			return md.JSONBlock(users), nil
+			return md.JSONBlock(affected), nil
 		}
-		return fmt.Sprintf("cleared %s to %s from %s", start, finish, users.Markdown()), nil
+		return fmt.Sprintf("cleared %s to %s from %s", start, finish, affected.Markdown()), nil
 	}
 
 	u := sl.NewUnavailable(sl.ReasonPersonal, interval)
-	err = c.SL.AddToCalendar(users, u)
+	affected, err = c.SL.AddToCalendar(mattermostUserIDs, u)
 	if err != nil {
 		return "", err
 	}
 
 	if *jsonOut {
-		return md.JSONBlock(users), nil
+		return md.JSONBlock(affected), nil
 	}
-	return fmt.Sprintf("Added %s to %s", actingUser.MarkdownUnavailable(u), users.Markdown()), nil
+	return fmt.Sprintf("Added %s to %s", actingUser.MarkdownUnavailable(u), affected.Markdown()), nil
 }

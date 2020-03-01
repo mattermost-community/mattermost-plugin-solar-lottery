@@ -46,30 +46,30 @@ func TestCommandUserUnavailable(t *testing.T) {
 			`)
 		require.NoError(t, err)
 
-		users := sl.UserMap{}
+		users := sl.NewUsers()
 		out, err = runJSONCommand(t, SL, `
 				/lotto user unavailable --clear -s 2025-01-30T10:00 -f 2025-02-08T11:00
 				`, &users)
 		require.NoError(t, err)
-		require.EqualValues(t, []string{"test-user"}, users.IDs().TestIDs())
-		require.Len(t, users["test-user"].Calendar, 2)
+		require.EqualValues(t, []string{"test-user"}, users.TestIDs())
+		require.Equal(t, 2, len(users.Get("test-user").Calendar))
 		require.EqualValues(t,
-			sl.Unavailable{
+			&sl.Unavailable{
 				Interval: types.Interval{
 					Start:  types.NewTime(time.Date(2025, 1, 1, 19, 0, 0, 0, time.UTC)),
 					Finish: types.NewTime(time.Date(2025, 1, 2, 17, 30, 0, 0, time.UTC)),
 				},
 				Reason: sl.ReasonPersonal,
 			},
-			*users["test-user"].Calendar[0])
+			users.Get("test-user").Calendar[0])
 		require.EqualValues(t,
-			sl.Unavailable{
+			&sl.Unavailable{
 				Interval: types.Interval{
 					Start:  types.NewTime(time.Date(2025, 6, 28, 7, 0, 0, 0, time.UTC)),
 					Finish: types.NewTime(time.Date(2025, 7, 5, 7, 0, 0, 0, time.UTC)),
 				},
 				Reason: sl.ReasonPersonal,
 			},
-			*users["test-user"].Calendar[1])
+			users.Get("test-user").Calendar[1])
 	})
 }

@@ -48,6 +48,9 @@ func NewIndex(proto IndexCardArray, vv ...IndexCard) *Index {
 }
 
 func (index *Index) Contains(id ID) bool {
+	if index.IsEmpty() {
+		return false
+	}
 	_, ok := index.m[id]
 	return ok
 }
@@ -70,18 +73,30 @@ func (index *Index) Delete(toDelete ID) {
 }
 
 func (index *Index) Get(id ID) IndexCard {
+	if index.IsEmpty() {
+		return nil
+	}
 	return index.m[id]
 }
 
 func (index *Index) GetAt(n int) IndexCard {
+	if index.IsEmpty() {
+		return nil
+	}
 	return index.m[index.ids[n]]
 }
 
 func (index *Index) Len() int {
+	if index.IsEmpty() {
+		return 0
+	}
 	return len(index.ids)
 }
 
 func (index *Index) IDs() []ID {
+	if index.IsEmpty() {
+		return []ID{}
+	}
 	n := make([]ID, len(index.ids))
 	copy(n, index.ids)
 	return n
@@ -104,6 +119,9 @@ func (index *Index) SetAt(n int, v IndexCard) {
 }
 
 func (index *Index) MarshalJSON() ([]byte, error) {
+	if index.IsEmpty() {
+		return json.Marshal([]byte("[]"))
+	}
 	proto := index.proto.InstanceOf()
 	proto.Resize(len(index.ids))
 	for n, id := range index.ids {
@@ -128,7 +146,26 @@ func (index *Index) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (index *Index) AsArray(out IndexCardArray) {
+	if index.IsEmpty() {
+		out.Resize(0)
+		return
+	}
+	out.Resize(len(index.ids))
+	for n, key := range index.ids {
+		out.SetAt(n, index.m[key])
+	}
+}
+
+func (index *Index) IsEmpty() bool {
+	return index == nil || len(index.ids) == 0
+}
+
 func (index *Index) TestAsArray(out IndexCardArray) {
+	if index.IsEmpty() {
+		out.Resize(0)
+		return
+	}
 	out.Resize(len(index.ids))
 	for n, key := range index.ids {
 		out.SetAt(n, index.m[key])
@@ -136,6 +173,9 @@ func (index *Index) TestAsArray(out IndexCardArray) {
 }
 
 func (index *Index) TestIDs() []string {
+	if index.IsEmpty() {
+		return nil
+	}
 	n := []string{}
 	for _, id := range index.IDs() {
 		n = append(n, string(id))

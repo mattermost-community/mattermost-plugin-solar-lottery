@@ -22,17 +22,17 @@ type fill struct {
 	userWeightF func(user *sl.User) float64
 
 	// State
-	pool             sl.UserMap
-	chosen           sl.UserMap
+	pool             sl.Users
+	chosen           sl.Users
 	requiredNeeds    store.Needs
-	needPools        map[string]sl.UserMap // uses skill-level for the key
+	needPools        map[string]sl.Users // uses skill-level for the key
 	constrainedNeeds store.Needs
 }
 
 func makeAutofill(rotationID string, size int, needs store.Needs,
-	pool sl.UserMap, chosen sl.UserMap, shiftNumber int, shiftStart, shiftEnd time.Time, logger bot.Logger) (*fill, error) {
+	pool sl.Users, chosen sl.Users, shiftNumber int, shiftStart, shiftEnd time.Time, logger bot.Logger) (*fill, error) {
 	if chosen == nil {
-		chosen = sl.UserMap{}
+		chosen = sl.NewUsers()
 	}
 
 	af := fill{
@@ -42,7 +42,7 @@ func makeAutofill(rotationID string, size int, needs store.Needs,
 		pool:          pool,
 		shiftNumber:   shiftNumber,
 		requiredNeeds: store.Needs{},
-		needPools:     map[string]sl.UserMap{},
+		needPools:     map[string]sl.NewUsers(),
 	}
 	af.userWeightF = af.userWeight
 
@@ -82,7 +82,7 @@ func makeAutofill(rotationID string, size int, needs store.Needs,
 	return &af, nil
 }
 
-func (af *fill) fill() (sl.UserMap, error) {
+func (af *fill) fill() (sl.Users, error) {
 	af.Debugf(af.markdown())
 
 	for len(af.chosen) < af.size {
@@ -173,7 +173,7 @@ func (af *fill) acceptUser(user *sl.User) error {
 	af.requiredNeeds = updatedRequiredNeeds
 
 	if af.chosen == nil {
-		af.chosen = sl.UserMap{}
+		af.chosen = sl.NewUsers()
 	}
 	af.chosen[user.MattermostUserID] = user
 	return nil

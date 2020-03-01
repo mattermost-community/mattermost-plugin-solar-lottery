@@ -23,12 +23,12 @@ func (c *Command) joinRotation(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	r, users, err := c.loadRotationUsernames(fs)
+	rotationID, mattermostUserIDs, err := c.resolveRotationUsernames(fs)
 	if err != nil {
 		return "", err
 	}
 
-	added, err := c.SL.JoinRotation(r, users, starting)
+	added, err := c.SL.JoinRotation(mattermostUserIDs, rotationID, starting)
 	if err != nil {
 		return "", errors.WithMessagef(err, "failed, %s might have been updated", added.Markdown())
 	}
@@ -36,5 +36,5 @@ func (c *Command) joinRotation(parameters []string) (string, error) {
 	if *jsonOut {
 		return md.JSONBlock(added), nil
 	}
-	return fmt.Sprintf("%s added to rotation %s", added.Markdown(), r.Markdown()), nil
+	return fmt.Sprintf("%s added to rotation %s", added.Markdown(), rotationID), nil
 }

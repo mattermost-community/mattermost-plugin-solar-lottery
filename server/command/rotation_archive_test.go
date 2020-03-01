@@ -70,16 +70,17 @@ func TestCommandRotationDelete(t *testing.T) {
 			/lotto rotation new test-345
 			`)
 
-		r := &sl.Rotation{}
+		var rotationID types.ID
 		_, err := runJSONCommand(t, SL, `
-			/lotto rotation debug-delete test-123`, &r)
+			/lotto rotation debug-delete test-123`, &rotationID)
 		require.NoError(t, err)
-		require.Equal(t, types.ID("test-123"), r.RotationID)
+		require.Equal(t, types.ID("test-123"), rotationID)
 
 		activeRotations, err := store.IDIndex(sl.KeyActiveRotations).Load()
 		require.NoError(t, err)
 		require.Equal(t, types.NewIDIndex("test", "test-345"), activeRotations)
 
+		var r sl.Rotation
 		err = store.Entity(sl.KeyRotation).Load("test-123", &r)
 		require.Equal(t, kvstore.ErrNotFound, err)
 

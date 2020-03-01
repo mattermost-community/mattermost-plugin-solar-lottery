@@ -20,7 +20,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 )
 
-func solarLotteryForGuess(t testing.TB, ctrl *gomock.Controller, rotation *sl.Rotation, usersDataSource sl.UserMap) sl.SolarLottery {
+func solarLotteryForGuess(t testing.TB, ctrl *gomock.Controller, rotation *sl.Rotation, usersDataSource sl.Users) sl.SolarLottery {
 	shiftStore := mock_store.NewMockShiftStore(ctrl)
 	shiftStore.EXPECT().LoadShift(
 		gomock.Eq(rotation.RotationID),

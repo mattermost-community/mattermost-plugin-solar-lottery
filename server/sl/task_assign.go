@@ -6,7 +6,7 @@ package sl
 // var ErrShiftMustBeOpen = errors.New("must be `open`")
 // var ErrUserAlreadyInShift = errors.New("user is already in shift")
 
-// func (sl *sl) AddUsersToTask(mattermostUsernames string, rotation *Rotation, t *Task) (UserMap, error) {
+// func (sl *sl) AddUsersToTask(mattermostUsernames string, rotation *Rotation, t *Task) (Users, error) {
 // 	err := sl.Filter(
 // 		withActingUserExpanded,
 // 		withMattermostUsersExpanded(mattermostUsernames),
@@ -67,7 +67,7 @@ package sl
 // 	return shift, false, whyNot, nil
 // }
 
-// func (sl *sl) FillTask(rotation *Rotation, t *Task) (UserMap, error) {
+// func (sl *sl) FillTask(rotation *Rotation, t *Task) (Users, error) {
 // 	err := sl.Filter(
 // 		withActingUserExpanded,
 // 	)
@@ -100,12 +100,12 @@ package sl
 // 	return shift, added, nil
 // }
 
-// func (sl *sl) addUsersToTask(rotation *Rotation, t *Task, users UserMap, persist bool) (UserMap, error) {
+// func (sl *sl) addUsersToTask(rotation *Rotation, t *Task, users Users, persist bool) (Users, error) {
 // 	if t.Status != store.TaskStatusOpen {
 // 		return nil, errors.Errorf("can't join task with status %s, must be %s", t.Status, store.TaskStatusOpen)
 // 	}
 
-// 	added := UserMap{}
+// 	added := NewUsers()
 // 	for _, user := range users {
 // 		if t.MattermostUserIDs[user.MattermostUserID] != "" {
 // 			continue

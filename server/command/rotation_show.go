@@ -14,12 +14,11 @@ func (c *Command) showRotation(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	r, _, err := c.loadRotationUsernames(fs)
+	rotationID, err := c.resolveRotation(fs)
 	if err != nil {
 		return "", err
 	}
-
-	err = c.SL.ExpandRotation(r)
+	r, err := c.SL.LoadRotation(rotationID)
 	if err != nil {
 		return "", err
 	}

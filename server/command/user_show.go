@@ -15,15 +15,17 @@ func (c *Command) showUser(parameters []string) (string, error) {
 		return c.flagUsage(fs), err
 	}
 
-	users, err := c.loadUsernames(fs.Args())
+	mattermostUserIDs, err := c.resolveUsernames(fs.Args())
+	if err != nil {
+		return "", err
+	}
+	users, err := c.SL.LoadUsers(mattermostUserIDs)
 	if err != nil {
 		return "", err
 	}
 
-	if len(users) == 1 {
-		for _, user := range users {
-			return md.JSONBlock(user), nil
-		}
+	if users.Len() == 1 {
+		return md.JSONBlock(users.AsArray()[0]), nil
 	}
 	return md.JSONBlock(users), nil
 }

@@ -56,25 +56,25 @@ func TestUsersQualifiedForNeed(t *testing.T) {
 	for _, tc := range []struct {
 		name              string
 		need              *sl.Need
-		users             sl.UserMap
-		expectedQualified sl.UserMap
+		users             sl.Users
+		expectedQualified sl.Users
 	}{
 		{
 			name:              "empty users",
 			need:              C1_Server_L2(),
-			expectedQualified: sl.UserMap{},
+			expectedQualified: sl.NewUsers(),
 		},
 		{
 			name:              "happy server3",
 			need:              C1_Server_L3(),
-			users:             Usermap(UserGuru(), UserServer1(), UserServer2(), UserServer3(), UserMobile1()),
-			expectedQualified: Usermap(UserGuru(), UserServer1(), UserServer2(), UserServer3()),
+			users:             sl.NewUsers(UserGuru(), UserServer1(), UserServer2(), UserServer3(), UserMobile1()),
+			expectedQualified: sl.NewUsers(UserGuru(), UserServer1(), UserServer2(), UserServer3()),
 		},
 		{
 			name:              "happy server4",
 			need:              C1_Server_L4(),
-			users:             Usermap(UserGuru(), UserServer1(), UserServer2(), UserServer3(), UserMobile1()),
-			expectedQualified: Usermap(UserGuru()),
+			users:             sl.NewUsers(UserGuru(), UserServer1(), UserServer2(), UserServer3(), UserMobile1()),
+			expectedQualified: sl.NewUsers(UserGuru()),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -88,7 +88,7 @@ func TestUsersQualifiedForNeed(t *testing.T) {
 // 	for _, tc := range []struct {
 // 		name          string
 // 		needs         []*sl.Need
-// 		users         sl.UserMap
+// 		users         sl.Users
 // 		expectedUnmet []*sl.Need
 // 	}{
 // 		{
@@ -100,7 +100,7 @@ func TestUsersQualifiedForNeed(t *testing.T) {
 // 		{
 // 			name:          "empty 2",
 // 			needs:         []sl.Need{},
-// 			users:         sl.UserMap{},
+// 			users:         sl.NewUsers(),
 // 			expectedUnmet: nil,
 // 		},
 // 		{
