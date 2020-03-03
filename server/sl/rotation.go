@@ -13,15 +13,17 @@ import (
 type Rotation struct {
 	PluginVersion string
 	RotationID    types.ID
-	AutofillType  string
 	IsArchived    bool
-	IssueSources  *types.Index // of *IssueSource
-	// ShiftSource *ShiftSource
-	Pending           []*Task
-	InProgress        []*Task
+	AutofillType  string
+	TaskMaker     *TaskMaker
+
 	MattermostUserIDs *types.IDIndex `json:",omitempty"`
+	PendingTaskIDs    *types.IDIndex `json:",omitempty"`
+	InProgressTaskIDs *types.IDIndex `json:",omitempty"`
 
 	users Users
+	// pending    Tasks
+	// inProgress Tasks
 }
 
 func NewRotation() *Rotation {
@@ -33,6 +35,15 @@ func NewRotation() *Rotation {
 func (r *Rotation) init() {
 	if r.MattermostUserIDs == nil {
 		r.MattermostUserIDs = types.NewIDIndex()
+	}
+	if r.PendingTaskIDs == nil {
+		r.PendingTaskIDs = types.NewIDIndex()
+	}
+	if r.InProgressTaskIDs == nil {
+		r.InProgressTaskIDs = types.NewIDIndex()
+	}
+	if r.TaskMaker == nil {
+		r.TaskMaker = NewTaskMaker()
 	}
 	if r.users.IsEmpty() {
 		r.users = NewUsers()
@@ -87,13 +98,4 @@ func (r *Rotation) FindUsers(mattermostUserIDs *types.IDIndex) []*User {
 		uu = append(uu, r.users.Get(id))
 	}
 	return uu
-}
-
-func (r *Rotation) IssueSource(sourceName types.ID) (*IssueSource, int) {
-	for i, id := range r.IssueSources.IDs() {
-		if id == sourceName {
-			return r.IssueSources.Get(id).(*IssueSource), i
-		}
-	}
-	return nil, -1
 }

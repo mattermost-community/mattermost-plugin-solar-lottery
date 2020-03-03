@@ -19,13 +19,13 @@ func TestCommandRotationLeave(t *testing.T) {
 
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
-			/lotto rotation join test-rotation @id1-username @id2-username @id3-username @id4-username
+			/lotto user join test-rotation @id1-username @id2-username @id3-username @id4-username
 			`)
 		require.NoError(t, err)
 
 		deleted := sl.NewUsers()
 		_, err = runJSONCommand(t, SL, `
-			/lotto rotation leave test-rotation @id2-username @id3-username @id5-username`, &deleted)
+			/lotto user leave test-rotation @id2-username @id3-username @id5-username`, &deleted)
 		require.NoError(t, err)
 		require.Equal(t, []string{"id2", "id3"}, deleted.TestIDs())
 

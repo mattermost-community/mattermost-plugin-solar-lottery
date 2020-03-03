@@ -19,8 +19,8 @@ func TestCommandRotationJoin(t *testing.T) {
 
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
-			/lotto rotation join test-rotation @id1-username @id2-username
-			/lotto rotation join @id3-username test-rotation @id4-username
+			/lotto user join test-rotation @id1-username @id2-username
+			/lotto user join @id3-username test-rotation @id4-username
 			`)
 		require.NoError(t, err)
 

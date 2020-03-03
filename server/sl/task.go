@@ -13,17 +13,20 @@ import (
 type TaskStatus string
 
 const (
-	TaskStatusPending  = TaskStatus("pending")
-	TaskStatusStarted  = TaskStatus("started")
-	TaskStatusFinished = TaskStatus("finished")
+	TaskStatusPending    = TaskStatus("pending")
+	TaskStatusInProgress = TaskStatus("inprogress")
+	TaskStatusFinished   = TaskStatus("finished")
 )
 
 type Task struct {
+	//TODO set PluginID on save
 	PluginVersion string
 	TaskID        types.ID
+	RotationID    types.ID
 	Status        TaskStatus
 	Created       types.Time
 	Summary       string
+	Description   string
 
 	Scheduled         *types.Interval `json:",omitempty"`
 	Min               Needs           `json:",omitempty"`

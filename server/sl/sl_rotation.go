@@ -23,6 +23,7 @@ type RotationService interface {
 	LoadRotation(rotationID types.ID) (*Rotation, error)
 	MakeRotation(rotationName string) (*Rotation, error)
 	ResolveRotationName(string) (types.ID, error)
+	UpdateRotation(rotationID types.ID, updatef func(*Rotation) error) (*Rotation, error)
 }
 
 func (sl *sl) AddRotation(r *Rotation) error {
@@ -207,23 +208,25 @@ func (sl *sl) LoadRotation(rotationID types.ID) (*Rotation, error) {
 	return r, nil
 }
 
-func (sl *sl) updateRotation(r *Rotation, updatef func() error) error {
-	err := sl.Setup(pushLogger("updateRotation", bot.LogContext{ctxRotationID: r.RotationID}))
+func (sl *sl) UpdateRotation(rotationID types.ID, updatef func(*Rotation) error) (*Rotation, error) {
+	var r *Rotation
+	err := sl.Setup(
+		withExpandedRotation(rotationID, &r),
+	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	defer sl.popLogger()
 
-	err = updatef()
+	err = updatef(r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = sl.Store.Entity(KeyRotation).Store(r.RotationID, r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	sl.Debugf("%s updated rotation %s.", sl.actingUser.Markdown(), r.Markdown())
-	return nil
+	return r, nil
 }

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
@@ -29,12 +30,12 @@ const (
 	// commandGuess       = "guess"
 	// commandNeed        = "need"
 	// commandShift       = "shift"
-	// commandUpdate      = "update"
 	commandArchive     = "archive"
 	commandDebugDelete = "debug-delete"
 	commandDelete      = "delete"
 	commandDisqualify  = "disqualify"
 	commandFinish      = "finish"
+	commandGrace       = "grace"
 	commandInfo        = "info"
 	commandIssue       = "issue"
 	commandIssueSource = "issue-source"
@@ -43,15 +44,21 @@ const (
 	commandLimit       = "limit"
 	commandList        = "list"
 	commandLog         = "log"
+	commandMax         = "max"
+	commandMin         = "min"
 	commandNew         = "new"
 	commandOpen        = "open"
+	commandParam       = "param"
 	commandPut         = "put"
 	commandQualify     = "qualify"
 	commandRequire     = "require"
 	commandRotation    = "rotation"
+	commandShift       = "shift"
 	commandShow        = "show"
 	commandSkill       = "skill"
 	commandStart       = "start"
+	commandTask        = "task"
+	commandTicket      = "ticket"
 	commandUnavailable = "unavailable"
 	commandUser        = "user"
 )
@@ -60,32 +67,29 @@ const (
 	flagPFinish   = "f"
 	flagPNumber   = "n"
 	flagPRotation = "r"
-	flagPShift    = "s"
 	flagPSkill    = "k"
 	flagPStart    = "s"
-	flagPUsers    = "u"
+	flagPPeriod   = "p"
 )
 
 const (
 	// flagDebugRun   = "debug-run"
 	// flagFill       = "fill"
 	// flagFillDays   = "fill-before"
-	// flagMax        = "max"
-	// flagMin        = "min"
 	// flagNotifyDays = "notify"
 	// flagNumber     = "number"
 	// flagOff        = "off"
 	// flagSampleSize = "sample"
-	// flagShift      = "shift"
-	// flagSize       = "size"
 	// flagType       = "type"
-	// flagUsers      = "users"
 	flagClear    = "clear"
 	flagCount    = "count"
 	flagDelete   = "delete"
+	flagDuration = "duration"
 	flagFinish   = "finish"
 	flagGrace    = "grace"
 	flagJSON     = "json"
+	flagMax      = "max"
+	flagMin      = "min"
 	flagPeriod   = "period"
 	flagRotation = "rotation"
 	flagSkill    = "skill"
@@ -124,10 +128,10 @@ func (c *Command) commands() map[string]func([]string) (string, error) {
 	return map[string]func([]string) (string, error){
 		commandInfo:     c.info,
 		commandRotation: c.rotation,
-		// commandTask:     c.task,
-		commandSkill: c.skill,
-		commandUser:  c.user,
-		commandLog:   c.log,
+		commandTask:     c.task,
+		commandSkill:    c.skill,
+		commandUser:     c.user,
+		commandLog:      c.log,
 
 		"debug-clean": c.debugClean,
 	}
@@ -227,8 +231,32 @@ func fStartFinish(fs *pflag.FlagSet, actingUser *sl.User) (*types.Time, *types.T
 	return &start, &finish
 }
 
+func fStart(fs *pflag.FlagSet, actingUser *sl.User) *types.Time {
+	start := actingUser.Time(types.NewTime())
+	fs.VarP(&start, flagStart, flagPStart, "start time")
+	return &start
+}
+
+func fPeriod(fs *pflag.FlagSet) *types.Period {
+	p := types.Period{}
+	fs.VarP(&p, flagPeriod, flagPPeriod, "recurrence period")
+	return &p
+}
+
 func fClear(fs *pflag.FlagSet) *bool {
 	return fs.Bool(flagClear, false, "mark as available by clearing all overlapping unavailability events")
+}
+
+func fMin(fs *pflag.FlagSet) *bool {
+	return fs.Bool(flagMin, false, "add/update a minimum headcount requirement for a skill level")
+}
+
+func fMax(fs *pflag.FlagSet) *bool {
+	return fs.Bool(flagMax, false, "add/update a maximum headcount requirement for a skill level")
+}
+
+func fDuration(fs *pflag.FlagSet) *time.Duration {
+	return fs.Duration(flagDuration, 0, "add a grace period to users after finishing a task")
 }
 
 func fCount(fs *pflag.FlagSet) *int {

@@ -10,6 +10,9 @@ func (c *Command) user(parameters []string) (string, error) {
 		commandShow:        c.showUser,
 		commandUnavailable: c.userUnavailable,
 		// commandForecast:    c.userForecast,
+		commandJoin:  c.joinRotation,
+		commandLeave: c.leaveRotation,
 	}
+
 	return c.handleCommand(subcommands, parameters)
 }

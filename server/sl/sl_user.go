@@ -112,11 +112,9 @@ func (sl *sl) Disqualify(mattermostUserIDs *types.IDIndex, skillName types.ID) (
 }
 
 func (sl *sl) JoinRotation(mattermostUserIDs *types.IDIndex, rotationID types.ID, starting types.Time) (Users, error) {
-	var r *Rotation
 	var users Users
 	err := sl.Setup(
 		pushLogger("JoinRotation", bot.LogContext{ctxStarting: starting}),
-		withRotation(rotationID, &r),
 		withExpandedUsers(mattermostUserIDs, &users),
 	)
 	if err != nil {
@@ -126,7 +124,7 @@ func (sl *sl) JoinRotation(mattermostUserIDs *types.IDIndex, rotationID types.ID
 
 	added := NewUsers()
 
-	err = sl.updateRotation(r, func() error {
+	r, err := sl.UpdateRotation(rotationID, func(r *Rotation) error {
 		for _, user := range users.AsArray() {
 			if r.MattermostUserIDs.Contains(user.MattermostUserID) {
 				sl.Debugf("%s is already in rotation %s.",

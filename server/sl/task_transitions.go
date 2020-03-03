@@ -108,7 +108,7 @@ func (sl *sl) finishTask(r *Rotation, t *Task) (*Task, error) {
 	if t.Status == TaskStatusFinished {
 		return t, nil
 	}
-	if t.Status != TaskStatusStarted {
+	if t.Status != TaskStatusInProgress {
 		return nil, errors.Errorf("can't finish a task which is %s, must be started", t.Status)
 	}
 

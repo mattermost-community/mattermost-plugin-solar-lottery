@@ -29,7 +29,7 @@ func TestCommandRotationArchive(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, types.NewIDIndex("test", "test-123", "test-345"), activeRotations)
 
-		r := &sl.Rotation{}
+		r := sl.NewRotation()
 		_, err = runJSONCommand(t, SL, `
 			/lotto rotation archive test-123`, &r)
 		require.NoError(t, err)

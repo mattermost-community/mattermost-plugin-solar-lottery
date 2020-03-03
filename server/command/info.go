@@ -24,11 +24,24 @@ func (c *Command) info(parameters []string) (string, error) {
 - [x] rotation
 	- [x] archive
 	- [x] debug-delete
-	- [x] join
-	- [x] leave
 	- [x] list
 	- [x] new
 	- [x] show
+
+- [ ] task
+	- [ ] param min --skill <s-l> (--count | --clear)
+	- [ ] param max --skill <s-l> (--count | --clear)
+	- [ ] param grace --duration 
+	- [ ] param shift --starting --period
+	- [ ] param ticket
+	- [ ] new ticket
+	- [ ] new shift
+	- [ ] assign [--auto aka fill]
+	- [ ] close
+	- [ ] debug-delete
+	- [ ] list --pending | --in-progress | --all
+	- [ ] start
+	- [ ] unassign
 
 - [x] skill
 	- [x] delete
@@ -36,21 +49,12 @@ func (c *Command) info(parameters []string) (string, error) {
 	- [x] new
 
 - [x] user: manage users.
+	- [x] join ROT [@user...] --starting
+	- [x] leave ROT [@user...]
 	- [x] disqualify --skill 
-	- [x] qualify --skill --level 
-	- [x] show: show users
+	- [x] qualify --skill 
+	- [x] show 
 	- [x] unavailable: --start --finish [--clear] 
-
-- [ ] task
-	- [ ] new issue
-	- [ ] assign [--auto aka fill]
-	- [ ] close
-	- [ ] debug-delete
-	- [ ] list (by rotation, by task queue)
-	- [ ] new shift 
-	- [ ] show
-	- [ ] start
-	- [ ] unassign
 
 	`
 	return resp, nil

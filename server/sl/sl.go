@@ -28,7 +28,6 @@ const (
 type SL interface {
 	RotationService
 	SkillService
-	IssueService
 	UserService
 
 	PluginAPI

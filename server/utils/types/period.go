@@ -12,8 +12,8 @@ import (
 )
 
 type Period struct {
-	value string
-	dur   time.Duration
+	Period   string
+	Duration time.Duration `json:",omitempty"`
 }
 
 var _ pflag.Value = (*Period)(nil)
@@ -27,7 +27,7 @@ const (
 )
 
 func (p *Period) String() string {
-	return p.value
+	return p.Period
 }
 
 func (p *Period) Type() string {
@@ -37,20 +37,20 @@ func (p *Period) Type() string {
 func (p *Period) Set(in string) error {
 	switch strings.ToLower(in) {
 	case EveryDay, "d", "day", "daily":
-		p.value = EveryDay
+		p.Period = EveryDay
 	case EveryWeek, "w", "week", "weekly":
-		p.value = EveryWeek
+		p.Period = EveryWeek
 	case EveryTwoWeeks, "2weeks", "biweekly", "bi-weekly":
-		p.value = EveryTwoWeeks
-	case EveryMonth, "m", "month":
-		p.value = EveryMonth
+		p.Period = EveryTwoWeeks
+	case EveryMonth, "m", "month", "monthly":
+		p.Period = EveryMonth
 	default:
-		dur, err := time.ParseDuration(in)
+		Duration, err := time.ParseDuration(in)
 		if err != nil {
 			return errors.New(`period must be "daily", "workday", "weekly", "biweekly", "monthly", or a valid go duration`)
 		}
-		p.value = EveryDuration
-		p.dur = dur
+		p.Period = EveryDuration
+		p.Duration = Duration
 	}
 	return nil
 }
@@ -77,10 +77,10 @@ func (p *Period) StartForTime(start, now Time) Time {
 	n := 0
 	delta := now.Sub(start.Time)
 	days, months := 0, 0
-	switch p.value {
+	switch p.Period {
 	case EveryDuration:
-		reduced := now.Add(-p.dur / 2)
-		return NewTime(reduced.Round(p.dur))
+		reduced := now.Add(-p.Duration / 2)
+		return NewTime(reduced.Round(p.Duration))
 
 	case EveryDay:
 		days = 1
@@ -117,10 +117,10 @@ func (p *Period) StartForTime(start, now Time) Time {
 
 func (p *Period) Next(start Time) Time {
 	days, months := 0, 0
-	switch p.value {
+	switch p.Period {
 	case EveryDuration:
-		reduced := start.Add(-p.dur / 2)
-		return NewTime(reduced.Round(p.dur))
+		reduced := start.Add(-p.Duration / 2)
+		return NewTime(reduced.Round(p.Duration))
 
 	case EveryDay:
 		days = 1
@@ -136,4 +136,19 @@ func (p *Period) Next(start Time) Time {
 	}
 
 	return NewTime(start.AddDate(0, months, days))
+}
+
+func (p *Period) NumberForTime(start, now Time) int {
+	if start.Before(now.Time) {
+		return -1
+	}
+
+	n := 0
+	for {
+		if !start.Before(now.Time) {
+			return n
+		}
+		start = p.Next(start)
+		n++
+	}
 }
