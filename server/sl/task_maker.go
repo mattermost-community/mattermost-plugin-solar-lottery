@@ -34,14 +34,13 @@ func NewTaskMaker() *TaskMaker {
 	}
 }
 
-func (maker *TaskMaker) NewTicket(prefix, id string) *Task {
+func (maker *TaskMaker) NewTicket(rotationID types.ID, defaultID string) *Task {
 	maker.TicketSeq++
-	t := NewTask()
-	if id == "" {
-		id = strconv.Itoa(maker.TicketSeq)
+	t := NewTask(rotationID)
+	if defaultID == "" {
+		defaultID = strconv.Itoa(maker.TicketSeq)
 	}
-	id = prefix + "-" + id
-	t.TaskID = types.ID(id)
+	t.TaskID = types.ID(string(rotationID) + "-" + defaultID)
 	// TODO do I need to clone these?
 	t.Min = maker.Min
 	t.Max = maker.Max
@@ -49,10 +48,10 @@ func (maker *TaskMaker) NewTicket(prefix, id string) *Task {
 	return t
 }
 
-func (maker *TaskMaker) NewShift(prefix string, t types.Time) *Task {
-	task := maker.NewTicket(prefix, "")
-	return task
-}
+// func (maker *TaskMaker) NewShift(prefix string, t types.Time) *Task {
+// 	task := maker.NewTicket(prefix, "")
+// 	return task
+// }
 
 func (maker TaskMaker) MarkdownBullets() string {
 	out := fmt.Sprintf("  - Type: **%s**\n", maker.Type)

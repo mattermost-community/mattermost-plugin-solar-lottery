@@ -38,7 +38,7 @@ func (c *Command) userUnavailable(parameters []string) (string, error) {
 		Finish: *finish,
 	}
 
-	var affected sl.Users
+	var affected *sl.Users
 	if *clear {
 		affected, err = c.SL.ClearCalendar(mattermostUserIDs, interval)
 		if err != nil {

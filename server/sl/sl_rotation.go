@@ -19,7 +19,7 @@ type RotationService interface {
 	AddRotation(*Rotation) error
 	ArchiveRotation(rotationID types.ID) (*Rotation, error)
 	DebugDeleteRotation(rotationID types.ID) error
-	LoadActiveRotations() (*types.IDIndex, error)
+	LoadActiveRotations() (*types.IDSet, error)
 	LoadRotation(rotationID types.ID) (*Rotation, error)
 	MakeRotation(rotationName string) (*Rotation, error)
 	ResolveRotationName(string) (types.ID, error)
@@ -27,10 +27,10 @@ type RotationService interface {
 }
 
 func (sl *sl) AddRotation(r *Rotation) error {
-	var active *types.IDIndex
+	var active *types.IDSet
 	err := sl.Setup(
 		pushLogger("AddRotation", bot.LogContext{ctxRotationID: r.RotationID}),
-		withActiveRotations(&active),
+		withLoadActiveRotations(&active),
 	)
 	if err != nil {
 		return err
@@ -55,9 +55,9 @@ func (sl *sl) AddRotation(r *Rotation) error {
 	return nil
 }
 
-func (sl *sl) LoadActiveRotations() (*types.IDIndex, error) {
-	var active *types.IDIndex
-	err := sl.Setup(withActiveRotations(&active))
+func (sl *sl) LoadActiveRotations() (*types.IDSet, error) {
+	var active *types.IDSet
+	err := sl.Setup(withLoadActiveRotations(&active))
 	if err != nil {
 		return nil, err
 	}
@@ -65,8 +65,8 @@ func (sl *sl) LoadActiveRotations() (*types.IDIndex, error) {
 }
 
 func (sl *sl) ResolveRotationName(pattern string) (types.ID, error) {
-	var active *types.IDIndex
-	err := sl.Setup(withActiveRotations(&active))
+	var active *types.IDSet
+	err := sl.Setup(withLoadActiveRotations(&active))
 	if err != nil {
 		return "", err
 	}
@@ -102,7 +102,7 @@ func (sl *sl) ArchiveRotation(rotationID types.ID) (*Rotation, error) {
 	var r *Rotation
 	err := sl.Setup(
 		pushLogger("ArchiveRotation", nil),
-		withRotation(rotationID, &r),
+		withLoadRotation(rotationID, &r),
 	)
 	if err != nil {
 		return nil, err
@@ -144,62 +144,9 @@ func (sl *sl) DebugDeleteRotation(rotationID types.ID) error {
 	return nil
 }
 
-func (sl *sl) loadRotation(rotationID types.ID) (*Rotation, error) {
-	var active *types.IDIndex
-	err := sl.Setup(withActiveRotations(&active))
-	if err != nil {
-		return nil, err
-	}
-
-	if !active.Contains(rotationID) {
-		return nil, errors.Errorf("rotationID %s not found", rotationID)
-	}
-
-	r := NewRotation()
-	err = sl.Store.Entity(KeyRotation).Load(rotationID, r)
-	if err != nil {
-		return nil, err
-	}
-	r.init()
-
-	return r, nil
-}
-
-func (sl *sl) MakeRotation(rotationName string) (*Rotation, error) {
-	id, err := sl.Store.Entity(KeyRotation).NewID(rotationName)
-	if err != nil {
-		return nil, err
-	}
-	r := NewRotation()
-	r.RotationID = id
-	return r, nil
-}
-
-func (sl *sl) expandRotation(r *Rotation) error {
-	if r.MattermostUserIDs.IsEmpty() ||
-		(!r.users.IsEmpty() && r.users.Len() == r.MattermostUserIDs.Len()) {
-		return nil
-	}
-
-	r.init()
-	users, err := sl.loadStoredUsers(r.MattermostUserIDs)
-	if err != nil {
-		return err
-	}
-	err = sl.expandUsers(users)
-	if err != nil {
-		return err
-	}
-	r.users = users
-	return nil
-}
-
 func (sl *sl) LoadRotation(rotationID types.ID) (*Rotation, error) {
 	var r *Rotation
-	err := sl.Setup(
-		// pushLogger("LoadRotation", nil),
-		withExpandedRotation(rotationID, &r),
-	)
+	err := sl.Setup(withExpandedRotation(rotationID, &r))
 	if err != nil {
 		return nil, err
 	}
@@ -210,9 +157,7 @@ func (sl *sl) LoadRotation(rotationID types.ID) (*Rotation, error) {
 
 func (sl *sl) UpdateRotation(rotationID types.ID, updatef func(*Rotation) error) (*Rotation, error) {
 	var r *Rotation
-	err := sl.Setup(
-		withExpandedRotation(rotationID, &r),
-	)
+	err := sl.Setup(withLoadRotation(rotationID, &r))
 	if err != nil {
 		return nil, err
 	}
@@ -229,4 +174,76 @@ func (sl *sl) UpdateRotation(rotationID types.ID, updatef func(*Rotation) error)
 
 	sl.Debugf("%s updated rotation %s.", sl.actingUser.Markdown(), r.Markdown())
 	return r, nil
+}
+
+func (sl *sl) MakeRotation(rotationName string) (*Rotation, error) {
+	id, err := sl.Store.Entity(KeyRotation).NewID(rotationName)
+	if err != nil {
+		return nil, err
+	}
+	r := NewRotation()
+	r.RotationID = id
+	r.loaded = true
+	return r, nil
+}
+
+func (sl *sl) loadRotation(rotationID types.ID) (*Rotation, error) {
+	var active *types.IDSet
+	err := sl.Setup(withLoadActiveRotations(&active))
+	if err != nil {
+		return nil, err
+	}
+
+	if !active.Contains(rotationID) {
+		return nil, errors.Errorf("rotationID %s not found", rotationID)
+	}
+
+	r := NewRotation()
+	err = sl.Store.Entity(KeyRotation).Load(rotationID, r)
+	if err != nil {
+		return nil, err
+	}
+	r.init()
+	r.loaded = true
+
+	return r, nil
+}
+
+func (sl *sl) expandRotationUsers(r *Rotation) error {
+	if r.expandedUsers {
+		return nil
+	}
+
+	r.init()
+	users, err := sl.loadStoredUsers(r.MattermostUserIDs)
+	if err != nil {
+		return err
+	}
+	err = sl.expandUsers(users)
+	if err != nil {
+		return err
+	}
+	r.users = users
+	r.expandedUsers = true
+	return nil
+}
+
+func (sl *sl) expandRotationTasks(r *Rotation) error {
+	if r.expandedTasks {
+		return nil
+	}
+
+	r.init()
+	pending, err := sl.loadTasks(r.PendingTaskIDs)
+	if err != nil {
+		return err
+	}
+	inProgress, err := sl.loadTasks(r.InProgressTaskIDs)
+	if err != nil {
+		return err
+	}
+	r.pending = pending
+	r.inProgress = inProgress
+	r.expandedTasks = true
+	return nil
 }

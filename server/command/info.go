@@ -29,11 +29,11 @@ func (c *Command) info(parameters []string) (string, error) {
 	- [x] show
 
 - [ ] task
-	- [ ] param min --skill <s-l> (--count | --clear)
-	- [ ] param max --skill <s-l> (--count | --clear)
-	- [ ] param grace --duration 
-	- [ ] param shift --starting --period
-	- [ ] param ticket
+	- [x] param min --skill <s-l> (--count | --clear)
+	- [x] param max --skill <s-l> (--count | --clear)
+	- [x] param grace --duration 
+	- [x] param shift --starting --period
+	- [x] param ticket
 	- [ ] new ticket
 	- [ ] new shift
 	- [ ] assign [--auto aka fill]

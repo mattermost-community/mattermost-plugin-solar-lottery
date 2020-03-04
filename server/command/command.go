@@ -93,6 +93,7 @@ const (
 	flagPeriod   = "period"
 	flagRotation = "rotation"
 	flagSkill    = "skill"
+	flagSummary  = "summary"
 	flagStart    = "start"
 )
 
@@ -273,8 +274,12 @@ func fSkillLevel(fs *pflag.FlagSet) *sl.SkillLevel {
 	return &skillLevel
 }
 
-func (c *Command) resolveUsernames(args []string) (mattermostUserIDs *types.IDIndex, err error) {
-	mattermostUserIDs = types.NewIDIndex()
+func fSummary(fs *pflag.FlagSet) *string {
+	return fs.String(flagSummary, "", "task summary")
+}
+
+func (c *Command) resolveUsernames(args []string) (mattermostUserIDs *types.IDSet, err error) {
+	mattermostUserIDs = types.NewIDSet()
 	// if no args provided, return the acting user
 	if len(args) == 0 {
 		user, err := c.SL.ActingUser()
@@ -300,7 +305,7 @@ func (c *Command) resolveUsernames(args []string) (mattermostUserIDs *types.IDIn
 	return mattermostUserIDs, nil
 }
 
-func (c *Command) resolveRotationUsernames(fs *pflag.FlagSet) (types.ID, *types.IDIndex, error) {
+func (c *Command) resolveRotationUsernames(fs *pflag.FlagSet) (types.ID, *types.IDSet, error) {
 	ref, _ := fs.GetString(flagRotation)
 	usernames := []string{}
 	rotationID := types.ID(ref)

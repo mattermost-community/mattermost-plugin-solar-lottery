@@ -71,7 +71,7 @@ func (sl *sl) messageAddedSkill(user *User, skillName string, level int) {
 }
 
 func (sl *sl) messageNewTask(rotation *Rotation, t *Task) {
-	sl.expandRotation(rotation)
+	sl.expandRotationUsers(rotation)
 
 	for _, user := range rotation.users.AsArray() {
 		sl.dmUser(user,
@@ -83,7 +83,7 @@ func (sl *sl) messageNewTask(rotation *Rotation, t *Task) {
 }
 
 func (sl *sl) messageTaskStarted(rotation *Rotation, t *Task) {
-	sl.expandRotation(rotation)
+	sl.expandRotationUsers(rotation)
 
 	for _, user := range rotation.FindUsers(t.MattermostUserIDs) {
 		sl.dmUser(user,
@@ -96,7 +96,7 @@ func (sl *sl) messageTaskStarted(rotation *Rotation, t *Task) {
 }
 
 func (sl *sl) messageTaskWillStart(rotation *Rotation, t *Task) {
-	sl.expandRotation(rotation)
+	sl.expandRotationUsers(rotation)
 
 	for _, user := range rotation.FindUsers(t.MattermostUserIDs) {
 		sl.dmUser(user,
@@ -106,7 +106,7 @@ func (sl *sl) messageTaskWillStart(rotation *Rotation, t *Task) {
 }
 
 func (sl *sl) messageTaskFinished(rotation *Rotation, t *Task) {
-	sl.expandRotation(rotation)
+	sl.expandRotationUsers(rotation)
 
 	for _, user := range rotation.FindUsers(t.MattermostUserIDs) {
 		sl.dmUser(user,
@@ -120,7 +120,7 @@ func (sl *sl) messageTaskFinished(rotation *Rotation, t *Task) {
 }
 
 func (sl *sl) messageTaskWillFinish(rotation *Rotation, t *Task) {
-	sl.expandRotation(rotation)
+	sl.expandRotationUsers(rotation)
 
 	for _, user := range rotation.FindUsers(t.MattermostUserIDs) {
 		sl.dmUser(user,
@@ -130,7 +130,7 @@ func (sl *sl) messageTaskWillFinish(rotation *Rotation, t *Task) {
 }
 
 func (sl *sl) messageAddedUsersToTask(added Users, rotation *Rotation, t *Task) {
-	sl.expandRotation(rotation)
+	sl.expandRotationUsers(rotation)
 
 	// Notify the previous shift users that new volunteers have been added
 	for _, user := range rotation.FindUsers(t.MattermostUserIDs) {

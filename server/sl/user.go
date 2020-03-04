@@ -16,9 +16,9 @@ import (
 type User struct {
 	PluginVersion    string `json:",omitempty"`
 	MattermostUserID types.ID
-	SkillLevels      *types.IntIndex `json:",omitempty"` // skill (id) -> level
-	LastServed       *types.IntIndex `json:",omitempty"` // Last time completed a task, rotationID -> Unix time.
-	Calendar         []*Unavailable  `json:",omitempty"` // Sorted by start date of the events.
+	SkillLevels      *types.IntSet  `json:",omitempty"` // skill (id) -> level
+	LastServed       *types.IntSet  `json:",omitempty"` // Last time completed a task, rotationID -> Unix time.
+	Calendar         []*Unavailable `json:",omitempty"` // Sorted by start date of the events.
 
 	// private fields
 	loaded         bool
@@ -29,9 +29,9 @@ type User struct {
 func NewUser(mattermostUserID types.ID) *User {
 	return &User{
 		MattermostUserID: mattermostUserID,
-		SkillLevels:      types.NewIntIndex(),
-		LastServed:       types.NewIntIndex(),
 		Calendar:         []*Unavailable{},
+		SkillLevels:      types.NewIntSet(),
+		LastServed:       types.NewIntSet(),
 	}
 }
 
@@ -44,7 +44,7 @@ func (user *User) WithLastServed(rotationID types.ID, finishTime types.Time) *Us
 	return user
 }
 
-func (user *User) WithSkills(skillLevels *types.IntIndex) *User {
+func (user *User) WithSkills(skillLevels *types.IntSet) *User {
 	user.SkillLevels = skillLevels
 	return user
 }

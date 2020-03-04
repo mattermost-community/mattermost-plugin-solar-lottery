@@ -10,23 +10,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestIntIndex(t *testing.T) {
+func TestIDSet(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
-		in := NewIntIndex()
-		in.Set("b", 2)
-		in.Set("c", 1000)
-		in.Set("a", 1)
+		in := NewIDSet("test1", "test2")
 
 		data, err := json.Marshal(in)
 		require.NoError(t, err)
-		require.Equal(t, `{"a":1,"b":2,"c":1000}`, string(data))
+		require.Equal(t, `["test1","test2"]`, string(data))
 
-		out := NewIntIndex()
+		out := NewIDSet()
 		err = json.Unmarshal(data, &out)
 		require.NoError(t, err)
-
-		outdata, err := json.Marshal(in)
-		require.NoError(t, err)
-		require.EqualValues(t, data, outdata)
+		require.EqualValues(t, in.TestIDs(), out.TestIDs())
 	})
 }

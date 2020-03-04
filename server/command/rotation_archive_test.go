@@ -27,7 +27,7 @@ func TestCommandRotationArchive(t *testing.T) {
 
 		activeRotations, err := store.IDIndex(sl.KeyActiveRotations).Load()
 		require.NoError(t, err)
-		require.Equal(t, types.NewIDIndex("test", "test-123", "test-345"), activeRotations)
+		require.Equal(t, types.NewIDSet("test", "test-123", "test-345"), activeRotations)
 
 		r := sl.NewRotation()
 		_, err = runJSONCommand(t, SL, `
@@ -78,7 +78,7 @@ func TestCommandRotationDelete(t *testing.T) {
 
 		activeRotations, err := store.IDIndex(sl.KeyActiveRotations).Load()
 		require.NoError(t, err)
-		require.Equal(t, types.NewIDIndex("test", "test-345"), activeRotations)
+		require.Equal(t, types.NewIDSet("test", "test-345"), activeRotations)
 
 		var r sl.Rotation
 		err = store.Entity(sl.KeyRotation).Load("test-123", &r)

@@ -17,13 +17,16 @@ type Rotation struct {
 	AutofillType  string
 	TaskMaker     *TaskMaker
 
-	MattermostUserIDs *types.IDIndex `json:",omitempty"`
-	PendingTaskIDs    *types.IDIndex `json:",omitempty"`
-	InProgressTaskIDs *types.IDIndex `json:",omitempty"`
+	MattermostUserIDs *types.IDSet `json:",omitempty"`
+	PendingTaskIDs    *types.IDSet `json:",omitempty"`
+	InProgressTaskIDs *types.IDSet `json:",omitempty"`
 
-	users Users
-	// pending    Tasks
-	// inProgress Tasks
+	loaded        bool
+	expandedUsers bool
+	users         *Users
+	expandedTasks bool
+	pending       *Tasks
+	inProgress    *Tasks
 }
 
 func NewRotation() *Rotation {
@@ -34,25 +37,25 @@ func NewRotation() *Rotation {
 
 func (r *Rotation) init() {
 	if r.MattermostUserIDs == nil {
-		r.MattermostUserIDs = types.NewIDIndex()
+		r.MattermostUserIDs = types.NewIDSet()
 	}
 	if r.PendingTaskIDs == nil {
-		r.PendingTaskIDs = types.NewIDIndex()
+		r.PendingTaskIDs = types.NewIDSet()
 	}
 	if r.InProgressTaskIDs == nil {
-		r.InProgressTaskIDs = types.NewIDIndex()
+		r.InProgressTaskIDs = types.NewIDSet()
 	}
 	if r.TaskMaker == nil {
 		r.TaskMaker = NewTaskMaker()
 	}
-	if r.users.IsEmpty() {
+	if r.users == nil {
 		r.users = NewUsers()
 	}
 }
 
-func (rotation *Rotation) WithMattermostUserIDs(pool Users) *Rotation {
+func (rotation *Rotation) WithMattermostUserIDs(pool *Users) *Rotation {
 	newRotation := *rotation
-	newRotation.MattermostUserIDs = types.NewIDIndex()
+	newRotation.MattermostUserIDs = types.NewIDSet()
 	for _, id := range pool.IDs() {
 		newRotation.MattermostUserIDs.Set(id)
 	}
@@ -92,7 +95,7 @@ func (r *Rotation) MarkdownBullets() string {
 	return out
 }
 
-func (r *Rotation) FindUsers(mattermostUserIDs *types.IDIndex) []*User {
+func (r *Rotation) FindUsers(mattermostUserIDs *types.IDSet) []*User {
 	uu := []*User{}
 	for _, id := range r.MattermostUserIDs.IDs() {
 		uu = append(uu, r.users.Get(id))

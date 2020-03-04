@@ -12,7 +12,7 @@ import (
 
 // Needs is a map of SkillLevel to an int64 headcount needed.
 type Needs struct {
-	*types.IntIndex
+	*types.IntSet
 }
 
 type Need struct {
@@ -22,7 +22,7 @@ type Need struct {
 
 func NewNeeds() Needs {
 	return Needs{
-		IntIndex: types.NewIntIndex(),
+		IntSet: types.NewIntSet(),
 	}
 }
 
@@ -34,7 +34,7 @@ func (needs Needs) Markdown() string {
 	return strings.Join(ss, ", ")
 }
 
-func (needs Needs) UnmetRequirements(users Users) Needs {
+func (needs Needs) UnmetRequirements(users *Users) Needs {
 	work := NewNeeds()
 	for _, id := range needs.IDs() {
 		work.Set(id, needs.Get(id))

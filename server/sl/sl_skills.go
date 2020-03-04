@@ -9,14 +9,14 @@ import (
 )
 
 type SkillService interface {
-	ListKnownSkills() (*types.IDIndex, error)
+	ListKnownSkills() (*types.IDSet, error)
 	AddKnownSkill(types.ID) error
 	DeleteKnownSkill(types.ID) error
 }
 
-func (sl *sl) ListKnownSkills() (*types.IDIndex, error) {
-	var knownSkills *types.IDIndex
-	err := sl.Setup(withKnownSkills(&knownSkills))
+func (sl *sl) ListKnownSkills() (*types.IDSet, error) {
+	var knownSkills *types.IDSet
+	err := sl.Setup(withLoadKnownSkills(&knownSkills))
 	if err != nil {
 		return nil, err
 	}

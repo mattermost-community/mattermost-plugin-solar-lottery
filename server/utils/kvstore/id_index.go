@@ -8,8 +8,8 @@ import (
 )
 
 type IDIndexStore interface {
-	Load() (*types.IDIndex, error)
-	Store(*types.IDIndex) error
+	Load() (*types.IDSet, error)
+	Store(*types.IDSet) error
 	Delete(types.ID) error
 	Set(types.ID) error
 }
@@ -26,8 +26,8 @@ func (s *store) IDIndex(key string) IDIndexStore {
 	}
 }
 
-func (s *idIndexStore) Load() (*types.IDIndex, error) {
-	set := types.NewIDIndex()
+func (s *idIndexStore) Load() (*types.IDSet, error) {
+	set := types.NewIDSet()
 	err := LoadJSON(s.kv, s.key, &set)
 	if err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func (s *idIndexStore) Load() (*types.IDIndex, error) {
 	return set, nil
 }
 
-func (s *idIndexStore) Store(index *types.IDIndex) error {
+func (s *idIndexStore) Store(index *types.IDSet) error {
 	err := StoreJSON(s.kv, s.key, index)
 	if err != nil {
 		return err
@@ -59,7 +59,7 @@ func (s *idIndexStore) Set(v types.ID) error {
 	case nil:
 
 	case ErrNotFound:
-		index = types.NewIDIndex()
+		index = types.NewIDSet()
 
 	default:
 		return err

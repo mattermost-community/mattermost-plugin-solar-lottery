@@ -33,18 +33,25 @@ type Task struct {
 	Max               Needs           `json:",omitempty"`
 	Actual            *types.Interval `json:",omitempty"`
 	Grace             time.Duration   `json:",omitempty"`
-	MattermostUserIDs *types.IDIndex  `json:",omitempty"`
+	MattermostUserIDs *types.IDSet    `json:",omitempty"`
 
-	users Users
+	users *Users
 }
 
-func NewTask() *Task {
+func NewTask(rotationID types.ID) *Task {
 	return &Task{
 		Status:            TaskStatusPending,
 		Created:           types.NewTime(),
-		MattermostUserIDs: types.NewIDIndex(),
+		RotationID:        rotationID,
+		Min:               NewNeeds(),
+		Max:               NewNeeds(),
+		MattermostUserIDs: types.NewIDSet(),
 		users:             NewUsers(),
 	}
+}
+
+func (t Task) GetID() types.ID {
+	return t.TaskID
 }
 
 func (t Task) MarkdownBullets(rotation *Rotation) string {
@@ -58,6 +65,10 @@ func (t Task) MarkdownBullets(rotation *Rotation) string {
 }
 
 func (t Task) Markdown() string {
+	return fmt.Sprintf("%s", t.String())
+}
+
+func (t Task) String() string {
 	return fmt.Sprintf("%s", t.TaskID)
 }
 

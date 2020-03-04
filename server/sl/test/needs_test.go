@@ -56,14 +56,9 @@ func TestUsersQualifiedForNeed(t *testing.T) {
 	for _, tc := range []struct {
 		name              string
 		need              *sl.Need
-		users             sl.Users
-		expectedQualified sl.Users
+		users             *sl.Users
+		expectedQualified *sl.Users
 	}{
-		{
-			name:              "empty users",
-			need:              C1_Server_L2(),
-			expectedQualified: sl.NewUsers(),
-		},
 		{
 			name:              "happy server3",
 			need:              C1_Server_L3(),

@@ -9,14 +9,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (sl *sl) AddToCalendar(mattermostUserIDs *types.IDIndex, u *Unavailable) (Users, error) {
-	var users Users
+func (sl *sl) AddToCalendar(mattermostUserIDs *types.IDSet, u *Unavailable) (*Users, error) {
+	var users *Users
 	err := sl.Setup(
 		pushLogger("AddToCalendar", bot.LogContext{ctxUnavailable: u}),
 		withExpandedUsers(mattermostUserIDs, &users),
 	)
 	if err != nil {
-		return users, err
+		return nil, err
 	}
 	defer sl.popLogger()
 
@@ -38,26 +38,26 @@ func (sl *sl) addUserUnavailable(user *User, u *Unavailable) error {
 	return nil
 }
 
-func (sl *sl) ClearCalendar(mattermostUserIDs *types.IDIndex, interval types.Interval) (Users, error) {
-	var users Users
+func (sl *sl) ClearCalendar(mattermostUserIDs *types.IDSet, interval types.Interval) (*Users, error) {
+	var users *Users
 	err := sl.Setup(
 		pushLogger("CkearCalendar", bot.LogContext{ctxInterval: interval}),
 		withExpandedUsers(mattermostUserIDs, &users),
 	)
 	if err != nil {
-		return users, err
+		return nil, err
 	}
 	defer sl.popLogger()
 
 	for _, user := range users.AsArray() {
 		_ = user.findUnavailable(interval, true)
 		if err != nil {
-			return users, errors.WithMessagef(err, "failed to remove unavailable for %v", interval)
+			return nil, errors.WithMessagef(err, "failed to remove unavailable for %v", interval)
 		}
 
 		_, err = sl.storeUserWelcomeNew(user)
 		if err != nil {
-			return users, errors.WithMessagef(err, "failed to update user %s", user.Markdown())
+			return nil, errors.WithMessagef(err, "failed to update user %s", user.Markdown())
 		}
 	}
 

@@ -29,6 +29,7 @@ type SL interface {
 	RotationService
 	SkillService
 	UserService
+	TaskService
 
 	PluginAPI
 	bot.Logger

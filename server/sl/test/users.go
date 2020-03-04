@@ -48,7 +48,7 @@ func UserMobile2() *sl.User {
 	return SkilledUser(UserIDMobile2, Webapp, 1, Mobile, 3)
 }
 
-func AllUsers() sl.Users {
+func AllUsers() *sl.Users {
 	return sl.NewUsers(
 		UserGuru(),
 		UserServer1(),
@@ -66,8 +66,8 @@ func SkilledUser(mattermostUserID types.ID, skillLevels ...interface{}) *sl.User
 	return sl.NewUser(mattermostUserID).WithSkills(Skillmap(skillLevels...))
 }
 
-func Skillmap(skillLevels ...interface{}) *types.IntIndex {
-	m := types.NewIntIndex()
+func Skillmap(skillLevels ...interface{}) *types.IntSet {
+	m := types.NewIntSet()
 	for i := 0; i < len(skillLevels); i += 2 {
 		skill, _ := skillLevels[i].(string)
 		level, _ := skillLevels[i+1].(int)

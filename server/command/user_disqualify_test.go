@@ -31,6 +31,6 @@ func TestCommandUserDisqualify(t *testing.T) {
 		require.Equal(t, 1, len(uu.TestArray()))
 		u := uu.TestArray()[0]
 		require.Equal(t, types.ID("test-user"), u.MattermostUserID)
-		require.EqualValues(t, types.NewIntIndex(types.NewIDInt("somethingelse", 3)), u.SkillLevels)
+		require.EqualValues(t, types.NewIntSet(types.NewIntValue("somethingelse", 3)), u.SkillLevels)
 	})
 }

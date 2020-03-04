@@ -31,11 +31,11 @@ func TestCommandUserQualify(t *testing.T) {
 		require.Equal(t, 2, len(uu.TestIDs()))
 		u1 := uu.TestArray()[0]
 		require.Equal(t, types.ID("uid1"), u1.MattermostUserID)
-		require.EqualValues(t, types.NewIntIndex(types.NewIDInt("webapp", 2)), u1.SkillLevels)
+		require.EqualValues(t, types.NewIntSet(types.NewIntValue("webapp", 2)), u1.SkillLevels)
 
 		u2 := uu.TestArray()[1]
 		require.Equal(t, types.ID("uid2"), u2.MattermostUserID)
-		require.EqualValues(t, types.NewIntIndex(types.NewIDInt("webapp", 2)), u2.SkillLevels)
+		require.EqualValues(t, types.NewIntSet(types.NewIntValue("webapp", 2)), u2.SkillLevels)
 
 		qualified = sl.NewUsers()
 		_, err = runJSONCommand(t, SL, `

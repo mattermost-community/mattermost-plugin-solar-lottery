@@ -11,31 +11,21 @@ import (
 )
 
 type Users struct {
-	*types.Index // of *User
+	types.ValueSet // of *User
 }
 
-func NewUsers(uu ...*User) Users {
+func NewUsers(uu ...*User) *Users {
 	users := Users{
-		Index: types.NewIndex(&usersArray{}),
+		ValueSet: *types.NewValueSet(&usersArray{}),
 	}
 	for _, user := range uu {
 		users.Set(user)
 	}
-	return users
-}
-
-func (sl *sl) expandUsers(users Users) error {
-	for _, user := range users.AsArray() {
-		err := sl.expandUser(user)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return &users
 }
 
 func (users Users) Get(id types.ID) *User {
-	return users.Index.Get(id).(*User)
+	return users.ValueSet.Get(id).(*User)
 }
 
 func (users Users) MarkdownWithSkills() string {
@@ -74,7 +64,7 @@ func (users Users) TestArray() []User {
 	return out
 }
 
-func (users Users) Qualified(skillLevel SkillLevel) Users {
+func (users Users) Qualified(skillLevel SkillLevel) *Users {
 	qualified := NewUsers()
 	for _, id := range users.TestIDs() {
 		user := users.Get(types.ID(id))
@@ -87,17 +77,17 @@ func (users Users) Qualified(skillLevel SkillLevel) Users {
 
 func (users Users) AsArray() []*User {
 	a := usersArray{}
-	users.Index.AsArray(&a)
+	users.ValueSet.AsArray(&a)
 	return []*User(a)
 }
 
 type usersArray []*User
 
-func (p usersArray) Len() int                       { return len(p) }
-func (p usersArray) GetAt(n int) types.IndexCard    { return p[n] }
-func (p usersArray) SetAt(n int, v types.IndexCard) { p[n] = v.(*User) }
+func (p usersArray) Len() int                   { return len(p) }
+func (p usersArray) GetAt(n int) types.Value    { return p[n] }
+func (p usersArray) SetAt(n int, v types.Value) { p[n] = v.(*User) }
 
-func (p usersArray) InstanceOf() types.IndexCardArray {
+func (p usersArray) InstanceOf() types.ValueArray {
 	inst := make(usersArray, 0)
 	return &inst
 }

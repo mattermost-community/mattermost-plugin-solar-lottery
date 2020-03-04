@@ -6,7 +6,7 @@ package command
 func (c *Command) task(parameters []string) (string, error) {
 	subcommands := map[string]func([]string) (string, error){
 		commandParam: c.taskParam,
-		// commandNew:   c.newTask,
+		commandNew:   c.newTask,
 	}
 
 	return c.handleCommand(subcommands, parameters)

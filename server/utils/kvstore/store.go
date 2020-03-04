@@ -9,7 +9,7 @@ type Store interface {
 	KVStore
 
 	Entity(string) EntityStore
-	CardIndex(string, types.IndexCardArray) CardIndexStore
+	ValueIndex(string, types.ValueArray) ValueIndexStore
 	IDIndex(string) IDIndexStore
 }
 
