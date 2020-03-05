@@ -18,15 +18,12 @@ type Rotation struct {
 	TaskMaker     *TaskMaker
 
 	MattermostUserIDs *types.IDSet `json:",omitempty"`
-	PendingTaskIDs    *types.IDSet `json:",omitempty"`
-	InProgressTaskIDs *types.IDSet `json:",omitempty"`
+	TaskIDs           *types.IDSet `json:",omitempty"`
 
-	loaded        bool
-	expandedUsers bool
-	users         *Users
-	expandedTasks bool
-	pending       *Tasks
-	inProgress    *Tasks
+	loaded     bool
+	users      *Users
+	pending    *Tasks
+	inProgress *Tasks
 }
 
 func NewRotation() *Rotation {
@@ -39,17 +36,11 @@ func (r *Rotation) init() {
 	if r.MattermostUserIDs == nil {
 		r.MattermostUserIDs = types.NewIDSet()
 	}
-	if r.PendingTaskIDs == nil {
-		r.PendingTaskIDs = types.NewIDSet()
-	}
-	if r.InProgressTaskIDs == nil {
-		r.InProgressTaskIDs = types.NewIDSet()
+	if r.TaskIDs == nil {
+		r.TaskIDs = types.NewIDSet()
 	}
 	if r.TaskMaker == nil {
 		r.TaskMaker = NewTaskMaker()
-	}
-	if r.users == nil {
-		r.users = NewUsers()
 	}
 }
 
@@ -81,8 +72,11 @@ func (r *Rotation) Markdown() string {
 func (r *Rotation) MarkdownBullets() string {
 	out := fmt.Sprintf("- **%s**\n", r.Name())
 	out += fmt.Sprintf("  - ID: `%s`.\n", r.RotationID)
-	out += fmt.Sprintf("  - Users (%v): %s.\n", r.MattermostUserIDs.Len(), r.users.MarkdownWithSkills())
-
+	if r.users != nil {
+		out += fmt.Sprintf("  - Users (%v): %s.\n", r.MattermostUserIDs.Len(), r.users.MarkdownWithSkills())
+	} else {
+		out += fmt.Sprintf("  - Users (%v): %s.\n", r.MattermostUserIDs.Len(), r.MattermostUserIDs.IDs())
+	}
 	// if rotation.Autopilot.On {
 	// 	out += fmt.Sprintf("  - Autopilot: **on**\n")
 	// 	out += fmt.Sprintf("    - Auto-start: **%v**\n", rotation.Autopilot.StartFinish)

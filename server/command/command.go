@@ -23,14 +23,12 @@ import (
 )
 
 const (
-	// commandAdd         = "add"
 	// commandAutopilot   = "autopilot"
-	// commandFill        = "fill"
 	// commandForecast    = "forecast"
 	// commandGuess       = "guess"
-	// commandNeed        = "need"
 	// commandShift       = "shift"
 	commandArchive     = "archive"
+	commandAssign      = "assign"
 	commandDebugDelete = "debug-delete"
 	commandDelete      = "delete"
 	commandDisqualify  = "disqualify"
@@ -74,10 +72,8 @@ const (
 
 const (
 	// flagDebugRun   = "debug-run"
-	// flagFill       = "fill"
 	// flagFillDays   = "fill-before"
 	// flagNotifyDays = "notify"
-	// flagNumber     = "number"
 	// flagOff        = "off"
 	// flagSampleSize = "sample"
 	// flagType       = "type"
@@ -85,7 +81,9 @@ const (
 	flagCount    = "count"
 	flagDelete   = "delete"
 	flagDuration = "duration"
+	flagFill     = "fill"
 	flagFinish   = "finish"
+	flagForce    = "force"
 	flagGrace    = "grace"
 	flagJSON     = "json"
 	flagMax      = "max"
@@ -93,8 +91,8 @@ const (
 	flagPeriod   = "period"
 	flagRotation = "rotation"
 	flagSkill    = "skill"
-	flagSummary  = "summary"
 	flagStart    = "start"
+	flagSummary  = "summary"
 )
 
 // Command handles commands
@@ -278,6 +276,14 @@ func fSummary(fs *pflag.FlagSet) *string {
 	return fs.String(flagSummary, "", "task summary")
 }
 
+func fForce(fs *pflag.FlagSet) *bool {
+	return fs.Bool(flagForce, false, "ignore constraints")
+}
+
+func fFill(fs *pflag.FlagSet) *bool {
+	return fs.Bool(flagFill, false, "automatically assign, to match the ticket needs")
+}
+
 func (c *Command) resolveUsernames(args []string) (mattermostUserIDs *types.IDSet, err error) {
 	mattermostUserIDs = types.NewIDSet()
 	// if no args provided, return the acting user
@@ -338,6 +344,29 @@ func (c *Command) resolveRotationUsernames(fs *pflag.FlagSet) (types.ID, *types.
 		return "", nil, err
 	}
 	return rotationID, mattermostUserIDs, nil
+}
+
+func (c *Command) resolveTaskIDUsernames(fs *pflag.FlagSet) (types.ID, *types.IDSet, error) {
+	args := fs.Args()
+	if len(args) == 0 {
+		return "", nil, errors.New("Task ID is required")
+	}
+	usernames := []string{}
+	taskID := types.ID(args[0])
+	args = args[1:]
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "@") {
+			usernames = append(usernames, arg)
+		} else {
+			return "", nil, errors.Errorf("Unexpected argument: %s, expected @usernames", arg)
+		}
+	}
+
+	mattermostUserIDs, err := c.resolveUsernames(usernames)
+	if err != nil {
+		return "", nil, err
+	}
+	return taskID, mattermostUserIDs, nil
 }
 
 func (c *Command) resolveRotation(fs *pflag.FlagSet) (types.ID, error) {

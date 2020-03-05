@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-type Level int
+type Level int64
 
 var _ pflag.Value = (*Level)(nil)
 

@@ -42,6 +42,6 @@ func TestCommandUserQualify(t *testing.T) {
 			/lotto user qualify -k somethingelse-3`, &qualified)
 		require.NoError(t, err)
 		require.Equal(t, []string{"test-user"}, qualified.TestIDs())
-
+		require.Equal(t, int64(3), qualified.Get("test-user").SkillLevels.Get("somethingelse"))
 	})
 }

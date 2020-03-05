@@ -210,11 +210,10 @@ func (sl *sl) loadRotation(rotationID types.ID) (*Rotation, error) {
 }
 
 func (sl *sl) expandRotationUsers(r *Rotation) error {
-	if r.expandedUsers {
+	if r.users != nil {
 		return nil
 	}
 
-	r.init()
 	users, err := sl.loadStoredUsers(r.MattermostUserIDs)
 	if err != nil {
 		return err
@@ -224,26 +223,27 @@ func (sl *sl) expandRotationUsers(r *Rotation) error {
 		return err
 	}
 	r.users = users
-	r.expandedUsers = true
 	return nil
 }
 
 func (sl *sl) expandRotationTasks(r *Rotation) error {
-	if r.expandedTasks {
+	if r.pending != nil { // && r.inProgress != nil {
 		return nil
 	}
 
-	r.init()
-	pending, err := sl.loadTasks(r.PendingTaskIDs)
+	r.pending = NewTasks()
+	r.inProgress = NewTasks()
+	tasks, err := sl.loadTasks(r.TaskIDs)
 	if err != nil {
 		return err
 	}
-	inProgress, err := sl.loadTasks(r.InProgressTaskIDs)
-	if err != nil {
-		return err
+	for _, task := range tasks.AsArray() {
+		switch task.Status {
+		case TaskStatusPending:
+			r.pending.Set(task)
+		case TaskStatusInProgress:
+			r.inProgress.Set(task)
+		}
 	}
-	r.pending = pending
-	r.inProgress = inProgress
-	r.expandedTasks = true
 	return nil
 }

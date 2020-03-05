@@ -8,7 +8,6 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 func (c *Command) taskParam(parameters []string) (string, error) {
@@ -52,11 +51,10 @@ func (c *Command) taskParamMinMax(min bool, parameters []string) (string, error)
 		if min {
 			needsToUpdate = r.TaskMaker.Min
 		}
-		id := types.ID(skillLevel.String())
 		if *clear {
-			needsToUpdate.Delete(id)
+			needsToUpdate.Delete(skillLevel.AsID())
 		} else {
-			needsToUpdate.Set(id, int64(*count))
+			needsToUpdate.SetCountForSkillLevel(*skillLevel, int64(*count))
 		}
 		return nil
 	})

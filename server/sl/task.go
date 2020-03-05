@@ -14,6 +14,7 @@ type TaskStatus string
 
 const (
 	TaskStatusPending    = TaskStatus("pending")
+	TaskStatusScheduled  = TaskStatus("scheduled")
 	TaskStatusInProgress = TaskStatus("inprogress")
 	TaskStatusFinished   = TaskStatus("finished")
 )
@@ -29,8 +30,8 @@ type Task struct {
 	Description   string
 
 	Scheduled         *types.Interval `json:",omitempty"`
-	Min               Needs           `json:",omitempty"`
-	Max               Needs           `json:",omitempty"`
+	Min               *Needs          `json:",omitempty"`
+	Max               *Needs          `json:",omitempty"`
 	Actual            *types.Interval `json:",omitempty"`
 	Grace             time.Duration   `json:",omitempty"`
 	MattermostUserIDs *types.IDSet    `json:",omitempty"`

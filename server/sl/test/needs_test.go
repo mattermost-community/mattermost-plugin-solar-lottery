@@ -47,8 +47,11 @@ func TestQualifiedForNeed(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			result := tc.user.IsQualified(tc.need.SkillLevel)
-			require.Equal(t, tc.expected, result)
+			ok, need := tc.need.QualifyUser(tc.user)
+			require.Equal(t, tc.expected, ok)
+			if ok {
+				require.Equal(t, tc.need.Count()-1, need.Count())
+			}
 		})
 	}
 }
@@ -73,8 +76,10 @@ func TestUsersQualifiedForNeed(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			qualified := tc.users.Qualified(tc.need.SkillLevel)
+			qualified, need := tc.need.QualifyUsers(tc.users)
 			require.Equal(t, tc.expectedQualified, qualified)
+			require.Equal(t, tc.need.Count()-int64(tc.expectedQualified.Len()), need.Count())
+
 		})
 	}
 }

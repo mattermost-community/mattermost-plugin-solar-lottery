@@ -23,6 +23,22 @@ func (sl *sl) Setup(filters ...filterf) error {
 	return nil
 }
 
+func withLoadActiveRotations(ref **types.IDSet) func(sl *sl) error {
+	return func(sl *sl) error {
+		var activeRotations *types.IDSet
+		activeRotations, err := sl.Store.IDIndex(KeyActiveRotations).Load()
+		if err == kvstore.ErrNotFound {
+			*ref = types.NewIDSet()
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		*ref = activeRotations
+		return nil
+	}
+}
+
 func withLoadRotation(rotationID types.ID, ref **Rotation) func(sl *sl) error {
 	return func(sl *sl) error {
 		sl.Logger = sl.Logger.With(bot.LogContext{ctxRotationID: rotationID})
@@ -148,18 +164,15 @@ func withValidSkillName(skillName types.ID) func(sl *sl) error {
 	}
 }
 
-func withLoadActiveRotations(ref **types.IDSet) func(sl *sl) error {
+func withLoadTask(taskID types.ID, ref **Task) func(sl *sl) error {
 	return func(sl *sl) error {
-		var activeRotations *types.IDSet
-		activeRotations, err := sl.Store.IDIndex(KeyActiveRotations).Load()
-		if err == kvstore.ErrNotFound {
-			*ref = types.NewIDSet()
-			return nil
-		}
+		sl.Logger = sl.Logger.With(bot.LogContext{ctxTaskID: taskID})
+
+		t, err := sl.loadTask(taskID)
 		if err != nil {
 			return err
 		}
-		*ref = activeRotations
+		*ref = t
 		return nil
 	}
 }

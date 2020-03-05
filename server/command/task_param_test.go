@@ -68,8 +68,8 @@ func TestCommandTaskParam(t *testing.T) {
 			/lotto rotation show test-rotation`, &r)
 		require.NoError(t, err)
 		require.Equal(t, []string{"server-◉", "webapp-▣"}, r.TaskMaker.Max.TestIDs())
-		require.Equal(t, int64(2), r.TaskMaker.Max.Get("webapp-▣"))
-		require.Equal(t, int64(3), r.TaskMaker.Max.Get("server-◉"))
+		require.Equal(t, int64(2), r.TaskMaker.Max.IntSet.Get("webapp-▣"))
+		require.Equal(t, int64(3), r.TaskMaker.Max.IntSet.Get("server-◉"))
 	})
 
 	t.Run("min", func(t *testing.T) {
@@ -91,7 +91,7 @@ func TestCommandTaskParam(t *testing.T) {
 			/lotto rotation show test-rotation`, &r)
 		require.NoError(t, err)
 		require.Equal(t, []string{"server-◉", "webapp-▣"}, r.TaskMaker.Min.TestIDs())
-		require.Equal(t, int64(2), r.TaskMaker.Min.Get("webapp-▣"))
-		require.Equal(t, int64(3), r.TaskMaker.Min.Get("server-◉"))
+		require.Equal(t, int64(2), r.TaskMaker.Min.IntSet.Get("webapp-▣"))
+		require.Equal(t, int64(3), r.TaskMaker.Min.IntSet.Get("server-◉"))
 	})
 }

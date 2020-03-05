@@ -34,9 +34,10 @@ func (c *Command) info(parameters []string) (string, error) {
 	- [x] param grace --duration 
 	- [x] param shift --starting --period
 	- [x] param ticket
-	- [ ] new ticket
+	- [x] new ticket
 	- [ ] new shift
-	- [ ] assign [--auto aka fill]
+	- [x] assign
+	- [ ] assign --fill
 	- [ ] close
 	- [ ] debug-delete
 	- [ ] list --pending | --in-progress | --all

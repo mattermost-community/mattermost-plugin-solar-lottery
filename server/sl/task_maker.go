@@ -18,8 +18,8 @@ const (
 
 type TaskMaker struct {
 	Type             types.ID
-	Min              Needs         `json:`
-	Max              Needs         `json:`
+	Min              *Needs        `json:"min,omitempty"`
+	Max              *Needs        `json:"max,omitempty"`
 	Grace            time.Duration `json:"grace,omitempty"`
 	TicketSeq        int           `json:",omitempty"`
 	ShiftDescription string        `json:",omitempty"`
@@ -34,13 +34,13 @@ func NewTaskMaker() *TaskMaker {
 	}
 }
 
-func (maker *TaskMaker) NewTicket(rotationID types.ID, defaultID string) *Task {
+func (maker *TaskMaker) newTicket(r *Rotation, defaultID string) *Task {
 	maker.TicketSeq++
-	t := NewTask(rotationID)
+	t := NewTask(r.RotationID)
 	if defaultID == "" {
 		defaultID = strconv.Itoa(maker.TicketSeq)
 	}
-	t.TaskID = types.ID(string(rotationID) + "-" + defaultID)
+	t.TaskID = types.ID(r.Name() + "#" + defaultID)
 	// TODO do I need to clone these?
 	t.Min = maker.Min
 	t.Max = maker.Max

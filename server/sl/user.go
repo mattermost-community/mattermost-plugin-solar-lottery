@@ -139,7 +139,34 @@ func (user *User) findUnavailable(interval types.Interval, remove bool) []*Unava
 	return found
 }
 
-func (user *User) IsQualified(skillLevel SkillLevel) bool {
-	level := user.SkillLevels.Get(skillLevel.Skill)
-	return level >= int64(skillLevel.Level)
+func (user *User) checkMaxConstraints(max *Needs) (adjusted, violated *Needs) {
+	violated = NewNeeds()
+	adjusted = NewNeeds()
+	for _, need := range max.AsArray() {
+		qualified, adjustedNeed := need.QualifyUser(user)
+		if !qualified {
+			adjusted.Set(need)
+			continue
+		}
+		adjusted.Set(adjustedNeed)
+		if adjustedNeed.Count() < 0 {
+			violated.Set(need)
+		}
+	}
+
+	return adjusted, violated
+}
+
+func (user *User) updateMinRequirements(min *Needs) (adjusted *Needs) {
+	adjusted = NewNeeds()
+	for _, need := range min.AsArray() {
+		qualified, adjustedNeed := need.QualifyUser(user)
+		if !qualified {
+			adjusted.Set(need)
+			continue
+		}
+		adjusted.Set(adjustedNeed)
+	}
+
+	return adjusted
 }

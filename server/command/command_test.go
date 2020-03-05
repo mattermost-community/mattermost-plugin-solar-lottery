@@ -70,6 +70,7 @@ func getTestSL(t testing.TB, ctrl *gomock.Controller) (sl.SL, kvstore.Store) {
 		PluginAPI: pluginAPI,
 		Config:    config.NewTestService(&testConfig),
 		// Autofillers map[string]Autofiller
+		// Logger: &bot.TestLogger{TB: t},
 		Logger: &bot.NilLogger{},
 		Poster: &bot.NilPoster{},
 		Store:  kvstore.NewStore(kvstore.NewCacheKVStore(nil)),

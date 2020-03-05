@@ -33,6 +33,10 @@ func (skillLevel SkillLevel) String() string {
 	return fmt.Sprintf("%s-%s", skillLevel.Skill, skillLevel.Level)
 }
 
+func (skillLevel SkillLevel) AsID() types.ID {
+	return types.ID(skillLevel.String())
+}
+
 func (skillLevel SkillLevel) Type() string {
 	return fmt.Sprintf("%s-%v", skillLevel.Skill, int(skillLevel.Level))
 }

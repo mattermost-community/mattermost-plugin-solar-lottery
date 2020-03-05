@@ -64,17 +64,6 @@ func (users Users) TestArray() []User {
 	return out
 }
 
-func (users Users) Qualified(skillLevel SkillLevel) *Users {
-	qualified := NewUsers()
-	for _, id := range users.TestIDs() {
-		user := users.Get(types.ID(id))
-		if user.IsQualified(skillLevel) {
-			qualified.Set(user)
-		}
-	}
-	return qualified
-}
-
 func (users Users) AsArray() []*User {
 	a := usersArray{}
 	users.ValueSet.AsArray(&a)
