@@ -4,7 +4,6 @@
 package sl
 
 import (
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
@@ -15,8 +14,8 @@ type SkillService interface {
 }
 
 func (sl *sl) ListKnownSkills() (*types.IDSet, error) {
-	var knownSkills *types.IDSet
-	err := sl.Setup(withLoadKnownSkills(&knownSkills))
+	knownSkills := types.NewIDSet()
+	err := sl.Setup(withLoadKnownSkills(knownSkills))
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +23,7 @@ func (sl *sl) ListKnownSkills() (*types.IDSet, error) {
 }
 
 func (sl *sl) AddKnownSkill(skillName types.ID) error {
-	err := sl.Setup(pushLogger("AddKnownSkill", bot.LogContext{ctxSkill: skillName}))
+	err := sl.Setup(pushAPILogger("AddKnownSkill", skillName))
 	if err != nil {
 		return err
 	}
@@ -40,7 +39,7 @@ func (sl *sl) AddKnownSkill(skillName types.ID) error {
 }
 
 func (sl *sl) DeleteKnownSkill(skillName types.ID) error {
-	err := sl.Setup(pushLogger("DeleteKnownSkill", bot.LogContext{ctxSkill: skillName}))
+	err := sl.Setup(pushAPILogger("DeleteKnownSkill", skillName))
 	if err != nil {
 		return err
 	}

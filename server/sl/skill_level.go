@@ -42,6 +42,11 @@ func (skillLevel SkillLevel) Type() string {
 }
 
 func (skillLevel *SkillLevel) Set(in string) error {
+	if in == "*" || in == "*-*" {
+		skillLevel.Skill = "*"
+		skillLevel.Level = AnyLevel
+		return nil
+	}
 	split := strings.Split(in, "-")
 	if len(split) > 2 {
 		return errors.Errorf("should be formatted as skill-level: %s", skillLevel)

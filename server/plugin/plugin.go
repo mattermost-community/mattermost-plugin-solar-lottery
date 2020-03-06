@@ -95,7 +95,7 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 	}
 
 	out, _ := command.Handle()
-	p.SendEphemeralPost(args.ChannelId, args.UserId, out)
+	p.SendEphemeralPost(args.ChannelId, args.UserId, out.String())
 	return &model.CommandResponse{}, nil
 }
 

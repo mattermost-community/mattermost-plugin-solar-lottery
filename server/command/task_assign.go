@@ -4,44 +4,30 @@
 package command
 
 import (
-	"fmt"
-
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) assignTask(parameters []string) (string, error) {
-	fs := newFS()
-	fRotation(fs)
-	jsonOut := fJSON(fs)
-	force := fForce(fs)
-	fill := fFill(fs)
-	err := fs.Parse(parameters)
+func (c *Command) assignTask(parameters []string) (md.MD, error) {
+	c.withFlagRotation()
+	force := c.withFlagForce()
+	fill := c.withFlagFill()
+	err := c.fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
-	taskID, mattermostUserIDs, err := c.resolveTaskIDUsernames(fs)
+	taskID, mattermostUserIDs, err := c.resolveTaskIDUsernames()
 	if err != nil {
 		return "", err
 	}
 
-	t, added, err := c.SL.AssignTask(taskID, mattermostUserIDs, *force)
-	if err != nil {
-		return "", err
-	}
+	out, err := c.SL.AssignTask(sl.InAssignTask{
+		// return c.normalOut(c.SL.AssignTask(sl.InAssignTask{
+		TaskID:            taskID,
+		MattermostUserIDs: mattermostUserIDs,
+		Fill:              *fill,
+		Force:             *force,
+	})
 
-	if *fill {
-		err := c.SL.FillTask(t)
-		if err != nil {
-			return "", err
-		}
-		t, added, err = c.SL.AssignTask(taskID, t.MattermostUserIDs, false)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	if *jsonOut {
-		return md.JSONBlock(t), nil
-	}
-	return fmt.Sprintf("%s assigned to %s", added.Markdown(), t), nil
+	return c.normalOut(out, err)
 }

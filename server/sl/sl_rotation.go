@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
@@ -27,10 +26,10 @@ type RotationService interface {
 }
 
 func (sl *sl) AddRotation(r *Rotation) error {
-	var active *types.IDSet
+	active := types.NewIDSet()
 	err := sl.Setup(
-		pushLogger("AddRotation", bot.LogContext{ctxRotationID: r.RotationID}),
-		withLoadActiveRotations(&active),
+		pushAPILogger("AddRotation", r),
+		withLoadActiveRotations(active),
 	)
 	if err != nil {
 		return err
@@ -56,8 +55,8 @@ func (sl *sl) AddRotation(r *Rotation) error {
 }
 
 func (sl *sl) LoadActiveRotations() (*types.IDSet, error) {
-	var active *types.IDSet
-	err := sl.Setup(withLoadActiveRotations(&active))
+	active := types.NewIDSet()
+	err := sl.Setup(withLoadActiveRotations(active))
 	if err != nil {
 		return nil, err
 	}
@@ -65,8 +64,8 @@ func (sl *sl) LoadActiveRotations() (*types.IDSet, error) {
 }
 
 func (sl *sl) ResolveRotationName(pattern string) (types.ID, error) {
-	var active *types.IDSet
-	err := sl.Setup(withLoadActiveRotations(&active))
+	active := types.NewIDSet()
+	err := sl.Setup(withLoadActiveRotations(active))
 	if err != nil {
 		return "", err
 	}
@@ -99,10 +98,10 @@ func (sl *sl) ResolveRotationName(pattern string) (types.ID, error) {
 }
 
 func (sl *sl) ArchiveRotation(rotationID types.ID) (*Rotation, error) {
-	var r *Rotation
+	r := NewRotation()
 	err := sl.Setup(
-		pushLogger("ArchiveRotation", nil),
-		withLoadRotation(rotationID, &r),
+		pushAPILogger("ArchiveRotation", rotationID),
+		withLoadRotation(&rotationID, r),
 	)
 	if err != nil {
 		return nil, err
@@ -125,7 +124,7 @@ func (sl *sl) ArchiveRotation(rotationID types.ID) (*Rotation, error) {
 }
 
 func (sl *sl) DebugDeleteRotation(rotationID types.ID) error {
-	err := sl.Setup(pushLogger("DebugDeleteRotation", bot.LogContext{ctxRotationID: rotationID}))
+	err := sl.Setup(pushAPILogger("DebugDeleteRotation", rotationID))
 	if err != nil {
 		return err
 	}
@@ -145,8 +144,8 @@ func (sl *sl) DebugDeleteRotation(rotationID types.ID) error {
 }
 
 func (sl *sl) LoadRotation(rotationID types.ID) (*Rotation, error) {
-	var r *Rotation
-	err := sl.Setup(withExpandedRotation(rotationID, &r))
+	r := NewRotation()
+	err := sl.Setup(withExpandedRotation(rotationID, r))
 	if err != nil {
 		return nil, err
 	}
@@ -156,8 +155,8 @@ func (sl *sl) LoadRotation(rotationID types.ID) (*Rotation, error) {
 }
 
 func (sl *sl) UpdateRotation(rotationID types.ID, updatef func(*Rotation) error) (*Rotation, error) {
-	var r *Rotation
-	err := sl.Setup(withLoadRotation(rotationID, &r))
+	r := NewRotation()
+	err := sl.Setup(withLoadRotation(&rotationID, r))
 	if err != nil {
 		return nil, err
 	}
@@ -188,8 +187,8 @@ func (sl *sl) MakeRotation(rotationName string) (*Rotation, error) {
 }
 
 func (sl *sl) loadRotation(rotationID types.ID) (*Rotation, error) {
-	var active *types.IDSet
-	err := sl.Setup(withLoadActiveRotations(&active))
+	active := types.NewIDSet()
+	err := sl.Setup(withLoadActiveRotations(active))
 	if err != nil {
 		return nil, err
 	}
@@ -238,12 +237,20 @@ func (sl *sl) expandRotationTasks(r *Rotation) error {
 		return err
 	}
 	for _, task := range tasks.AsArray() {
-		switch task.Status {
-		case TaskStatusPending:
+		switch task.State {
+		case TaskStatePending:
 			r.pending.Set(task)
-		case TaskStatusInProgress:
+		case TaskStateInProgress:
 			r.inProgress.Set(task)
 		}
 	}
 	return nil
+}
+
+func (sl *sl) taskFiller(r *Rotation) (TaskFiller, error) {
+	f, ok := sl.TaskFillers[r.TaskFillerType]
+	if !ok {
+		return nil, errors.Wrapf(kvstore.ErrNotFound, "task filler type %s", r.TaskFillerType)
+	}
+	return f, nil
 }

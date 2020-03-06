@@ -23,80 +23,80 @@ func (sl *sl) Setup(filters ...filterf) error {
 	return nil
 }
 
-func withLoadActiveRotations(ref **types.IDSet) func(sl *sl) error {
+func withLoadActiveRotations(activeRotations *types.IDSet) func(sl *sl) error {
 	return func(sl *sl) error {
-		var activeRotations *types.IDSet
-		activeRotations, err := sl.Store.IDIndex(KeyActiveRotations).Load()
+		loaded, err := sl.Store.IDIndex(KeyActiveRotations).Load()
 		if err == kvstore.ErrNotFound {
-			*ref = types.NewIDSet()
+			*activeRotations = *types.NewIDSet()
 			return nil
 		}
 		if err != nil {
 			return err
 		}
-		*ref = activeRotations
+		*activeRotations = *loaded
 		return nil
 	}
 }
 
-func withLoadRotation(rotationID types.ID, ref **Rotation) func(sl *sl) error {
+func withLoadRotation(rotationID *types.ID, r *Rotation) func(sl *sl) error {
 	return func(sl *sl) error {
 		sl.Logger = sl.Logger.With(bot.LogContext{ctxRotationID: rotationID})
 
-		r, err := sl.loadRotation(rotationID)
+		loaded, err := sl.loadRotation(*rotationID)
 		if err != nil {
 			return err
 		}
-		*ref = r
+		*r = *loaded
 		return nil
 	}
 }
 
-func withExpandRotationUsers(ref **Rotation) func(sl *sl) error {
+func withExpandRotationUsers(r *Rotation) func(sl *sl) error {
 	return func(sl *sl) error {
-		return sl.expandRotationUsers(*ref)
+		return sl.expandRotationUsers(r)
 	}
 }
 
-func withExpandRotationTasks(ref **Rotation) func(sl *sl) error {
+func withExpandRotationTasks(r *Rotation) func(sl *sl) error {
 	return func(sl *sl) error {
-		return sl.expandRotationTasks(*ref)
+		return sl.expandRotationTasks(r)
 	}
 }
 
-func withExpandedRotation(rotationID types.ID, ref **Rotation) func(sl *sl) error {
+func withExpandedRotation(rotationID types.ID, r *Rotation) func(sl *sl) error {
 	return func(sl *sl) error {
 		return sl.Setup(
-			withLoadRotation(rotationID, ref),
-			withExpandRotationUsers(ref),
-			withExpandRotationTasks(ref),
+			withLoadRotation(&rotationID, r),
+			withExpandRotationUsers(r),
+			withExpandRotationTasks(r),
 		)
 	}
 }
 
-func withLoadOrMakeUser(mattermostUserID types.ID, userref **User) func(sl *sl) error {
+func withLoadOrMakeUser(mattermostUserID *types.ID, user *User) func(sl *sl) error {
 	return func(sl *sl) error {
-		loadedUser, _, err := sl.loadOrMakeUser(mattermostUserID)
+		loadedUser, _, err := sl.loadOrMakeUser(*mattermostUserID)
 		if err != nil {
 			return err
 		}
-		*userref = loadedUser
+		*user = *loadedUser
 		return nil
 	}
 }
 
-func withExpandedUser(mattermostUserID types.ID, ref **User) func(sl *sl) error {
+func withExpandedUser(mattermostUserID types.ID, user *User) func(sl *sl) error {
 	return func(sl *sl) error {
-		err := withLoadOrMakeUser(mattermostUserID, ref)(sl)
+		err := withLoadOrMakeUser(&mattermostUserID, user)(sl)
 		if err != nil {
 			return err
 		}
-		return sl.expandUser(*ref)
+		return sl.expandUser(user)
 	}
 }
 
 func withExpandedActingUser(sl *sl) error {
-	err := sl.Setup(withExpandedUser(sl.actingMattermostUserID, &sl.actingUser))
+	sl.actingUser = NewUser("")
+	err := sl.Setup(withExpandedUser(sl.actingMattermostUserID, sl.actingUser))
 	if err != nil {
 		return err
 	}
@@ -104,25 +104,24 @@ func withExpandedActingUser(sl *sl) error {
 	return nil
 }
 
-func withLoadUsers(mattermostUserIDs *types.IDSet, ref **Users) func(sl *sl) error {
+func withLoadUsers(mattermostUserIDs **types.IDSet, users *Users) func(sl *sl) error {
 	return func(sl *sl) error {
-		users, err := sl.loadStoredUsers(mattermostUserIDs)
+		loaded, err := sl.loadStoredUsers(*mattermostUserIDs)
 		if err != nil {
 			return err
 		}
-		*ref = users
+		*users = *loaded
 		sl.Logger = sl.Logger.With(bot.LogContext{ctxUserIDs: users.IDs()})
 		return nil
 	}
 }
 
-func withExpandedUsers(mattermostUserIDs *types.IDSet, ref **Users) func(sl *sl) error {
+func withExpandedUsers(mattermostUserIDs **types.IDSet, users *Users) func(sl *sl) error {
 	return func(sl *sl) error {
-		err := withLoadUsers(mattermostUserIDs, ref)(sl)
+		err := withLoadUsers(mattermostUserIDs, users)(sl)
 		if err != nil {
 			return err
 		}
-		users := *ref
 		if users.IsEmpty() {
 			return nil
 		}
@@ -135,49 +134,49 @@ func withExpandedUsers(mattermostUserIDs *types.IDSet, ref **Users) func(sl *sl)
 	}
 }
 
-func withLoadKnownSkills(ref **types.IDSet) func(*sl) error {
+func withLoadKnownSkills(knownSkills *types.IDSet) func(*sl) error {
 	return func(sl *sl) error {
 		skills, err := sl.Store.IDIndex(KeyKnownSkills).Load()
 		if err == kvstore.ErrNotFound {
-			*ref = types.NewIDSet()
+			*knownSkills = *types.NewIDSet()
 			return nil
 		}
 		if err != nil {
 			return err
 		}
-		*ref = skills
+		*knownSkills = *skills
 		return nil
 	}
 }
 
-func withValidSkillName(skillName types.ID) func(sl *sl) error {
+func withValidSkillName(skillName *types.ID) func(sl *sl) error {
 	return func(sl *sl) error {
-		var knownSkills *types.IDSet
+		knownSkills := *types.NewIDSet()
 		err := sl.Setup(withLoadKnownSkills(&knownSkills))
 		if err != nil {
 			return err
 		}
-		if !knownSkills.Contains(skillName) {
+		if !knownSkills.Contains(*skillName) {
 			return errors.Errorf("skill %s is not found", skillName)
 		}
 		return nil
 	}
 }
 
-func withLoadTask(taskID types.ID, ref **Task) func(sl *sl) error {
+func withLoadTask(taskID *types.ID, task *Task) func(sl *sl) error {
 	return func(sl *sl) error {
-		sl.Logger = sl.Logger.With(bot.LogContext{ctxTaskID: taskID})
+		sl.Logger = sl.Logger.With(bot.LogContext{ctxTaskID: *taskID})
 
-		t, err := sl.loadTask(taskID)
+		loaded, err := sl.loadTask(*taskID)
 		if err != nil {
 			return err
 		}
-		*ref = t
+		*task = *loaded
 		return nil
 	}
 }
 
-func pushLogger(apiName string, logContext bot.LogContext) func(*sl) error {
+func pushAPILogger(apiName string, in interface{}) func(*sl) error {
 	return func(sl *sl) error {
 		err := withExpandedActingUser(sl)
 		if err != nil {
@@ -185,10 +184,10 @@ func pushLogger(apiName string, logContext bot.LogContext) func(*sl) error {
 		}
 
 		logger := sl.Logger
-		logger = logger.With(logContext)
 		logger = logger.With(bot.LogContext{
 			ctxActingUsername: sl.actingUser.MattermostUsername(),
 			ctxAPI:            apiName,
+			ctxInput:          in,
 		})
 
 		if sl.loggers == nil {

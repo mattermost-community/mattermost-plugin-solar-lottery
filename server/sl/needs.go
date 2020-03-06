@@ -70,6 +70,14 @@ func (needs Needs) AsArray() []*Need {
 	return a
 }
 
+func (needs Needs) Unmet(users *Users) *Needs {
+	out := &needs
+	for _, user := range users.AsArray() {
+		out = user.updateMinRequirements(out)
+	}
+	return out
+}
+
 type Need struct {
 	types.IntValue
 }

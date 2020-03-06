@@ -28,15 +28,16 @@ func TestCommandTaskNewTicket(t *testing.T) {
 		require.NoError(t, err)
 
 		ts := time.Now()
-		task := sl.NewTask("")
+		out := &sl.OutMakeTicket{}
 		_, err = runJSONCommand(t, SL, `
-			/lotto task new ticket test-rotation --summary test-summary1
-			`, &task)
+		/lotto task new ticket test-rotation --summary test-summary1
+		`, &out)
+		task := out.Task
 		require.NoError(t, err)
 		require.Equal(t, "test-plugin-version", task.PluginVersion)
 		require.Equal(t, types.ID("test-rotation#1"), task.TaskID)
 		require.Equal(t, types.ID("test-rotation"), task.RotationID)
-		require.Equal(t, sl.TaskStatusPending, task.Status)
+		require.Equal(t, sl.TaskStatePending, task.State)
 		require.True(t, task.Created.After(ts))
 		require.Equal(t, "test-summary1", task.Summary)
 		require.Equal(t, []string{"webapp-▣"}, task.Min.TestIDs())

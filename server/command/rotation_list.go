@@ -4,15 +4,12 @@
 package command
 
 import (
-	"fmt"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/pkg/errors"
 )
 
-func (c *Command) listRotations(parameters []string) (string, error) {
-	fs := newFS()
-	jsonOut := fJSON(fs)
+func (c *Command) listRotations(parameters []string) (md.MD, error) {
+	fs := c.assureFS()
 	err := fs.Parse(parameters)
 	if len(fs.Args()) > 0 {
 		return c.subUsage(nil), errors.New("unexpected parameters")
@@ -23,15 +20,15 @@ func (c *Command) listRotations(parameters []string) (string, error) {
 		return "", err
 	}
 
-	if *jsonOut {
+	if c.outputJson {
 		return md.JSONBlock(rotations), nil
 	}
 	if rotations.Len() == 0 {
 		return "*none*", nil
 	}
-	out := ""
+	out := md.MD("")
 	for _, id := range rotations.IDs() {
-		out += fmt.Sprintf("- %s\n", id)
+		out += md.Markdownf("- %s\n", id)
 	}
 	return out, nil
 }

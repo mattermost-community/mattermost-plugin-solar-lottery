@@ -11,7 +11,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 )
 
-func TestCommandRotationLeave(t *testing.T) {
+func TestCommandUserLeave(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -23,11 +23,13 @@ func TestCommandRotationLeave(t *testing.T) {
 			`)
 		require.NoError(t, err)
 
-		deleted := sl.NewUsers()
+		out := sl.OutJoinLeaveRotation{
+			Modified: sl.NewUsers(),
+		}
 		_, err = runJSONCommand(t, SL, `
-			/lotto user leave test-rotation @id2-username @id3-username @id5-username`, &deleted)
+			/lotto user leave test-rotation @id2-username @id3-username @id5-username`, &out)
 		require.NoError(t, err)
-		require.Equal(t, []string{"id2", "id3"}, deleted.TestIDs())
+		require.Equal(t, []string{"id2", "id3"}, out.Modified.TestIDs())
 
 		r := sl.NewRotation()
 		_, err = runJSONCommand(t, SL, `

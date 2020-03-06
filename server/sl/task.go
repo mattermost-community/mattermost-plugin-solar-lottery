@@ -7,16 +7,20 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-type TaskStatus string
+type TaskState string
+
+var ErrWrongState = errors.New("operation is not allowed in this state")
 
 const (
-	TaskStatusPending    = TaskStatus("pending")
-	TaskStatusScheduled  = TaskStatus("scheduled")
-	TaskStatusInProgress = TaskStatus("inprogress")
-	TaskStatusFinished   = TaskStatus("finished")
+	TaskStatePending    = TaskState("pending")
+	TaskStateScheduled  = TaskState("scheduled")
+	TaskStateInProgress = TaskState("inprogress")
+	TaskStateFinished   = TaskState("finished")
 )
 
 type Task struct {
@@ -24,7 +28,7 @@ type Task struct {
 	PluginVersion string
 	TaskID        types.ID
 	RotationID    types.ID
-	Status        TaskStatus
+	State         TaskState
 	Created       types.Time
 	Summary       string
 	Description   string
@@ -41,7 +45,7 @@ type Task struct {
 
 func NewTask(rotationID types.ID) *Task {
 	return &Task{
-		Status:            TaskStatusPending,
+		State:             TaskStatePending,
 		Created:           types.NewTime(),
 		RotationID:        rotationID,
 		Min:               NewNeeds(),
@@ -57,7 +61,7 @@ func (t Task) GetID() types.ID {
 
 func (t Task) MarkdownBullets(rotation *Rotation) string {
 	out := fmt.Sprintf("- %s\n", t.Markdown())
-	out += fmt.Sprintf("  - Status: **%s**\n", t.Status)
+	out += fmt.Sprintf("  - Status: **%s**\n", t.State)
 	out += fmt.Sprintf("  - Users: **%v**\n", t.MattermostUserIDs.Len())
 	// for _, user := range rotation.TaskUsers(&t) {
 	// 	out += fmt.Sprintf("    - %s\n", user.MarkdownWithSkills())
@@ -105,4 +109,23 @@ func (t *Task) NewUnavailable() []*Unavailable {
 	}
 
 	return uu
+}
+
+func (task *Task) isReadyToStart() (ready bool, whyNot string, err error) {
+	if task.State != TaskStatePending && task.State != TaskStateScheduled {
+		return false, "", errors.Wrap(ErrWrongState, string(task.State))
+	}
+
+	unmetNeeds := task.Min.Unmet(task.users)
+	if unmetNeeds.IsEmpty() {
+		return true, "", nil
+	}
+
+	whyNot = FillError{
+		UnmetNeeds: unmetNeeds,
+		Err:        errors.New("not filled"),
+		TaskID:     task.TaskID,
+	}.Error()
+
+	return false, whyNot, nil
 }

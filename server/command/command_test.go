@@ -16,6 +16,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl/mock_sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
@@ -79,7 +80,7 @@ func getTestSL(t testing.TB, ctrl *gomock.Controller) (sl.SL, kvstore.Store) {
 	return serviceSL.ActingAs("test-user"), serviceSL.Store
 }
 
-func runCommand(t testing.TB, sl sl.SL, cmd string) (string, error) {
+func runCommand(t testing.TB, sl sl.SL, cmd string) (md.MD, error) {
 	if cmd == "" || cmd[0] == '#' {
 		return "", nil
 	}
@@ -93,19 +94,19 @@ func runCommand(t testing.TB, sl sl.SL, cmd string) (string, error) {
 	return c.handleCommand(c.commands(), split[1:])
 }
 
-func runJSONCommand(t testing.TB, sl sl.SL, cmd string, ref interface{}) (string, error) {
+func runJSONCommand(t testing.TB, sl sl.SL, cmd string, ref interface{}) (md.MD, error) {
 	cmd += " --json"
-	out, err := runCommand(t, sl, cmd)
+	outmd, err := runCommand(t, sl, cmd)
+	out := outmd.String()
 	out = strings.Trim(strings.TrimSpace(out), "`")
 	out = strings.TrimPrefix(out, "json\n")
-
 	if ref != nil && out != "" {
 		errUnmarshal := json.Unmarshal([]byte(out), ref)
 		if errUnmarshal != nil {
 			return "", errUnmarshal
 		}
 	}
-	return out, err
+	return md.MD(out), err
 }
 
 func runCommands(t testing.TB, sl sl.SL, in string) error {

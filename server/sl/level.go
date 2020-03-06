@@ -13,7 +13,9 @@ type Level int64
 var _ pflag.Value = (*Level)(nil)
 
 const (
-	Beginner = Level(1) + iota
+	AnyLevel = Level(-1) + iota
+	NoLevel
+	Beginner
 	Intermediate
 	Advanced
 	Expert
@@ -32,6 +34,8 @@ const (
 
 func (level Level) String() string {
 	switch level {
+	case AnyLevel:
+		return "*"
 	case Beginner:
 		return LevelBeginnerSymbol
 	case Intermediate:
@@ -45,7 +49,7 @@ func (level Level) String() string {
 }
 
 func (level *Level) Type() string {
-	return "skill_level"
+	return "level"
 }
 
 func (level *Level) Set(in string) error {

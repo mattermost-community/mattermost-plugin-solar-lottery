@@ -8,16 +8,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (c *Command) archiveRotation(parameters []string) (string, error) {
-	fs := newFS()
-	fRotation(fs)
-	jsonOut := fJSON(fs)
+func (c *Command) archiveRotation(parameters []string) (md.MD, error) {
+	fs := c.assureFS()
+	c.withFlagRotation()
 	err := fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
 
-	rotationID, err := c.resolveRotation(fs)
+	rotationID, err := c.resolveRotation()
 	if err != nil {
 		return "", err
 	}
@@ -27,22 +26,18 @@ func (c *Command) archiveRotation(parameters []string) (string, error) {
 		return "", errors.WithMessagef(err, "failed to archive %s", rotationID)
 	}
 
-	if *jsonOut {
-		return md.JSONBlock(r), nil
-	}
-	return "Archived rotation " + r.Markdown(), nil
+	return c.normalOut(r, err)
 }
 
-func (c *Command) debugDeleteRotation(parameters []string) (string, error) {
-	fs := newFS()
-	fRotation(fs)
-	jsonOut := fJSON(fs)
+func (c *Command) debugDeleteRotation(parameters []string) (md.MD, error) {
+	fs := c.assureFS()
+	c.withFlagRotation()
 	err := fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
 
-	rotationID, err := c.resolveRotation(fs)
+	rotationID, err := c.resolveRotation()
 	if err != nil {
 		return "", err
 	}
@@ -52,8 +47,5 @@ func (c *Command) debugDeleteRotation(parameters []string) (string, error) {
 		return "", errors.WithMessagef(err, "failed to delete %s", rotationID)
 	}
 
-	if *jsonOut {
-		return md.JSONBlock(rotationID), nil
-	}
-	return "Deleted rotation " + string(rotationID), nil
+	return c.normalOut(md.MD(rotationID), err)
 }

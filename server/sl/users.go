@@ -28,6 +28,10 @@ func (users Users) Get(id types.ID) *User {
 	return users.ValueSet.Get(id).(*User)
 }
 
+func (users Users) Join(other *Users) *Users {
+	return NewUsers(append(users.AsArray(), other.AsArray()...)...)
+}
+
 func (users Users) MarkdownWithSkills() string {
 	out := []string{}
 	for _, user := range users.AsArray() {

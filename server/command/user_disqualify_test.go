@@ -24,12 +24,14 @@ func TestCommandUserDisqualify(t *testing.T) {
 		`)
 		require.NoError(t, err)
 
-		uu := sl.NewUsers()
+		out := sl.OutQualify{
+			Users: sl.NewUsers(),
+		}
 		_, err = runJSONCommand(t, SL, `
-			/lotto user disqualify -k webapp`, &uu)
+			/lotto user disqualify -k webapp`, &out)
 		require.NoError(t, err)
-		require.Equal(t, 1, len(uu.TestArray()))
-		u := uu.TestArray()[0]
+		require.Equal(t, 1, len(out.Users.TestArray()))
+		u := out.Users.TestArray()[0]
 		require.Equal(t, types.ID("test-user"), u.MattermostUserID)
 		require.EqualValues(t, types.NewIntSet(types.NewIntValue("somethingelse", 3)), u.SkillLevels)
 	})

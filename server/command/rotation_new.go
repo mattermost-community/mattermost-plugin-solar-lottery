@@ -5,17 +5,18 @@ package command
 
 import (
 	"github.com/pkg/errors"
-	"github.com/spf13/pflag"
+
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) newRotation(parameters []string) (string, error) {
-	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
+func (c *Command) newRotation(parameters []string) (md.MD, error) {
+	fs := c.assureFS()
 	err := fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
 	if fs.Arg(0) == "" {
-		return c.flagUsage(fs), errors.Errorf("must specify rotation name")
+		return c.flagUsage(), errors.Errorf("must specify rotation name")
 	}
 
 	r, err := c.SL.MakeRotation(fs.Arg(0))

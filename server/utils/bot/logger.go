@@ -102,7 +102,7 @@ func (bot *bot) Warnf(format string, args ...interface{}) {
 
 func (bot *bot) logToAdmins(level, message string) {
 	if bot.AdminLogVerbose && len(bot.logContext) > 0 {
-		message += "\n" + md.JSONBlock(bot.logContext)
+		message += "\n" + md.JSONBlock(bot.logContext).String()
 	}
 	bot.dmAdmins("(log " + level + ") " + message)
 }

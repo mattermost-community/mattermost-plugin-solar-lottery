@@ -81,7 +81,7 @@ func TestCommandTaskParam(t *testing.T) {
 			/lotto rotation new test-rotation
 			/lotto task param min -k webapp-2 --count 2 test-rotation
 			/lotto task param min -k webapp-3 --count 1 test-rotation
-			/lotto task param min -k server-1 --count 3 test-rotation
+			/lotto task param min -k server --count 3 test-rotation
 			/lotto task param min -k webapp-3 --clear test-rotation
 			`)
 		require.NoError(t, err)
@@ -94,4 +94,24 @@ func TestCommandTaskParam(t *testing.T) {
 		require.Equal(t, int64(2), r.TaskMaker.Min.IntSet.Get("webapp-▣"))
 		require.Equal(t, int64(3), r.TaskMaker.Min.IntSet.Get("server-◉"))
 	})
+
+	t.Run("max any", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		SL, _ := getTestSL(t, ctrl)
+
+		err := runCommands(t, SL, `
+			/lotto rotation new test-rotation
+			/lotto task param max -k * --count 2 test-rotation
+			`)
+		require.NoError(t, err)
+
+		r := sl.NewRotation()
+		_, err = runJSONCommand(t, SL, `
+			/lotto rotation show test-rotation`, &r)
+		require.NoError(t, err)
+		require.Equal(t, []string{"*-*"}, r.TaskMaker.Max.TestIDs())
+		require.Equal(t, int64(2), r.TaskMaker.Max.IntSet.Get("*-*"))
+	})
+
 }

@@ -100,18 +100,21 @@ func (set *ValueSet) IDs() []ID {
 	return n
 }
 
-func (set *ValueSet) Set(v Value) {
+func (set *ValueSet) Set(vv ...Value) {
 	if set.ids == nil {
 		set.ids = []ID{}
 	}
 	if set.m == nil {
 		set.m = map[ID]Value{}
 	}
-	id := v.GetID()
-	if !set.Contains(id) {
-		set.ids = append(set.ids, id)
+
+	for _, v := range vv {
+		id := v.GetID()
+		if !set.Contains(id) {
+			set.ids = append(set.ids, id)
+		}
+		set.m[id] = v
 	}
-	set.m[id] = v
 }
 
 func (set *ValueSet) SetAt(n int, v Value) {
@@ -168,7 +171,7 @@ func (set *ValueSet) TestIDs() []string {
 
 func (set *ValueSet) MarshalJSON() ([]byte, error) {
 	if set.IsEmpty() {
-		return json.Marshal([]byte("[]"))
+		return []byte("[]"), nil
 	}
 	proto := set.proto.InstanceOf()
 	proto.Resize(len(set.ids))

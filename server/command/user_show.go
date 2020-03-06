@@ -7,12 +7,11 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) showUser(parameters []string) (string, error) {
-	fs := newFS()
-	_ = fJSON(fs)
+func (c *Command) showUser(parameters []string) (md.MD, error) {
+	fs := c.assureFS()
 	err := fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
 
 	mattermostUserIDs, err := c.resolveUsernames(fs.Args())

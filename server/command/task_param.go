@@ -4,14 +4,12 @@
 package command
 
 import (
-	"fmt"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) taskParam(parameters []string) (string, error) {
-	subcommands := map[string]func([]string) (string, error){
+func (c *Command) taskParam(parameters []string) (md.MD, error) {
+	subcommands := map[string]func([]string) (md.MD, error){
 		commandMin:    c.taskParamMin,
 		commandMax:    c.taskParamMax,
 		commandGrace:  c.taskParamGrace,
@@ -22,139 +20,103 @@ func (c *Command) taskParam(parameters []string) (string, error) {
 	return c.handleCommand(subcommands, parameters)
 }
 
-func (c *Command) taskParamMin(parameters []string) (string, error) {
+func (c *Command) taskParamMin(parameters []string) (md.MD, error) {
 	return c.taskParamMinMax(true, parameters)
 }
 
-func (c *Command) taskParamMax(parameters []string) (string, error) {
+func (c *Command) taskParamMax(parameters []string) (md.MD, error) {
 	return c.taskParamMinMax(false, parameters)
 }
 
-func (c *Command) taskParamMinMax(min bool, parameters []string) (string, error) {
-	fs := newFS()
-	fRotation(fs)
-	jsonOut := fJSON(fs)
-	skillLevel := fSkillLevel(fs)
-	count := fCount(fs)
-	clear := fClear(fs)
-	err := fs.Parse(parameters)
+func (c *Command) taskParamMinMax(min bool, parameters []string) (md.MD, error) {
+	c.withFlagRotation()
+	skillLevel := c.withFlagSkillLevel()
+	count := c.withFlagCount()
+	clear := c.withFlagClear()
+	err := c.fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
-	rotationID, err := c.resolveRotation(fs)
+	rotationID, err := c.resolveRotation()
 	if err != nil {
 		return "", err
 	}
 
-	r, err := c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
-		needsToUpdate := r.TaskMaker.Max
-		if min {
-			needsToUpdate = r.TaskMaker.Min
-		}
-		if *clear {
-			needsToUpdate.Delete(skillLevel.AsID())
-		} else {
-			needsToUpdate.SetCountForSkillLevel(*skillLevel, int64(*count))
-		}
-		return nil
-	})
-	if err != nil {
-		return "", err
-	}
-
-	if *jsonOut {
-		return md.JSONBlock(r), nil
-	}
-	return fmt.Sprintf("%s deleted from rotation %s", fs.Arg(1), rotationID), nil
+	return c.normalOut(
+		c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
+			needsToUpdate := r.TaskMaker.Max
+			if min {
+				needsToUpdate = r.TaskMaker.Min
+			}
+			if *clear {
+				needsToUpdate.Delete(skillLevel.AsID())
+			} else {
+				needsToUpdate.SetCountForSkillLevel(*skillLevel, int64(*count))
+			}
+			return nil
+		}))
 }
 
-func (c *Command) taskParamGrace(parameters []string) (string, error) {
-	fs := newFS()
-	fRotation(fs)
-	jsonOut := fJSON(fs)
-	dur := fDuration(fs)
-	err := fs.Parse(parameters)
+func (c *Command) taskParamGrace(parameters []string) (md.MD, error) {
+	c.withFlagRotation()
+	dur := c.withFlagDuration()
+	err := c.fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
-	rotationID, err := c.resolveRotation(fs)
+	rotationID, err := c.resolveRotation()
 	if err != nil {
 		return "", err
 	}
 
-	r, err := c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
-		r.TaskMaker.Grace = *dur
-		return nil
-	})
-	if err != nil {
-		return "", err
-	}
-
-	if *jsonOut {
-		return md.JSONBlock(r), nil
-	}
-	return fmt.Sprintf("%s deleted from rotation %s", fs.Arg(1), rotationID), nil
+	return c.normalOut(
+		c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
+			r.TaskMaker.Grace = *dur
+			return nil
+		}))
 }
 
-func (c *Command) taskParamShift(parameters []string) (string, error) {
+func (c *Command) taskParamShift(parameters []string) (md.MD, error) {
 	actingUser, err := c.SL.ActingUser()
 	if err != nil {
 		return "", err
 	}
 
-	fs := newFS()
-	fRotation(fs)
-	jsonOut := fJSON(fs)
-	period := fPeriod(fs)
-	start := fStart(fs, actingUser)
-	err = fs.Parse(parameters)
+	c.withFlagRotation()
+	period := c.withFlagPeriod()
+	start := c.withFlagStart(actingUser)
+	err = c.fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
-	rotationID, err := c.resolveRotation(fs)
+	rotationID, err := c.resolveRotation()
 	if err != nil {
 		return "", err
 	}
 
-	r, err := c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
-		r.TaskMaker.Type = sl.ShiftMaker
-		r.TaskMaker.ShiftPeriod = *period
-		r.TaskMaker.ShiftStart = *start
-		return nil
-	})
-	if err != nil {
-		return "", err
-	}
-
-	if *jsonOut {
-		return md.JSONBlock(r), nil
-	}
-	return fmt.Sprintf("%s deleted from rotation %s", fs.Arg(1), rotationID), nil
+	return c.normalOut(
+		c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
+			r.TaskMaker.Type = sl.ShiftMaker
+			r.TaskMaker.ShiftPeriod = *period
+			r.TaskMaker.ShiftStart = *start
+			return nil
+		}))
 }
 
-func (c *Command) taskParamTicket(parameters []string) (string, error) {
-	fs := newFS()
-	fRotation(fs)
-	jsonOut := fJSON(fs)
-	err := fs.Parse(parameters)
+func (c *Command) taskParamTicket(parameters []string) (md.MD, error) {
+	c.withFlagRotation()
+	err := c.fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
-	rotationID, err := c.resolveRotation(fs)
+	rotationID, err := c.resolveRotation()
 	if err != nil {
 		return "", err
 	}
 
-	r, err := c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
-		r.TaskMaker.Type = sl.TicketMaker
-		return nil
-	})
-	if err != nil {
-		return "", err
-	}
-
-	if *jsonOut {
-		return md.JSONBlock(r), nil
-	}
-	return fmt.Sprintf("%s deleted from rotation %s", fs.Arg(1), rotationID), nil
+	return c.normalOut(
+		c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
+			r.TaskMaker.Type = sl.TicketMaker
+			return nil
+		}))
 }

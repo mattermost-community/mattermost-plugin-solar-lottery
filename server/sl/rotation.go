@@ -4,18 +4,17 @@
 package sl
 
 import (
-	"fmt"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 type Rotation struct {
-	PluginVersion string
-	RotationID    types.ID
-	IsArchived    bool
-	AutofillType  string
-	TaskMaker     *TaskMaker
+	PluginVersion  string
+	RotationID     types.ID
+	IsArchived     bool
+	TaskFillerType types.ID
+	TaskMaker      *TaskMaker
 
 	MattermostUserIDs *types.IDSet `json:",omitempty"`
 	TaskIDs           *types.IDSet `json:",omitempty"`
@@ -65,17 +64,17 @@ func (r *Rotation) Name() string {
 	return kvstore.NameFromID(r.RotationID)
 }
 
-func (r *Rotation) Markdown() string {
-	return r.Name()
+func (r *Rotation) Markdown() md.MD {
+	return md.MD(r.Name())
 }
 
-func (r *Rotation) MarkdownBullets() string {
-	out := fmt.Sprintf("- **%s**\n", r.Name())
-	out += fmt.Sprintf("  - ID: `%s`.\n", r.RotationID)
+func (r *Rotation) MarkdownBullets() md.MD {
+	out := md.Markdownf("- **%s**\n", r.Name())
+	out += md.Markdownf("  - ID: `%s`.\n", r.RotationID)
 	if r.users != nil {
-		out += fmt.Sprintf("  - Users (%v): %s.\n", r.MattermostUserIDs.Len(), r.users.MarkdownWithSkills())
+		out += md.Markdownf("  - Users (%v): %s.\n", r.MattermostUserIDs.Len(), r.users.MarkdownWithSkills())
 	} else {
-		out += fmt.Sprintf("  - Users (%v): %s.\n", r.MattermostUserIDs.Len(), r.MattermostUserIDs.IDs())
+		out += md.Markdownf("  - Users (%v): %s.\n", r.MattermostUserIDs.Len(), r.MattermostUserIDs.IDs())
 	}
 	// if rotation.Autopilot.On {
 	// 	out += fmt.Sprintf("  - Autopilot: **on**\n")

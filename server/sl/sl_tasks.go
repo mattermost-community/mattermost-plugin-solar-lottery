@@ -4,110 +4,9 @@
 package sl
 
 import (
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 	"github.com/pkg/errors"
 )
-
-type TaskService interface {
-	MakeTicket(rotationID types.ID, summary, description string) (*Task, error)
-	AssignTask(types.ID, *types.IDSet, bool) (*Task, *Users, error)
-	FillTask(*Task) error
-}
-
-func (sl *sl) MakeTicket(rotationID types.ID, summary, description string) (*Task, error) {
-	err := sl.Setup(pushLogger("MakeTicket", bot.LogContext{}))
-	if err != nil {
-		return nil, err
-	}
-	defer sl.popLogger()
-
-	var t *Task
-	_, err = sl.UpdateRotation(rotationID, func(r *Rotation) error {
-		t = r.TaskMaker.newTicket(r, "")
-		t.Summary = summary
-		t.Description = description
-		var id types.ID
-		id, err = sl.Store.Entity(KeyTask).NewID(string(t.TaskID))
-		if err != nil {
-			return err
-		}
-		t.TaskID = id
-
-		err = sl.storeTask(t)
-		if err != nil {
-			return err
-		}
-		r.TaskIDs.Set(t.TaskID)
-		if r.pending != nil {
-			r.pending.Set(t)
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	sl.Infof("%s created ticket %s.", sl.actingUser.Markdown(), t.Markdown())
-	return t, nil
-}
-
-func (sl *sl) AssignTask(taskID types.ID, mattermostUserIDs *types.IDSet, force bool) (*Task, *Users, error) {
-	users := NewUsers()
-	task := NewTask("")
-	err := sl.Setup(
-		pushLogger("AssignTask", bot.LogContext{ctxForce: force}),
-		withLoadTask(taskID, &task),
-		withExpandedUsers(mattermostUserIDs, &users),
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer sl.popLogger()
-
-	max := task.Max
-	added := NewUsers()
-	for _, user := range users.AsArray() {
-		if task.MattermostUserIDs.Contains(user.MattermostUserID) {
-			continue
-		}
-		if !force {
-			var failed *Needs
-			max, failed = user.checkMaxConstraints(max)
-			if !failed.IsEmpty() {
-				return nil, nil, errors.Errorf("user %s failed max constraints %s", user.Markdown(), failed.MarkdownSkillLevels())
-			}
-		}
-		task.MattermostUserIDs.Set(user.MattermostUserID)
-		if task.users != nil {
-			task.users.Set(user)
-		}
-		added.Set(user)
-	}
-	err = sl.storeTask(task)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	sl.Infof("%s assigned %s to ticket %s.",
-		sl.actingUser.Markdown(), added.Markdown(), task.Markdown())
-	return task, added, nil
-}
-
-func (sl *sl) FillTask(*Task) error {
-	return errors.New("<><> TODO")
-}
-
-func (sl *sl) loadTasks(taskIDs *types.IDSet) (*Tasks, error) {
-	tasks := NewTasks()
-	for _, id := range taskIDs.IDs() {
-		t, err := sl.loadTask(id)
-		if err != nil {
-			return nil, err
-		}
-		tasks.Set(t)
-	}
-	return tasks, nil
-}
 
 func (sl *sl) loadTask(taskID types.ID) (*Task, error) {
 	t := NewTask("")
@@ -141,4 +40,62 @@ func (sl *sl) expandTaskUsers(t *Task) error {
 	}
 	t.users = users
 	return nil
+}
+
+func (sl *sl) assignTask(task *Task, users *Users, force bool) (*Users, error) {
+	max := task.Max
+	added := NewUsers()
+	for _, user := range users.AsArray() {
+		if task.MattermostUserIDs.Contains(user.MattermostUserID) {
+			continue
+		}
+		if !force {
+			var failed *Needs
+			max, failed = user.checkMaxConstraints(max)
+			if !failed.IsEmpty() {
+				return nil, errors.Errorf("user %s failed max constraints %s", user.Markdown(), failed.MarkdownSkillLevels())
+			}
+		}
+		task.MattermostUserIDs.Set(user.MattermostUserID)
+		if task.users != nil {
+			task.users.Set(user)
+		}
+		added.Set(user)
+	}
+	return added, nil
+}
+
+func (sl *sl) fillTask(r *Rotation, task *Task) (added *Users, err error) {
+	defer func() {
+		if err != nil {
+			err = errors.Wrapf(err, "failed to fill task %s", task.Markdown())
+		}
+	}()
+
+	// Autofill is only allowed on pending tasks
+	if task.State != TaskStatePending {
+		return nil, errors.Wrap(ErrWrongState, string(task.State))
+	}
+
+	filler, err := sl.taskFiller(r)
+	if err != nil {
+		return nil, err
+	}
+	added, err = filler.FillTask(r, task, sl.Logger)
+	if err != nil {
+		return nil, err
+	}
+	return added, nil
+}
+
+func (sl *sl) loadTasks(taskIDs *types.IDSet) (*Tasks, error) {
+	tasks := NewTasks()
+	for _, id := range taskIDs.IDs() {
+		t, err := sl.loadTask(id)
+		if err != nil {
+			return nil, err
+		}
+		tasks.Set(t)
+	}
+	return tasks, nil
 }

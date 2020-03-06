@@ -5,16 +5,15 @@ package command
 
 import "github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 
-func (c *Command) showRotation(parameters []string) (string, error) {
-	fs := newFS()
-	fRotation(fs)
-	jsonOut := fJSON(fs)
+func (c *Command) showRotation(parameters []string) (md.MD, error) {
+	fs := c.assureFS()
+	c.withFlagRotation()
 	err := fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
 
-	rotationID, err := c.resolveRotation(fs)
+	rotationID, err := c.resolveRotation()
 	if err != nil {
 		return "", err
 	}
@@ -23,7 +22,7 @@ func (c *Command) showRotation(parameters []string) (string, error) {
 		return "", err
 	}
 
-	if *jsonOut {
+	if c.outputJson {
 		return md.JSONBlock(r), nil
 	}
 	return r.MarkdownBullets(), nil

@@ -16,7 +16,7 @@ func TestLevelHappy(t *testing.T) {
 		level    Level
 		expected string
 	}{
-		{Level(-1), "⛔"},
+		{Level(-1), "*"},
 		{Level(0), "⛔"},
 		{Level(1), LevelBeginnerSymbol},
 		{Level(2), LevelIntermediateSymbol},

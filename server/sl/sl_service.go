@@ -24,10 +24,10 @@ type Service struct {
 	PluginAPI
 	Config config.Service
 
-	// Autofillers map[string]Autofiller
-	Logger bot.Logger
-	Poster bot.Poster
-	Store  kvstore.Store
+	TaskFillers map[types.ID]TaskFiller
+	Logger      bot.Logger
+	Poster      bot.Poster
+	Store       kvstore.Store
 }
 
 func (s *Service) ActingAs(mattermostUserID types.ID) SL {

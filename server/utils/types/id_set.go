@@ -9,7 +9,8 @@ import (
 
 type ID string
 
-func (id ID) GetID() ID { return id }
+func (id ID) GetID() ID      { return id }
+func (id ID) String() string { return string(id) }
 
 type IDArray []ID
 

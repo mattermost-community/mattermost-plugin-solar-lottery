@@ -3,6 +3,6 @@
 
 package sl
 
-func (sl *sl) ListTasks(rotation *Rotation, taskStatus TaskStatus) ([]string, error) {
+func (sl *sl) ListTasks(rotation *Rotation, taskStatus TaskState) ([]string, error) {
 	return []string{"<><> TODO"}, nil
 }

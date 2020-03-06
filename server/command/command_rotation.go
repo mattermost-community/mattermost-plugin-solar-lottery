@@ -3,17 +3,18 @@
 
 package command
 
-func (c *Command) rotation(parameters []string) (string, error) {
-	subcommands := map[string]func([]string) (string, error){
+import "github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
+
+func (c *Command) rotation(parameters []string) (md.MD, error) {
+	subcommands := map[string]func([]string) (md.MD, error){
 		// commandAutopilot:   c.autopilotRotation,
+		// commandForecast:    c.forecastRotation,
+		// commandGuess:       c.guessRotation,
 		commandNew:         c.newRotation,
 		commandArchive:     c.archiveRotation,
 		commandDebugDelete: c.debugDeleteRotation,
-		// commandForecast:    c.forecastRotation,
-		// commandGuess:       c.guessRotation,
-		commandList: c.listRotations,
-		// commandNeed:  c.rotationNeed,
-		commandShow: c.showRotation,
+		commandList:        c.listRotations,
+		commandShow:        c.showRotation,
 	}
 
 	return c.handleCommand(subcommands, parameters)

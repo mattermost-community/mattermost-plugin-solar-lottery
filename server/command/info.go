@@ -4,13 +4,12 @@
 package command
 
 import (
-	"fmt"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/constants"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) info(parameters []string) (string, error) {
-	resp := fmt.Sprintf("Mattermost Solar Lottery plugin version: %s, "+
+func (c *Command) info(parameters []string) (md.MD, error) {
+	resp := md.Markdownf("Mattermost Solar Lottery plugin version: %s, "+
 		"[%s](https://github.com/mattermost/%s/commit/%s), built %s\n",
 		c.SL.Config().PluginVersion,
 		c.SL.Config().BuildHashShort,

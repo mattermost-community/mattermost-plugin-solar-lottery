@@ -3,8 +3,10 @@
 
 package command
 
-func (c *Command) user(parameters []string) (string, error) {
-	subcommands := map[string]func([]string) (string, error){
+import "github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
+
+func (c *Command) user(parameters []string) (md.MD, error) {
+	subcommands := map[string]func([]string) (md.MD, error){
 		commandDisqualify:  c.disqualifyUsers,
 		commandQualify:     c.qualifyUsers,
 		commandShow:        c.showUser,

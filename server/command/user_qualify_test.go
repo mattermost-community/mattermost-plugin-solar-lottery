@@ -18,11 +18,13 @@ func TestCommandUserQualify(t *testing.T) {
 		defer ctrl.Finish()
 		SL, _ := getTestSL(t, ctrl)
 
-		qualified := sl.NewUsers()
+		out := sl.OutQualify{
+			Users: sl.NewUsers(),
+		}
 		_, err := runJSONCommand(t, SL, `
-			/lotto user qualify @uid1-username -k webapp-▣ @uid2-username`, &qualified)
+			/lotto user qualify @uid1-username -k webapp-▣ @uid2-username`, &out)
 		require.NoError(t, err)
-		require.Equal(t, []string{"uid1", "uid2"}, qualified.TestIDs())
+		require.Equal(t, []string{"uid1", "uid2"}, out.Users.TestIDs())
 
 		uu := sl.NewUsers()
 		_, err = runJSONCommand(t, SL, `
@@ -37,11 +39,13 @@ func TestCommandUserQualify(t *testing.T) {
 		require.Equal(t, types.ID("uid2"), u2.MattermostUserID)
 		require.EqualValues(t, types.NewIntSet(types.NewIntValue("webapp", 2)), u2.SkillLevels)
 
-		qualified = sl.NewUsers()
+		out = sl.OutQualify{
+			Users: sl.NewUsers(),
+		}
 		_, err = runJSONCommand(t, SL, `
-			/lotto user qualify -k somethingelse-3`, &qualified)
+			/lotto user qualify -k somethingelse-3`, &out)
 		require.NoError(t, err)
-		require.Equal(t, []string{"test-user"}, qualified.TestIDs())
-		require.Equal(t, int64(3), qualified.Get("test-user").SkillLevels.Get("somethingelse"))
+		require.Equal(t, []string{"test-user"}, out.Users.TestIDs())
+		require.Equal(t, int64(3), out.Users.Get("test-user").SkillLevels.Get("somethingelse"))
 	})
 }

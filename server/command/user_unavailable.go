@@ -4,32 +4,28 @@
 package command
 
 import (
-	"fmt"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-func (c *Command) userUnavailable(parameters []string) (string, error) {
+func (c *Command) userUnavailable(parameters []string) (md.MD, error) {
 	actingUser, err := c.SL.ActingUser()
 	if err != nil {
 		return "", err
 	}
 
-	fs := newFS()
-	jsonOut := fJSON(fs)
-	clear := fClear(fs)
-	start, finish := fStartFinish(fs, actingUser)
+	clear := c.withFlagClear()
+	start, finish := c.withFlagStartFinish(actingUser)
 	if err != nil {
 		return "", err
 	}
-	err = fs.Parse(parameters)
+	err = c.fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
 
-	mattermostUserIDs, err := c.resolveUsernames(fs.Args())
+	mattermostUserIDs, err := c.resolveUsernames(c.fs.Args())
 	if err != nil {
 		return "", err
 	}
@@ -38,26 +34,17 @@ func (c *Command) userUnavailable(parameters []string) (string, error) {
 		Finish: *finish,
 	}
 
-	var affected *sl.Users
 	if *clear {
-		affected, err = c.SL.ClearCalendar(mattermostUserIDs, interval)
-		if err != nil {
-			return "", err
-		}
-		if *jsonOut {
-			return md.JSONBlock(affected), nil
-		}
-		return fmt.Sprintf("cleared %s to %s from %s", start, finish, affected.Markdown()), nil
+		return c.normalOut(
+			c.SL.ClearCalendar(sl.InClearCalendar{
+				MattermostUserIDs: mattermostUserIDs,
+				Interval:          interval,
+			}))
 	}
 
-	u := sl.NewUnavailable(sl.ReasonPersonal, interval)
-	affected, err = c.SL.AddToCalendar(mattermostUserIDs, u)
-	if err != nil {
-		return "", err
-	}
-
-	if *jsonOut {
-		return md.JSONBlock(affected), nil
-	}
-	return fmt.Sprintf("Added %s to %s", actingUser.MarkdownUnavailable(u), affected.Markdown()), nil
+	return c.normalOut(
+		c.SL.AddToCalendar(sl.InAddToCalendar{
+			MattermostUserIDs: mattermostUserIDs,
+			Unavailable:       sl.NewUnavailable(sl.ReasonPersonal, interval),
+		}))
 }

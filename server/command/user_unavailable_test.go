@@ -19,13 +19,13 @@ func TestCommandUserUnavailable(t *testing.T) {
 		SL, store := getTestSL(t, ctrl)
 
 		// test-user is in PST
-		out, err := runCommand(t, SL, `
+		outmd, err := runCommand(t, SL, `
 		/lotto user unavailable -s 2025-01-01T11:00 -f 2025-01-02T09:30
 		`)
 		require.NoError(t, err)
-		require.Equal(t, "Added personal: 2025-01-01T11:00 to 2025-01-02T09:30 to @test-user-username", out)
+		require.Equal(t, "added unavailable event personal: 2025-01-01T11:00 to 2025-01-02T09:30 to @test-user-username", outmd.String())
 
-		user := &sl.User{}
+		user := sl.NewUser("")
 		err = store.Entity(sl.KeyUser).Load("test-user", user)
 		require.NoError(t, err)
 		require.Len(t, user.Calendar, 1)
@@ -46,10 +46,13 @@ func TestCommandUserUnavailable(t *testing.T) {
 			`)
 		require.NoError(t, err)
 
-		users := sl.NewUsers()
-		out, err = runJSONCommand(t, SL, `
+		out := sl.OutCalendar{
+			Users: sl.NewUsers(),
+		}
+		_, err = runJSONCommand(t, SL, `
 				/lotto user unavailable --clear -s 2025-01-30T10:00 -f 2025-02-08T11:00
-				`, &users)
+				`, &out)
+		users := out.Users
 		require.NoError(t, err)
 		require.EqualValues(t, []string{"test-user"}, users.TestIDs())
 		require.Equal(t, 2, len(users.Get("test-user").Calendar))

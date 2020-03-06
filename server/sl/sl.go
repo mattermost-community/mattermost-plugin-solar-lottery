@@ -6,6 +6,7 @@ package sl
 import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
@@ -13,6 +14,8 @@ const (
 	ctxActingUserID   = "ActingUserID"
 	ctxActingUsername = "ActingUsername"
 	ctxAPI            = "API"
+	ctxInput          = "Input"
+	ctxFill           = "Fill"
 	ctxForce          = "Force"
 	ctxInterval       = "Interval"
 	ctxRotationID     = "RotationID"
@@ -38,6 +41,9 @@ type SL interface {
 
 	ActingUser() (*User, error)
 	Config() *config.Config
+
+	LoadUsers(mattermostUserIDs *types.IDSet) (*Users, error)
+	LoadMattermostUsername(username string) (*User, error)
 }
 
 type sl struct {
@@ -58,4 +64,8 @@ type sl struct {
 
 func (sl *sl) Config() *config.Config {
 	return sl.conf
+}
+
+func (sl *sl) LogAPI(msg md.Markdowner) {
+	sl.Infof("%s: %s", sl.actingUser.Markdown(), msg.Markdown())
 }

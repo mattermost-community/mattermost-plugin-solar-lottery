@@ -80,11 +80,11 @@ var ErrAlreadyExists = errors.New("already exists")
 // }
 
 // func (sl *sl) startTask(rotation *Rotation, t *Task) error {
-// 	if t.Status == store.TaskStatusStarted {
+// 	if t.Status == store.TaskStateStarted {
 // 		return errors.New("already started")
 // 	}
-// 	if t.Status != store.TaskStatusOpen {
-// 		return errors.Errorf("can't start a shift which is %q, must be %q", t.Status, store.TaskStatusOpen)
+// 	if t.Status != store.TaskStateOpen {
+// 		return errors.Errorf("can't start a shift which is %q, must be %q", t.Status, store.TaskStateOpen)
 // 	}
 
 // 	for _, user := range rotation.ShiftUsers(shift) {
@@ -105,14 +105,14 @@ var ErrAlreadyExists = errors.New("already exists")
 // }
 
 func (sl *sl) finishTask(r *Rotation, t *Task) (*Task, error) {
-	if t.Status == TaskStatusFinished {
+	if t.State == TaskStateFinished {
 		return t, nil
 	}
-	if t.Status != TaskStatusInProgress {
-		return nil, errors.Errorf("can't finish a task which is %s, must be started", t.Status)
+	if t.State != TaskStateInProgress {
+		return nil, errors.Errorf("can't finish a task which is %s, must be started", t.State)
 	}
 
-	t.Status = TaskStatusFinished
+	t.State = TaskStateFinished
 	err := sl.Store.Entity(KeyTask).Store(t.TaskID, t)
 	if err != nil {
 		return nil, err
@@ -123,7 +123,7 @@ func (sl *sl) finishTask(r *Rotation, t *Task) (*Task, error) {
 	return t, nil
 }
 
-// func (sl *sl) transitionTaskToStatus(rotation *Rotation, t *Task, toStatus store.TaskStatus) error {
+// func (sl *sl) transitionTaskToStatus(rotation *Rotation, t *Task, toStatus store.TaskState) error {
 // 	fromStatus := t.Status
 // 	fromTaskIDs, err := sl.RotationTasksStore.LoadRotationTaskIDs(rotation.RotationID, fromStatus)
 // 	if err != nil {
