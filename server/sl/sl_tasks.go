@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (sl *sl) loadTask(taskID types.ID) (*Task, error) {
+func (sl *sl) LoadTask(taskID types.ID) (*Task, error) {
 	t := NewTask("")
 	err := sl.Store.Entity(KeyTask).Load(taskID, t)
 	if err != nil {
@@ -26,11 +26,11 @@ func (sl *sl) storeTask(t *Task) error {
 	return nil
 }
 
-func (sl *sl) expandTaskUsers(t *Task) error {
-	if t.users != nil {
+func (sl *sl) expandTaskUsers(task *Task) error {
+	if task.Users != nil {
 		return nil
 	}
-	users, err := sl.loadStoredUsers(t.MattermostUserIDs)
+	users, err := sl.loadStoredUsers(task.MattermostUserIDs)
 	if err != nil {
 		return err
 	}
@@ -38,27 +38,29 @@ func (sl *sl) expandTaskUsers(t *Task) error {
 	if err != nil {
 		return err
 	}
-	t.users = users
+	task.Users = users
 	return nil
 }
 
 func (sl *sl) assignTask(task *Task, users *Users, force bool) (*Users, error) {
-	max := task.Max
+	limit := NewNeeds(task.Limit.AsArray()...)
+	require := NewNeeds(task.Require.AsArray()...)
 	added := NewUsers()
 	for _, user := range users.AsArray() {
 		if task.MattermostUserIDs.Contains(user.MattermostUserID) {
 			continue
 		}
-		if !force {
-			var failed *Needs
-			max, failed = user.checkMaxConstraints(max)
-			if !failed.IsEmpty() {
-				return nil, errors.Errorf("user %s failed max constraints %s", user.Markdown(), failed.MarkdownSkillLevels())
-			}
+
+		var failed *Needs
+		limit, _, failed = limit.CheckLimits(user)
+		if !failed.IsEmpty() && !force {
+			return nil, errors.Errorf("user %s failed max constraints %s", user.Markdown(), failed.MarkdownSkillLevels())
 		}
+		require = require.CheckRequired(user)
+
 		task.MattermostUserIDs.Set(user.MattermostUserID)
-		if task.users != nil {
-			task.users.Set(user)
+		if task.Users != nil {
+			task.Users.Set(user)
 		}
 		added.Set(user)
 	}
@@ -85,13 +87,19 @@ func (sl *sl) fillTask(r *Rotation, task *Task) (added *Users, err error) {
 	if err != nil {
 		return nil, err
 	}
+
+	for _, user := range added.AsArray() {
+		task.MattermostUserIDs.Set(user.MattermostUserID)
+		task.Users.Set(user)
+	}
+
 	return added, nil
 }
 
-func (sl *sl) loadTasks(taskIDs *types.IDSet) (*Tasks, error) {
+func (sl *sl) LoadTasks(taskIDs *types.IDSet) (*Tasks, error) {
 	tasks := NewTasks()
 	for _, id := range taskIDs.IDs() {
-		t, err := sl.loadTask(id)
+		t, err := sl.LoadTask(id)
 		if err != nil {
 			return nil, err
 		}

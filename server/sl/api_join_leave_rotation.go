@@ -24,7 +24,7 @@ func (sl *sl) JoinLeaveRotation(params InJoinLeaveRotation) (*OutJoinLeaveRotati
 	users := NewUsers()
 	err := sl.Setup(
 		pushAPILogger("JoinRotation", params),
-		withExpandedUsers(&params.MattermostUserIDs, users),
+		withExpandUsers(&params.MattermostUserIDs, users),
 	)
 	if err != nil {
 		return nil, err

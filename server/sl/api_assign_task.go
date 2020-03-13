@@ -4,8 +4,6 @@
 package sl
 
 import (
-	"fmt"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
@@ -13,15 +11,13 @@ import (
 type InAssignTask struct {
 	TaskID            types.ID
 	MattermostUserIDs *types.IDSet
-	Fill              bool
 	Force             bool
 }
 
 type OutAssignTask struct {
 	md.MD
-	Task     *Task
-	Assigned *Users
-	Filled   *Users
+	Task  *Task
+	Added *Users
 }
 
 func (sl *sl) AssignTask(params InAssignTask) (*OutAssignTask, error) {
@@ -30,9 +26,9 @@ func (sl *sl) AssignTask(params InAssignTask) (*OutAssignTask, error) {
 	r := NewRotation()
 	err := sl.Setup(
 		pushAPILogger("AssignTask", params),
-		withLoadTask(&params.TaskID, task),
-		withLoadRotation(&task.RotationID, r),
-		withExpandedUsers(&params.MattermostUserIDs, users),
+		withLoadExpandTask(&params.TaskID, task),
+		withLoadExpandRotation(&task.RotationID, r),
+		withExpandUsers(&params.MattermostUserIDs, users),
 	)
 	if err != nil {
 		return nil, err
@@ -44,35 +40,16 @@ func (sl *sl) AssignTask(params InAssignTask) (*OutAssignTask, error) {
 		return nil, err
 	}
 
-	filled := NewUsers()
-	if params.Fill {
-		filled, err = sl.fillTask(r, task)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	err = sl.storeTask(task)
 	if err != nil {
 		return nil, err
 	}
 
-	txt, sep := "", ""
-	if !assigned.IsEmpty() {
-		txt += fmt.Sprintf("assigned %s", assigned.Markdown())
-		sep = ", "
-	}
-	if !filled.IsEmpty() {
-		txt += sep + fmt.Sprintf("auto-filled %s", filled.Markdown())
-	}
-	txt += fmt.Sprintf(" to ticket %s.", task.Markdown())
 	out := &OutAssignTask{
-		MD:       md.MD(txt),
-		Task:     task,
-		Assigned: assigned,
-		Filled:   filled,
+		MD:    md.Markdownf("assigned %s to ticket %s.", assigned.Markdown(), task.Markdown()),
+		Task:  task,
+		Added: assigned,
 	}
-
 	sl.LogAPI(out)
 	return out, nil
 }

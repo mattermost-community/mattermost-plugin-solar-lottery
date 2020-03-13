@@ -145,7 +145,7 @@ func (sl *sl) DebugDeleteRotation(rotationID types.ID) error {
 
 func (sl *sl) LoadRotation(rotationID types.ID) (*Rotation, error) {
 	r := NewRotation()
-	err := sl.Setup(withExpandedRotation(rotationID, r))
+	err := sl.Setup(withLoadExpandRotation(&rotationID, r))
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +209,7 @@ func (sl *sl) loadRotation(rotationID types.ID) (*Rotation, error) {
 }
 
 func (sl *sl) expandRotationUsers(r *Rotation) error {
-	if r.users != nil {
+	if r.Users != nil {
 		return nil
 	}
 
@@ -221,7 +221,7 @@ func (sl *sl) expandRotationUsers(r *Rotation) error {
 	if err != nil {
 		return err
 	}
-	r.users = users
+	r.Users = users
 	return nil
 }
 
@@ -232,7 +232,7 @@ func (sl *sl) expandRotationTasks(r *Rotation) error {
 
 	r.pending = NewTasks()
 	r.inProgress = NewTasks()
-	tasks, err := sl.loadTasks(r.TaskIDs)
+	tasks, err := sl.LoadTasks(r.TaskIDs)
 	if err != nil {
 		return err
 	}

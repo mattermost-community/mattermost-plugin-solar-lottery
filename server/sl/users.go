@@ -24,6 +24,14 @@ func NewUsers(uu ...*User) *Users {
 	return &users
 }
 
+func (users Users) Clone() *Users {
+	return NewUsers(users.AsArray()...)
+}
+
+func (users *Users) IsEmpty() bool {
+	return users == nil || users.ValueSet.IsEmpty()
+}
+
 func (users Users) Get(id types.ID) *User {
 	return users.ValueSet.Get(id).(*User)
 }

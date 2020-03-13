@@ -19,11 +19,10 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/constants"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl/filler/solarlottery"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
-	// "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery/autofill/queue"
-	// "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery/autofill/solarlottery"
 )
 
 type Plugin struct {
@@ -58,7 +57,11 @@ func (p *Plugin) OnActivate() error {
 	p.sl = sl.Service{
 		PluginAPI: p,
 		Config:    p.config,
-		// Autofillers map[string]Autofiller
+		TaskFillers: map[types.ID]sl.TaskFiller{
+			// queue.Type:        queue.New(bot),
+			solarlottery.Type: solarlottery.New(),
+			"":                solarlottery.New(), // default
+		},
 		Logger: p.bot,
 		Poster: p.bot,
 		Store:  kvstore.NewStore(kvstore.NewPluginStore(p.API)),

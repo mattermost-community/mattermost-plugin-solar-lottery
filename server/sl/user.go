@@ -114,10 +114,36 @@ UNAVAILABLE:
 	}
 }
 
-func (user *User) findUnavailable(interval types.Interval, remove bool) []*Unavailable {
-	var found, updated []*Unavailable
-	for _, u := range user.Calendar {
-		s, f := u.Start, u.Finish
+func (user *User) FindUnavailable(interval types.Interval, applicableToRotationID types.ID) []*Unavailable {
+	var found []*Unavailable
+	for _, unavailable := range user.Calendar {
+		s, f := unavailable.Start, unavailable.Finish
+		if s.Before(interval.Start.Time) {
+			s = interval.Start
+		}
+		if f.After(interval.Finish.Time) {
+			f = interval.Finish
+		}
+		if !s.Before(f.Time) {
+			continue
+		}
+
+		// Overlap, only consider events applicable to the rotation
+		if applicableToRotationID == "" ||
+			(unavailable.Reason != ReasonTask && unavailable.Reason != ReasonGrace) ||
+			unavailable.RotationID != applicableToRotationID {
+			continue
+		}
+
+		found = append(found, unavailable)
+	}
+	return found
+}
+
+func (user *User) ClearUnavailable(interval types.Interval) []*Unavailable {
+	var cleared, updated []*Unavailable
+	for _, unavailable := range user.Calendar {
+		s, f := unavailable.Start, unavailable.Finish
 		if s.Before(interval.Start.Time) {
 			s = interval.Start
 		}
@@ -127,46 +153,20 @@ func (user *User) findUnavailable(interval types.Interval, remove bool) []*Unava
 
 		if s.Before(f.Time) {
 			// Overlap
-			found = append(found, u)
-			if remove {
-				continue
-			}
+			cleared = append(cleared, unavailable)
+			continue
 		}
 
-		updated = append(updated, u)
+		updated = append(updated, unavailable)
 	}
 	user.Calendar = updated
-	return found
+	return cleared
 }
 
-func (user *User) checkMaxConstraints(max *Needs) (adjusted, violated *Needs) {
-	violated = NewNeeds()
-	adjusted = NewNeeds()
-	for _, need := range max.AsArray() {
-		qualified, adjustedNeed := need.QualifyUser(user)
-		if !qualified {
-			adjusted.Set(need)
-			continue
-		}
-		adjusted.Set(adjustedNeed)
-		if adjustedNeed.Count() < 0 {
-			violated.Set(need)
-		}
+func (user *User) GetLastServed(r *Rotation) int64 {
+	last := user.LastServed.Get(r.RotationID)
+	if last <= 0 {
+		return r.Starts.Unix()
 	}
-
-	return adjusted, violated
-}
-
-func (user *User) updateMinRequirements(min *Needs) (adjusted *Needs) {
-	adjusted = NewNeeds()
-	for _, need := range min.AsArray() {
-		qualified, adjustedNeed := need.QualifyUser(user)
-		if !qualified {
-			adjusted.Set(need)
-			continue
-		}
-		adjusted.Set(adjustedNeed)
-	}
-
-	return adjusted
+	return last
 }

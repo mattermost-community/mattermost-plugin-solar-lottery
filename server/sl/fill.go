@@ -17,6 +17,7 @@ type TaskFiller interface {
 }
 
 var ErrFillInsufficient = errors.New("insufficient")
+var ErrFillLimit = errors.New("limit violated")
 
 type FillError struct {
 	Err        error

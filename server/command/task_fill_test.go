@@ -13,25 +13,34 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-func TestCommandTaskNewTicket(t *testing.T) {
-	t.Run("happy", func(t *testing.T) {
+func TestCommandTaskFill(t *testing.T) {
+	t.Run("fill happy", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		SL, _ := getTestSL(t, ctrl)
 
+		ts := time.Now()
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
-			/lotto task param ticket test-rotation
-			/lotto task param min -k webapp-2 --count 2 test-rotation
-			/lotto task param max -k server-3 --count 1 test-rotation
+			/lotto task param ticket test-rotation 
+			/lotto task param min -k web-1 --count 2 test-rotation
+			
+			# user3 and 4 are joining in the future, and will not be selected,
+			# user1 and 2 are in the past, and will be selected
+			/lotto user join test-rotation @test-user3 @test-user4 --start 2022-01-01
+			/lotto user join test-rotation @test-user1 @test-user2 --start 2020-01-01
+			/lotto user qualify -k web-1 @test-user1 @test-user2 @test-user3 @test-user4
+			/lotto task new ticket test-rotation --summary test-summary1
+			/lotto task show test-rotation#1
 			`)
 		require.NoError(t, err)
 
-		ts := time.Now()
-		out := &sl.OutMakeTicket{}
+		out := &sl.OutAssignTask{
+			Added: sl.NewUsers(),
+		}
 		_, err = runJSONCommand(t, SL, `
-		/lotto task new ticket test-rotation --summary test-summary1
-		`, &out)
+			/lotto task fill test-rotation#1 
+			`, &out)
 		task := out.Task
 		require.NoError(t, err)
 		require.Equal(t, "test-plugin-version", task.PluginVersion)
@@ -40,8 +49,6 @@ func TestCommandTaskNewTicket(t *testing.T) {
 		require.Equal(t, sl.TaskStatePending, task.State)
 		require.True(t, task.Created.After(ts))
 		require.Equal(t, "test-summary1", task.Summary)
-
-		require.Equal(t, map[types.ID]int64{"*-*": 1, "webapp-▣": 2}, task.Require.TestAsMap())
-		require.Equal(t, map[types.ID]int64{"server-◈": 1}, task.Limit.TestAsMap())
+		require.Equal(t, []string{"test-user1", "test-user2"}, out.Task.MattermostUserIDs.TestIDs())
 	})
 }

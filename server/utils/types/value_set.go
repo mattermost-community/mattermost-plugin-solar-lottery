@@ -143,7 +143,10 @@ func (set *ValueSet) AsArray(out ValueArray) {
 }
 
 func (set *ValueSet) IsEmpty() bool {
-	return set == nil || len(set.ids) == 0
+	if set == nil {
+		return true
+	}
+	return len(set.ids) == 0
 }
 
 func (set *ValueSet) TestAsArray(out ValueArray) {

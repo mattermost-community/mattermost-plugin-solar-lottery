@@ -15,7 +15,9 @@ type Needs struct {
 	types.IntSet
 }
 
-func NewNeeds(nn ...*Need) *Needs {
+var NeedOneAnyLevel = NewNeed(1, AnySkillLevel)
+
+func NewNeeds(nn ...Need) *Needs {
 	needs := &Needs{
 		IntSet: *types.NewIntSet(),
 	}
@@ -25,9 +27,17 @@ func NewNeeds(nn ...*Need) *Needs {
 	return needs
 }
 
-func (needs Needs) Get(id types.ID) *Need {
+func (needs Needs) Clone() *Needs {
+	return NewNeeds(needs.AsArray()...)
+}
+
+func (needs *Needs) IsEmpty() bool {
+	return needs == nil || needs.IntSet.IsEmpty()
+}
+
+func (needs Needs) Get(id types.ID) Need {
 	if !needs.Contains(id) {
-		return nil
+		return NewNeed(0, AnySkillLevel)
 	}
 	return NewNeed(needs.IntSet.Get(id), ParseSkillLevel(id))
 }
@@ -37,7 +47,7 @@ func (needs Needs) GetCountForSkillLevel(skillLevel SkillLevel) int64 {
 	return needs.IntSet.Get(id)
 }
 
-func (needs *Needs) Set(need *Need) {
+func (needs *Needs) Set(need Need) {
 	needs.IntSet.Set(need.ID, need.Value)
 }
 
@@ -62,8 +72,8 @@ func (needs Needs) MarkdownSkillLevels() string {
 	return strings.Join(ss, ", ")
 }
 
-func (needs Needs) AsArray() []*Need {
-	a := []*Need{}
+func (needs Needs) AsArray() []Need {
+	a := []Need{}
 	for _, skillLevel := range needs.IDs() {
 		a = append(a, needs.Get(skillLevel))
 	}
@@ -73,63 +83,41 @@ func (needs Needs) AsArray() []*Need {
 func (needs Needs) Unmet(users *Users) *Needs {
 	out := &needs
 	for _, user := range users.AsArray() {
-		out = user.updateMinRequirements(out)
+		out = out.CheckRequired(user)
 	}
 	return out
 }
 
-type Need struct {
-	types.IntValue
-}
-
-func NewNeed(count int64, skillLevel SkillLevel) *Need {
-	return &Need{
-		IntValue: types.NewIntValue(types.ID(skillLevel.String()), count),
-	}
-}
-
-func (need Need) Count() int64 {
-	return need.Value
-}
-
-func (need Need) SkillLevel() SkillLevel {
-	return ParseSkillLevel(need.GetID())
-}
-
-func (need Need) String() string {
-	return fmt.Sprintf("%v-%s", need.Count(), need.SkillLevel())
-}
-
-func (need Need) Markdown() string {
-	return fmt.Sprintf("**%v** %s", need.Count(), need.SkillLevel())
-}
-
-func (need Need) QualifyUser(user *User) (bool, *Need) {
-	adjusted := need
-	skillLevel := need.SkillLevel()
-	skill := skillLevel.Skill
-	level := int64(skillLevel.Level)
-	ulevel := user.SkillLevels.Get(skill)
-
-	if ulevel >= level {
-		adjusted.Value--
-		return true, &adjusted
-	}
-	return false, nil
-}
-
-func (need Need) QualifyUsers(users *Users) (*Users, *Need) {
-	adjusted := &need
-	qualified := NewUsers()
-
-	for _, user := range users.AsArray() {
-		isQualified, adj := adjusted.QualifyUser(user)
-		if !isQualified {
+func (needs *Needs) CheckLimits(user *User) (adjusted, modified, violated *Needs) {
+	violated = NewNeeds()
+	modified = NewNeeds()
+	adjusted = NewNeeds()
+	for _, need := range needs.AsArray() {
+		qualified, adjustedNeed := need.QualifyUser(user)
+		if !qualified {
+			adjusted.Set(need)
 			continue
 		}
-		adjusted = adj
-		qualified.Set(user)
+		adjusted.Set(adjustedNeed)
+		modified.Set(adjustedNeed)
+		if adjustedNeed.Count() < 0 {
+			violated.Set(need)
+		}
 	}
 
-	return qualified, adjusted
+	return adjusted, modified, violated
+}
+
+func (require *Needs) CheckRequired(user *User) (adjusted *Needs) {
+	adjusted = NewNeeds()
+	for _, need := range require.AsArray() {
+		qualified, adjustedNeed := need.QualifyUser(user)
+		if !qualified {
+			adjusted.Set(need)
+			continue
+		}
+		adjusted.Set(adjustedNeed)
+	}
+
+	return adjusted
 }

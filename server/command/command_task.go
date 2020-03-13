@@ -9,7 +9,9 @@ func (c *Command) task(parameters []string) (md.MD, error) {
 	subcommands := map[string]func([]string) (md.MD, error){
 		commandParam:  c.taskParam,
 		commandNew:    c.newTask,
+		commandShow:   c.showTask,
 		commandAssign: c.assignTask,
+		commandFill:   c.fillTask,
 	}
 
 	return c.handleCommand(subcommands, parameters)

@@ -73,8 +73,9 @@ func (sl *sl) disqualify(users *Users, skillName types.ID) error {
 	return nil
 }
 
-func (sl *sl) joinRotation(users *Users, r *Rotation, starting types.Time) (*Users, error) {
-	added := NewUsers()
+func (sl *sl) joinRotation(users *Users, r *Rotation, starting types.Time) (added *Users, err error) {
+	added = NewUsers()
+
 	for _, user := range users.AsArray() {
 		if r.MattermostUserIDs.Contains(user.MattermostUserID) {
 			sl.Debugf("%s is already in rotation %s.",
@@ -86,7 +87,7 @@ func (sl *sl) joinRotation(users *Users, r *Rotation, starting types.Time) (*Use
 		// future all but guarantees they won't be selected until then.
 		user.LastServed.Set(r.RotationID, starting.Unix())
 
-		user, err := sl.storeUserWelcomeNew(user)
+		user, err = sl.storeUserWelcomeNew(user)
 		if err != nil {
 			return added, err
 		}
@@ -247,7 +248,7 @@ func (sl *sl) addUserUnavailable(user *User, u *Unavailable) error {
 }
 
 func (sl *sl) clearUserUnavailable(user *User, interval types.Interval) error {
-	_ = user.findUnavailable(interval, true)
+	_ = user.ClearUnavailable(interval)
 	_, err := sl.storeUserWelcomeNew(user)
 	if err != nil {
 		return errors.Wrapf(err, "user %s", user.Markdown())

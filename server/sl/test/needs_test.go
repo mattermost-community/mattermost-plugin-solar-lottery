@@ -17,7 +17,7 @@ import (
 func TestQualifiedForNeed(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
-		need     *sl.Need
+		need     sl.Need
 		user     *sl.User
 		expected bool
 	}{
@@ -58,7 +58,7 @@ func TestQualifiedForNeed(t *testing.T) {
 func TestUsersQualifiedForNeed(t *testing.T) {
 	for _, tc := range []struct {
 		name              string
-		need              *sl.Need
+		need              sl.Need
 		users             *sl.Users
 		expectedQualified *sl.Users
 	}{

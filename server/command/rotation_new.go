@@ -4,8 +4,12 @@
 package command
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl/filler/solarlottery"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
@@ -23,6 +27,13 @@ func (c *Command) newRotation(parameters []string) (md.MD, error) {
 	if err != nil {
 		return "", err
 	}
+
+	// TODO parameterize rotation defaults
+	r.TaskFillerType = solarlottery.Type
+	r.TaskMaker.Type = sl.TicketMaker
+	r.TaskMaker.TicketDefaultDuration = 24 * time.Hour
+	r.TaskMaker.Require.Set(sl.NeedOneAnyLevel)
+
 	err = c.SL.AddRotation(r)
 	if err != nil {
 		return "", err

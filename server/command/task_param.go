@@ -44,9 +44,9 @@ func (c *Command) taskParamMinMax(min bool, parameters []string) (md.MD, error) 
 
 	return c.normalOut(
 		c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
-			needsToUpdate := r.TaskMaker.Max
+			needsToUpdate := r.TaskMaker.Limit
 			if min {
-				needsToUpdate = r.TaskMaker.Min
+				needsToUpdate = r.TaskMaker.Require
 			}
 			if *clear {
 				needsToUpdate.Delete(skillLevel.AsID())

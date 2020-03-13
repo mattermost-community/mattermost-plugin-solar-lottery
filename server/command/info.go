@@ -36,12 +36,13 @@ func (c *Command) info(parameters []string) (md.MD, error) {
 	- [x] new ticket
 	- [ ] new shift
 	- [x] assign
-	- [ ] assign --fill
+	- [x] fill
 	- [ ] close
 	- [ ] debug-delete
 	- [ ] list --pending | --in-progress | --all
 	- [ ] start
 	- [ ] unassign
+	- [x] show
 
 - [x] skill
 	- [x] delete

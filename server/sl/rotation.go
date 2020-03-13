@@ -15,18 +15,21 @@ type Rotation struct {
 	IsArchived     bool
 	TaskFillerType types.ID
 	TaskMaker      *TaskMaker
+	Starts         types.Time
 
 	MattermostUserIDs *types.IDSet `json:",omitempty"`
 	TaskIDs           *types.IDSet `json:",omitempty"`
 
 	loaded     bool
-	users      *Users
+	Users      *Users `json:"-"`
 	pending    *Tasks
 	inProgress *Tasks
 }
 
 func NewRotation() *Rotation {
-	r := &Rotation{}
+	r := &Rotation{
+		Starts: types.NewTime(),
+	}
 	r.init()
 	return r
 }
@@ -52,7 +55,7 @@ func (rotation *Rotation) WithMattermostUserIDs(pool *Users) *Rotation {
 	if pool.IsEmpty() {
 		pool = NewUsers()
 	}
-	newRotation.users = pool
+	newRotation.Users = pool
 	return &newRotation
 }
 
@@ -71,8 +74,8 @@ func (r *Rotation) Markdown() md.MD {
 func (r *Rotation) MarkdownBullets() md.MD {
 	out := md.Markdownf("- **%s**\n", r.Name())
 	out += md.Markdownf("  - ID: `%s`.\n", r.RotationID)
-	if r.users != nil {
-		out += md.Markdownf("  - Users (%v): %s.\n", r.MattermostUserIDs.Len(), r.users.MarkdownWithSkills())
+	if r.Users != nil {
+		out += md.Markdownf("  - Users (%v): %s.\n", r.MattermostUserIDs.Len(), r.Users.MarkdownWithSkills())
 	} else {
 		out += md.Markdownf("  - Users (%v): %s.\n", r.MattermostUserIDs.Len(), r.MattermostUserIDs.IDs())
 	}
@@ -91,7 +94,7 @@ func (r *Rotation) MarkdownBullets() md.MD {
 func (r *Rotation) FindUsers(mattermostUserIDs *types.IDSet) []*User {
 	uu := []*User{}
 	for _, id := range r.MattermostUserIDs.IDs() {
-		uu = append(uu, r.users.Get(id))
+		uu = append(uu, r.Users.Get(id))
 	}
 	return uu
 }

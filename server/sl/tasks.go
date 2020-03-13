@@ -6,6 +6,7 @@ package sl
 import (
 	"strings"
 
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
@@ -27,12 +28,12 @@ func (tasks Tasks) Get(id types.ID) *Task {
 	return tasks.ValueSet.Get(id).(*Task)
 }
 
-func (tasks Tasks) Markdown() string {
+func (tasks Tasks) Markdown() md.MD {
 	out := []string{}
 	for _, t := range tasks.AsArray() {
-		out = append(out, t.Markdown())
+		out = append(out, t.Markdown().String())
 	}
-	return strings.Join(out, ", ")
+	return md.MD(strings.Join(out, ", "))
 }
 
 func (tasks Tasks) String() string {

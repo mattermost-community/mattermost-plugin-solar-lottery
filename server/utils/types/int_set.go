@@ -81,3 +81,11 @@ func (set *IntSet) UnmarshalJSON(data []byte) error {
 	}
 	return nil
 }
+
+func (set *IntSet) TestAsMap() map[ID]int64 {
+	out := map[ID]int64{}
+	for _, id := range set.ids {
+		out[id] = set.Get(id)
+	}
+	return out
+}

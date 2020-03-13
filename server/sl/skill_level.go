@@ -16,6 +16,9 @@ type SkillLevel struct {
 	Level Level
 }
 
+var AnySkill = types.ID("*")
+var AnySkillLevel = NewSkillLevel(AnySkill, AnyLevel)
+
 func NewSkillLevel(s types.ID, l Level) SkillLevel {
 	return SkillLevel{
 		Skill: s,
@@ -42,9 +45,8 @@ func (skillLevel SkillLevel) Type() string {
 }
 
 func (skillLevel *SkillLevel) Set(in string) error {
-	if in == "*" || in == "*-*" {
-		skillLevel.Skill = "*"
-		skillLevel.Level = AnyLevel
+	if in == AnySkill.String() || in == AnySkillLevel.String() {
+		*skillLevel = AnySkillLevel
 		return nil
 	}
 	split := strings.Split(in, "-")

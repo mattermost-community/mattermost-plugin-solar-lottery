@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
@@ -33,14 +34,14 @@ type Task struct {
 	Summary       string
 	Description   string
 
-	Scheduled         *types.Interval `json:",omitempty"`
-	Min               *Needs          `json:",omitempty"`
-	Max               *Needs          `json:",omitempty"`
-	Actual            *types.Interval `json:",omitempty"`
-	Grace             time.Duration   `json:",omitempty"`
-	MattermostUserIDs *types.IDSet    `json:",omitempty"`
+	Scheduled         types.Interval `json:",omitempty"`
+	Require           *Needs         `json:",omitempty"`
+	Limit             *Needs         `json:",omitempty"`
+	Actual            types.Interval `json:",omitempty"`
+	Grace             time.Duration  `json:",omitempty"`
+	MattermostUserIDs *types.IDSet   `json:",omitempty"`
 
-	users *Users
+	Users *Users `json:"-"`
 }
 
 func NewTask(rotationID types.ID) *Task {
@@ -48,10 +49,10 @@ func NewTask(rotationID types.ID) *Task {
 		State:             TaskStatePending,
 		Created:           types.NewTime(),
 		RotationID:        rotationID,
-		Min:               NewNeeds(),
-		Max:               NewNeeds(),
+		Require:           NewNeeds(),
+		Limit:             NewNeeds(),
 		MattermostUserIDs: types.NewIDSet(),
-		users:             NewUsers(),
+		Users:             NewUsers(),
 	}
 }
 
@@ -59,18 +60,18 @@ func (t Task) GetID() types.ID {
 	return t.TaskID
 }
 
-func (t Task) MarkdownBullets(rotation *Rotation) string {
-	out := fmt.Sprintf("- %s\n", t.Markdown())
-	out += fmt.Sprintf("  - Status: **%s**\n", t.State)
-	out += fmt.Sprintf("  - Users: **%v**\n", t.MattermostUserIDs.Len())
+func (t Task) MarkdownBullets(rotation *Rotation) md.MD {
+	out := md.Markdownf("- %s\n", t.Markdown())
+	out += md.Markdownf("  - Status: **%s**\n", t.State)
+	out += md.Markdownf("  - Users: **%v**\n", t.MattermostUserIDs.Len())
 	// for _, user := range rotation.TaskUsers(&t) {
 	// 	out += fmt.Sprintf("    - %s\n", user.MarkdownWithSkills())
 	// }
 	return out
 }
 
-func (t Task) Markdown() string {
-	return fmt.Sprintf("%s", t.String())
+func (t Task) Markdown() md.MD {
+	return md.Markdownf("%s", t.String())
 }
 
 func (t Task) String() string {
@@ -84,16 +85,17 @@ func (t *Task) NewUnavailable() []*Unavailable {
 	}
 	if interval.IsEmpty() {
 		now := types.NewTime()
-		interval = &types.Interval{
+		interval = types.Interval{
 			Start:  now,
 			Finish: now,
 		}
 	}
 	uu := []*Unavailable{
 		{
-			Reason:   ReasonTask,
-			Interval: *interval,
-			TaskID:   t.TaskID,
+			Reason:     ReasonTask,
+			Interval:   interval,
+			TaskID:     t.TaskID,
+			RotationID: t.RotationID,
 		},
 	}
 
@@ -116,7 +118,7 @@ func (task *Task) isReadyToStart() (ready bool, whyNot string, err error) {
 		return false, "", errors.Wrap(ErrWrongState, string(task.State))
 	}
 
-	unmetNeeds := task.Min.Unmet(task.users)
+	unmetNeeds := task.Require.Unmet(task.Users)
 	if unmetNeeds.IsEmpty() {
 		return true, "", nil
 	}

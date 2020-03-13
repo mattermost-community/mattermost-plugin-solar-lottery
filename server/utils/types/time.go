@@ -101,3 +101,12 @@ func init() {
 		panic(err.Error())
 	}
 }
+
+func MustParseTime(in string) Time {
+	t := NewTime()
+	err := t.Set(in)
+	if err != nil {
+		panic(err.Error())
+	}
+	return t
+}

@@ -13,10 +13,12 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl/filler/solarlottery"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl/mock_sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 	"github.com/mattermost/mattermost-server/v5/model"
 )
 
@@ -70,9 +72,13 @@ func getTestSL(t testing.TB, ctrl *gomock.Controller) (sl.SL, kvstore.Store) {
 	serviceSL := &sl.Service{
 		PluginAPI: pluginAPI,
 		Config:    config.NewTestService(&testConfig),
-		// Autofillers map[string]Autofiller
-		// Logger: &bot.TestLogger{TB: t},
-		Logger: &bot.NilLogger{},
+		TaskFillers: map[types.ID]sl.TaskFiller{
+			// queue.Type:        queue.New(bot),
+			solarlottery.Type: solarlottery.New(),
+			"":                solarlottery.New(), // default
+		},
+		Logger: &bot.TestLogger{TB: t},
+		// Logger: &bot.NilLogger{},
 		Poster: &bot.NilPoster{},
 		Store:  kvstore.NewStore(kvstore.NewCacheKVStore(nil)),
 	}

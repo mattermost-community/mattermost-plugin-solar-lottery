@@ -8,20 +8,18 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) assignTask(parameters []string) (md.MD, error) {
-	force := c.withFlagForce()
+func (c *Command) fillTask(parameters []string) (md.MD, error) {
+	c.assureFS()
 	err := c.fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}
-	taskID, mattermostUserIDs, err := c.resolveTaskIDUsernames()
+	taskID, _, err := c.resolveTaskIDUsernames()
 	if err != nil {
 		return "", err
 	}
 
-	return c.normalOut(c.SL.AssignTask(sl.InAssignTask{
-		TaskID:            taskID,
-		MattermostUserIDs: mattermostUserIDs,
-		Force:             *force,
+	return c.normalOut(c.SL.FillTask(sl.InAssignTask{
+		TaskID: taskID,
 	}))
 }

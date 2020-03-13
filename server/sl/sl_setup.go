@@ -63,10 +63,10 @@ func withExpandRotationTasks(r *Rotation) func(sl *sl) error {
 	}
 }
 
-func withExpandedRotation(rotationID types.ID, r *Rotation) func(sl *sl) error {
+func withLoadExpandRotation(rotationID *types.ID, r *Rotation) func(sl *sl) error {
 	return func(sl *sl) error {
 		return sl.Setup(
-			withLoadRotation(&rotationID, r),
+			withLoadRotation(rotationID, r),
 			withExpandRotationUsers(r),
 			withExpandRotationTasks(r),
 		)
@@ -84,7 +84,7 @@ func withLoadOrMakeUser(mattermostUserID *types.ID, user *User) func(sl *sl) err
 	}
 }
 
-func withExpandedUser(mattermostUserID types.ID, user *User) func(sl *sl) error {
+func withLoadExpandUser(mattermostUserID types.ID, user *User) func(sl *sl) error {
 	return func(sl *sl) error {
 		err := withLoadOrMakeUser(&mattermostUserID, user)(sl)
 		if err != nil {
@@ -96,7 +96,7 @@ func withExpandedUser(mattermostUserID types.ID, user *User) func(sl *sl) error 
 
 func withExpandedActingUser(sl *sl) error {
 	sl.actingUser = NewUser("")
-	err := sl.Setup(withExpandedUser(sl.actingMattermostUserID, sl.actingUser))
+	err := sl.Setup(withLoadExpandUser(sl.actingMattermostUserID, sl.actingUser))
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func withLoadUsers(mattermostUserIDs **types.IDSet, users *Users) func(sl *sl) e
 	}
 }
 
-func withExpandedUsers(mattermostUserIDs **types.IDSet, users *Users) func(sl *sl) error {
+func withExpandUsers(mattermostUserIDs **types.IDSet, users *Users) func(sl *sl) error {
 	return func(sl *sl) error {
 		err := withLoadUsers(mattermostUserIDs, users)(sl)
 		if err != nil {
@@ -167,7 +167,25 @@ func withLoadTask(taskID *types.ID, task *Task) func(sl *sl) error {
 	return func(sl *sl) error {
 		sl.Logger = sl.Logger.With(bot.LogContext{ctxTaskID: *taskID})
 
-		loaded, err := sl.loadTask(*taskID)
+		loaded, err := sl.LoadTask(*taskID)
+		if err != nil {
+			return err
+		}
+		*task = *loaded
+		return nil
+	}
+}
+
+func withLoadExpandTask(taskID *types.ID, task *Task) func(sl *sl) error {
+	return func(sl *sl) error {
+		sl.Setup(
+			withLoadTask(taskID, task),
+			withExpandUsers(&task.MattermostUserIDs, task.Users),
+		)
+
+		sl.Logger = sl.Logger.With(bot.LogContext{ctxTaskID: *taskID})
+
+		loaded, err := sl.LoadTask(*taskID)
 		if err != nil {
 			return err
 		}

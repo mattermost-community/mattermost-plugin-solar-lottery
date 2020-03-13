@@ -73,7 +73,7 @@ func (sl *sl) messageAddedSkill(user *User, skillName string, level int) {
 func (sl *sl) messageNewTask(rotation *Rotation, t *Task) {
 	sl.expandRotationUsers(rotation)
 
-	for _, user := range rotation.users.AsArray() {
+	for _, user := range rotation.Users.AsArray() {
 		sl.dmUser(user,
 			fmt.Sprintf("%s opened %s.\n"+
 				"Use `TODO` if you would like to participate.\n",

@@ -57,6 +57,7 @@ const (
 	commandStart       = "start"
 	commandTask        = "task"
 	commandTicket      = "ticket"
+	commandFill        = "fill"
 	commandUnavailable = "unavailable"
 	commandUser        = "user"
 )
@@ -81,7 +82,6 @@ const (
 	flagCount    = "count"
 	flagDelete   = "delete"
 	flagDuration = "duration"
-	flagFill     = "fill"
 	flagFinish   = "finish"
 	flagForce    = "force"
 	flagGrace    = "grace"
@@ -290,10 +290,6 @@ func (c *Command) withFlagSummary() *string {
 
 func (c *Command) withFlagForce() *bool {
 	return c.assureFS().Bool(flagForce, false, "ignore constraints")
-}
-
-func (c *Command) withFlagFill() *bool {
-	return c.assureFS().Bool(flagFill, false, "automatically assign, to match the ticket needs")
 }
 
 func (c *Command) resolveUsernames(args []string) (mattermostUserIDs *types.IDSet, err error) {

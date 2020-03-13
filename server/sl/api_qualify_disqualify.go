@@ -23,7 +23,7 @@ func (sl *sl) Qualify(params InQualify) (*OutQualify, error) {
 	err := sl.Setup(
 		pushAPILogger("Qualify", params),
 		// NOT restricted to: withValidSkillName(&params.SkillLevel.Skill),
-		withExpandedUsers(&params.MattermostUserIDs, users),
+		withExpandUsers(&params.MattermostUserIDs, users),
 	)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (sl *sl) Disqualify(params InDisqualify) (*OutQualify, error) {
 	err := sl.Setup(
 		pushAPILogger("Qualify", params),
 		withValidSkillName(&params.Skill),
-		withExpandedUsers(&params.MattermostUserIDs, users),
+		withExpandUsers(&params.MattermostUserIDs, users),
 	)
 	if err != nil {
 		return nil, err

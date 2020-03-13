@@ -17,20 +17,21 @@ const (
 )
 
 type TaskMaker struct {
-	Type             types.ID
-	Min              *Needs        `json:"min,omitempty"`
-	Max              *Needs        `json:"max,omitempty"`
-	Grace            time.Duration `json:"grace,omitempty"`
-	TicketSeq        int           `json:",omitempty"`
-	ShiftDescription string        `json:",omitempty"`
-	ShiftStart       types.Time    `json:",omitempty"`
-	ShiftPeriod      types.Period  `json:",omitempty"`
+	Type                  types.ID
+	Require               *Needs        `json:",omitempty"`
+	Limit                 *Needs        `json:",omitempty"`
+	Grace                 time.Duration `json:",omitempty"`
+	TicketSeq             int           `json:",omitempty"`
+	TicketDefaultDuration time.Duration `json:",omitempty"`
+	ShiftDescription      string        `json:",omitempty"`
+	ShiftStart            types.Time    `json:",omitempty"`
+	ShiftPeriod           types.Period  `json:",omitempty"`
 }
 
 func NewTaskMaker() *TaskMaker {
 	return &TaskMaker{
-		Min: NewNeeds(),
-		Max: NewNeeds(),
+		Require: NewNeeds(),
+		Limit:   NewNeeds(),
 	}
 }
 
@@ -42,8 +43,8 @@ func (maker *TaskMaker) newTicket(r *Rotation, defaultID string) *Task {
 	}
 	t.TaskID = types.ID(r.Name() + "#" + defaultID)
 	// TODO do I need to clone these?
-	t.Min = maker.Min
-	t.Max = maker.Max
+	t.Require = maker.Require
+	t.Limit = maker.Limit
 	t.Grace = maker.Grace
 	return t
 }
@@ -55,8 +56,8 @@ func (maker *TaskMaker) newTicket(r *Rotation, defaultID string) *Task {
 
 func (maker TaskMaker) MarkdownBullets() string {
 	out := fmt.Sprintf("  - Type: **%s**\n", maker.Type)
-	out += fmt.Sprintf("  - Min: **%s**\n", maker.Min.Markdown())
-	out += fmt.Sprintf("  - Max: **%v**\n", maker.Max.Markdown())
+	out += fmt.Sprintf("  - Require: **%s**\n", maker.Require.Markdown())
+	out += fmt.Sprintf("  - Limit: **%v**\n", maker.Limit.Markdown())
 	out += fmt.Sprintf("  - Grace: %v\n", maker.Grace)
 	if maker.Type == ShiftMaker {
 		out += fmt.Sprintf("  - Shift period: **%v**\n", maker.ShiftPeriod.String())

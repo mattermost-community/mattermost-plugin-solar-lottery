@@ -3,9 +3,13 @@
 
 package sl
 
+import "github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
+
 type TaskService interface {
+	LoadTask(types.ID) (*Task, error)
 	MakeTicket(InMakeTicket) (*OutMakeTicket, error)
 	AssignTask(InAssignTask) (*OutAssignTask, error)
+	FillTask(InAssignTask) (*OutAssignTask, error)
 }
 
 type UserService interface {

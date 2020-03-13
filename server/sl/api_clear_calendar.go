@@ -18,7 +18,7 @@ func (sl *sl) ClearCalendar(params InClearCalendar) (*OutCalendar, error) {
 	users := NewUsers()
 	err := sl.Setup(
 		pushAPILogger("CkearCalendar", params),
-		withExpandedUsers(&params.MattermostUserIDs, users),
+		withExpandUsers(&params.MattermostUserIDs, users),
 	)
 	if err != nil {
 		return nil, err
@@ -26,7 +26,7 @@ func (sl *sl) ClearCalendar(params InClearCalendar) (*OutCalendar, error) {
 	defer sl.popLogger()
 
 	for _, user := range users.AsArray() {
-		_ = user.findUnavailable(params.Interval, true)
+		_ = user.ClearUnavailable(params.Interval)
 		if err != nil {
 			return nil, errors.WithMessagef(err, "failed to remove unavailable for %v", params.Interval)
 		}
