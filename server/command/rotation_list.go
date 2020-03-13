@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (c *Command) listRotations(parameters []string) (md.MD, error) {
+func (c *Command) rotationList(parameters []string) (md.MD, error) {
 	fs := c.assureFS()
 	err := fs.Parse(parameters)
 	if len(fs.Args()) > 0 {

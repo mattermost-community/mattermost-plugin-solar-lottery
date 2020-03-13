@@ -22,8 +22,8 @@ func TestCommandTaskFill(t *testing.T) {
 		ts := time.Now()
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
-			/lotto task param ticket test-rotation 
-			/lotto task param min -k web-1 --count 2 test-rotation
+			/lotto rotation param ticket test-rotation 
+			/lotto rotation param min -k web-1 --count 2 test-rotation
 			
 			# user3 and 4 are joining in the future, and will not be selected,
 			# user1 and 2 are in the past, and will be selected

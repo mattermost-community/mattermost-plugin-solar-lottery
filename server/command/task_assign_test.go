@@ -22,9 +22,9 @@ func TestCommandTaskAssign(t *testing.T) {
 		ts := time.Now()
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
-			/lotto task param ticket test-rotation
-			/lotto task param min -k webapp-2 --count 2 test-rotation
-			/lotto task param max -k server-3 --count 1 test-rotation
+			/lotto rotation param ticket test-rotation
+			/lotto rotation param min -k webapp-2 --count 2 test-rotation
+			/lotto rotation param max -k server-3 --count 1 test-rotation
 			/lotto task new ticket test-rotation --summary test-summary1
 			/lotto task new ticket test-rotation --summary test-summary2
 			`)
@@ -69,8 +69,8 @@ func TestCommandTaskAssign(t *testing.T) {
 
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
-			/lotto task param ticket test-rotation
-			/lotto task param max -k server-1 --count 1 test-rotation
+			/lotto rotation param ticket test-rotation
+			/lotto rotation param max -k server-1 --count 1 test-rotation
 			/lotto user qualify @test-user1 @test-user2 -k server-1
 			/lotto task new ticket test-rotation --summary test-summary1
 			`)
@@ -90,8 +90,8 @@ func TestCommandTaskAssign(t *testing.T) {
 
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
-			/lotto task param ticket test-rotation
-			/lotto task param max -k server-1 --count 1 test-rotation
+			/lotto rotation param ticket test-rotation
+			/lotto rotation param max -k server-1 --count 1 test-rotation
 			/lotto user qualify @test-user1 @test-user2 -k server-1
 			/lotto task new ticket test-rotation --summary test-summary1
 			`)

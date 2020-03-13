@@ -8,27 +8,27 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) taskParam(parameters []string) (md.MD, error) {
+func (c *Command) rotationParam(parameters []string) (md.MD, error) {
 	subcommands := map[string]func([]string) (md.MD, error){
-		commandMin:    c.taskParamMin,
-		commandMax:    c.taskParamMax,
-		commandGrace:  c.taskParamGrace,
-		commandShift:  c.taskParamShift,
-		commandTicket: c.taskParamTicket,
+		commandGrace:  c.rotationParamGrace,
+		commandMax:    c.rotationParamMax,
+		commandMin:    c.rotationParamMin,
+		commandShift:  c.rotationParamShift,
+		commandTicket: c.rotationParamTicket,
 	}
 
 	return c.handleCommand(subcommands, parameters)
 }
 
-func (c *Command) taskParamMin(parameters []string) (md.MD, error) {
-	return c.taskParamMinMax(true, parameters)
+func (c *Command) rotationParamMin(parameters []string) (md.MD, error) {
+	return c.rotationParamMinMax(true, parameters)
 }
 
-func (c *Command) taskParamMax(parameters []string) (md.MD, error) {
-	return c.taskParamMinMax(false, parameters)
+func (c *Command) rotationParamMax(parameters []string) (md.MD, error) {
+	return c.rotationParamMinMax(false, parameters)
 }
 
-func (c *Command) taskParamMinMax(min bool, parameters []string) (md.MD, error) {
+func (c *Command) rotationParamMinMax(min bool, parameters []string) (md.MD, error) {
 	c.withFlagRotation()
 	skillLevel := c.withFlagSkillLevel()
 	count := c.withFlagCount()
@@ -57,7 +57,7 @@ func (c *Command) taskParamMinMax(min bool, parameters []string) (md.MD, error) 
 		}))
 }
 
-func (c *Command) taskParamGrace(parameters []string) (md.MD, error) {
+func (c *Command) rotationParamGrace(parameters []string) (md.MD, error) {
 	c.withFlagRotation()
 	dur := c.withFlagDuration()
 	err := c.fs.Parse(parameters)
@@ -76,7 +76,7 @@ func (c *Command) taskParamGrace(parameters []string) (md.MD, error) {
 		}))
 }
 
-func (c *Command) taskParamShift(parameters []string) (md.MD, error) {
+func (c *Command) rotationParamShift(parameters []string) (md.MD, error) {
 	actingUser, err := c.SL.ActingUser()
 	if err != nil {
 		return "", err
@@ -103,7 +103,7 @@ func (c *Command) taskParamShift(parameters []string) (md.MD, error) {
 		}))
 }
 
-func (c *Command) taskParamTicket(parameters []string) (md.MD, error) {
+func (c *Command) rotationParamTicket(parameters []string) (md.MD, error) {
 	c.withFlagRotation()
 	err := c.fs.Parse(parameters)
 	if err != nil {

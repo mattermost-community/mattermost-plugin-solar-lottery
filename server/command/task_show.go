@@ -7,7 +7,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) showTask(parameters []string) (md.MD, error) {
+func (c *Command) taskShow(parameters []string) (md.MD, error) {
 	c.withFlagRotation()
 	err := c.fs.Parse(parameters)
 	if err != nil {

@@ -21,9 +21,9 @@ func TestCommandTaskNewTicket(t *testing.T) {
 
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
-			/lotto task param ticket test-rotation
-			/lotto task param min -k webapp-2 --count 2 test-rotation
-			/lotto task param max -k server-3 --count 1 test-rotation
+			/lotto rotation param ticket test-rotation
+			/lotto rotation param min -k webapp-2 --count 2 test-rotation
+			/lotto rotation param max -k server-3 --count 1 test-rotation
 			`)
 		require.NoError(t, err)
 

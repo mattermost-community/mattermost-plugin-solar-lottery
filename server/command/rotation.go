@@ -10,11 +10,12 @@ func (c *Command) rotation(parameters []string) (md.MD, error) {
 		// commandAutopilot:   c.autopilotRotation,
 		// commandForecast:    c.forecastRotation,
 		// commandGuess:       c.guessRotation,
-		commandNew:         c.newRotation,
-		commandArchive:     c.archiveRotation,
-		commandDebugDelete: c.debugDeleteRotation,
-		commandList:        c.listRotations,
-		commandShow:        c.showRotation,
+		commandNew:         c.rotationNew,
+		commandArchive:     c.rotationArchive,
+		commandDebugDelete: c.rotationDebugDelete,
+		commandParam:       c.rotationParam,
+		commandList:        c.rotationList,
+		commandShow:        c.rotationShow,
 	}
 
 	return c.handleCommand(subcommands, parameters)

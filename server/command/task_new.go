@@ -8,7 +8,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) newTask(parameters []string) (md.MD, error) {
+func (c *Command) taskNew(parameters []string) (md.MD, error) {
 	subcommands := map[string]func([]string) (md.MD, error){
 		commandTicket: c.newTicketTask,
 	}

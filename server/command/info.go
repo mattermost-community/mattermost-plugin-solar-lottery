@@ -20,42 +20,43 @@ func (c *Command) info(parameters []string) (md.MD, error) {
 	resp += `
 - [x] info: display this.
 
-- [x] rotation
-	- [x] archive
-	- [x] debug-delete
-	- [x] list
-	- [x] new
-	- [x] show
-
 - [ ] task
-	- [x] param min --skill <s-l> (--count | --clear)
-	- [x] param max --skill <s-l> (--count | --clear)
-	- [x] param grace --duration 
-	- [x] param shift --starting --period
-	- [x] param ticket
-	- [x] new ticket
-	- [ ] new shift
-	- [x] assign
-	- [x] fill
+	- [ ] schedule
 	- [ ] close
+	- [ ] start
 	- [ ] debug-delete
 	- [ ] list --pending | --in-progress | --all
-	- [ ] start
+	- [ ] new shift
 	- [ ] unassign
-	- [x] show
+	- [x] assign
+	- [x] fill
+	- [x] new ticket
+	- [x] show ROT#id
 
-- [x] skill
-	- [x] delete
+- [x] rotation
+	- [x] archive ROT
+	- [x] debug-delete ROT
 	- [x] list
-	- [x] new
+	- [x] new ROT
+	- [x] show ROT
+	- [x] param grace --duration 
+	- [x] param max --skill <s-l> (--count | --clear)
+	- [x] param min --skill <s-l> (--count | --clear)
+	- [x] param shift --starting --period
+	- [x] param ticket
+	
+- [x] skill
+	- [x] delete SKILL
+	- [x] list
+	- [x] new SKILL
 
 - [x] user: manage users.
+	- [x] disqualify [@user...] --skill 
 	- [x] join ROT [@user...] --starting
 	- [x] leave ROT [@user...]
-	- [x] disqualify --skill 
-	- [x] qualify --skill 
-	- [x] show 
-	- [x] unavailable: --start --finish [--clear] 
+	- [x] qualify [@user...] --skill 
+	- [x] show [@user...]
+	- [x] unavailable: [@user...] --start --finish [--clear] 
 
 	`
 	return resp, nil

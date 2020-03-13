@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (c *Command) archiveRotation(parameters []string) (md.MD, error) {
+func (c *Command) rotationArchive(parameters []string) (md.MD, error) {
 	fs := c.assureFS()
 	c.withFlagRotation()
 	err := fs.Parse(parameters)
@@ -29,7 +29,7 @@ func (c *Command) archiveRotation(parameters []string) (md.MD, error) {
 	return c.normalOut(r, err)
 }
 
-func (c *Command) debugDeleteRotation(parameters []string) (md.MD, error) {
+func (c *Command) rotationDebugDelete(parameters []string) (md.MD, error) {
 	fs := c.assureFS()
 	c.withFlagRotation()
 	err := fs.Parse(parameters)

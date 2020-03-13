@@ -26,7 +26,7 @@ func TestCommandTaskParam(t *testing.T) {
 
 		r := sl.NewRotation()
 		_, err = runJSONCommand(t, SL, `
-			/lotto task param shift test-rotation -s 2030-01-10 -p monthly`, &r)
+			/lotto rotation param shift test-rotation -s 2030-01-10 -p monthly`, &r)
 		require.NoError(t, err)
 		require.Equal(t, sl.ShiftMaker, r.TaskMaker.Type)
 		require.Equal(t, "everyMonth", r.TaskMaker.ShiftPeriod.String())
@@ -45,7 +45,7 @@ func TestCommandTaskParam(t *testing.T) {
 
 		r := sl.NewRotation()
 		_, err = runJSONCommand(t, SL, `
-			/lotto task param ticket test-rotation`, &r)
+			/lotto rotation param ticket test-rotation`, &r)
 		require.NoError(t, err)
 		require.Equal(t, sl.TicketMaker, r.TaskMaker.Type)
 	})
@@ -57,10 +57,10 @@ func TestCommandTaskParam(t *testing.T) {
 
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
-			/lotto task param max -k webapp-2 --count 2 test-rotation
-			/lotto task param max -k webapp-3 --count 1 test-rotation
-			/lotto task param max -k server-1 --count 3 test-rotation
-			/lotto task param max -k webapp-3 --clear test-rotation
+			/lotto rotation param max -k webapp-2 --count 2 test-rotation
+			/lotto rotation param max -k webapp-3 --count 1 test-rotation
+			/lotto rotation param max -k server-1 --count 3 test-rotation
+			/lotto rotation param max -k webapp-3 --clear test-rotation
 			`)
 		require.NoError(t, err)
 
@@ -79,10 +79,10 @@ func TestCommandTaskParam(t *testing.T) {
 
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
-			/lotto task param min -k webapp-2 --count 2 test-rotation
-			/lotto task param min -k webapp-3 --count 1 test-rotation
-			/lotto task param min -k server --count 3 test-rotation
-			/lotto task param min -k webapp-3 --clear test-rotation
+			/lotto rotation param min -k webapp-2 --count 2 test-rotation
+			/lotto rotation param min -k webapp-3 --count 1 test-rotation
+			/lotto rotation param min -k server --count 3 test-rotation
+			/lotto rotation param min -k webapp-3 --clear test-rotation
 			`)
 		require.NoError(t, err)
 
@@ -114,8 +114,8 @@ func TestCommandTaskParam(t *testing.T) {
 		require.Equal(t, int64(1), r.TaskMaker.Require.IntSet.Get(sl.AnySkillLevel.AsID()))
 
 		err = runCommands(t, SL, `
-			/lotto task param max -k * --count 3 test-rotation
-			/lotto task param min -k web-1 --count 1 test-rotation
+			/lotto rotation param max -k * --count 3 test-rotation
+			/lotto rotation param min -k web-1 --count 1 test-rotation
 		`)
 		require.NoError(t, err)
 

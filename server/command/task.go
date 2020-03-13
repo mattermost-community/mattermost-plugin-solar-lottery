@@ -7,11 +7,10 @@ import "github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 
 func (c *Command) task(parameters []string) (md.MD, error) {
 	subcommands := map[string]func([]string) (md.MD, error){
-		commandParam:  c.taskParam,
-		commandNew:    c.newTask,
-		commandShow:   c.showTask,
-		commandAssign: c.assignTask,
-		commandFill:   c.fillTask,
+		commandAssign: c.taskAssign,
+		commandFill:   c.taskFill,
+		commandNew:    c.taskNew,
+		commandShow:   c.taskShow,
 	}
 
 	return c.handleCommand(subcommands, parameters)

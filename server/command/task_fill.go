@@ -8,7 +8,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) fillTask(parameters []string) (md.MD, error) {
+func (c *Command) taskFill(parameters []string) (md.MD, error) {
 	c.assureFS()
 	err := c.fs.Parse(parameters)
 	if err != nil {

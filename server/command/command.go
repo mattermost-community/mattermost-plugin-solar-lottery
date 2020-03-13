@@ -128,11 +128,11 @@ func Register(registerFunc RegisterFunc) {
 func (c *Command) commands() map[string]func([]string) (md.MD, error) {
 	return map[string]func([]string) (md.MD, error){
 		commandInfo:     c.info,
-		commandRotation: c.rotation,
-		commandTask:     c.task,
-		commandSkill:    c.skill,
-		commandUser:     c.user,
 		commandLog:      c.log,
+		commandRotation: c.rotation,
+		commandSkill:    c.skill,
+		commandTask:     c.task,
+		commandUser:     c.user,
 
 		"debug-clean": c.debugClean,
 	}
