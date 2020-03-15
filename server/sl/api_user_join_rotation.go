@@ -8,23 +8,22 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-type InJoinLeaveRotation struct {
+type InJoinRotation struct {
 	MattermostUserIDs *types.IDSet
 	RotationID        types.ID
 	Starting          types.Time
-	Leave             bool
 }
 
-type OutJoinLeaveRotation struct {
+type OutJoinRotation struct {
 	md.MD
 	Modified *Users
 }
 
-func (sl *sl) JoinLeaveRotation(params InJoinLeaveRotation) (*OutJoinLeaveRotation, error) {
+func (sl *sl) JoinRotation(params InJoinRotation) (*OutJoinRotation, error) {
 	users := NewUsers()
 	err := sl.Setup(
 		pushAPILogger("JoinRotation", params),
-		withExpandUsers(&params.MattermostUserIDs, users),
+		withExpandedUsers(&params.MattermostUserIDs, users),
 	)
 	if err != nil {
 		return nil, err
@@ -33,24 +32,16 @@ func (sl *sl) JoinLeaveRotation(params InJoinLeaveRotation) (*OutJoinLeaveRotati
 
 	modified := NewUsers()
 	r, err := sl.UpdateRotation(params.RotationID, func(r *Rotation) error {
-		if params.Leave {
-			modified, err = sl.leaveRotation(users, r)
-		} else {
-			modified, err = sl.joinRotation(users, r, params.Starting)
-		}
+		modified, err = sl.joinRotation(users, r, params.Starting)
 		return err
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	verb, prep := "added", "to"
-	if params.Leave {
-		verb, prep = "removed", "from"
-	}
-	out := &OutJoinLeaveRotation{
+	out := &OutJoinRotation{
 		Modified: modified,
-		MD:       md.Markdownf("%s %s %s %s.", verb, modified.MarkdownWithSkills(), prep, r.Markdown()),
+		MD:       md.Markdownf("added %s to %s.", modified.MarkdownWithSkills(), r.Markdown()),
 	}
 	sl.LogAPI(out)
 	return out, nil

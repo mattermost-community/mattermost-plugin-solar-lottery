@@ -26,6 +26,12 @@ func TestCommandUserQualify(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, []string{"uid1", "uid2"}, out.Users.TestIDs())
 
+		ss := []string{}
+		_, err = runJSONCommand(t, SL, `
+			/lotto skill list`, &ss)
+		require.NoError(t, err)
+		require.Equal(t, []string{"webapp"}, ss)
+
 		uu := sl.NewUsers()
 		_, err = runJSONCommand(t, SL, `
 			/lotto user show @uid1-username @uid2-username`, &uu)

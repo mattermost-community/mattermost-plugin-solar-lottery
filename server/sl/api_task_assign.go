@@ -26,9 +26,9 @@ func (sl *sl) AssignTask(params InAssignTask) (*OutAssignTask, error) {
 	r := NewRotation()
 	err := sl.Setup(
 		pushAPILogger("AssignTask", params),
-		withLoadExpandTask(&params.TaskID, task),
-		withLoadExpandRotation(&task.RotationID, r),
-		withExpandUsers(&params.MattermostUserIDs, users),
+		withExpandedTask(&params.TaskID, task),
+		withExpandedRotation(&task.RotationID, r),
+		withExpandedUsers(&params.MattermostUserIDs, users),
 	)
 	if err != nil {
 		return nil, err

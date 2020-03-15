@@ -21,9 +21,9 @@ func (c *Command) info(parameters []string) (md.MD, error) {
 - [x] info: display this.
 
 - [ ] task
-	- [ ] schedule
-	- [ ] close
-	- [ ] start
+	- [x] schedule
+	- [x] close
+	- [x] start
 	- [ ] debug-delete
 	- [ ] list --pending | --in-progress | --all
 	- [ ] new shift

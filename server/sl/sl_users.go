@@ -96,7 +96,7 @@ func (sl *sl) joinRotation(users *Users, r *Rotation, starting types.Time) (adde
 			r.MattermostUserIDs = types.NewIDSet()
 		}
 		r.MattermostUserIDs.Set(user.MattermostUserID)
-		sl.messageWelcomeToRotation(user, r)
+		sl.dmUserWelcomeToRotation(user, r)
 		added.Set(user)
 	}
 	return added, nil
@@ -116,7 +116,7 @@ func (sl *sl) leaveRotation(users *Users, r *Rotation) (*Users, error) {
 			return nil, err
 		}
 		r.MattermostUserIDs.Delete(user.MattermostUserID)
-		sl.messageLeftRotation(user, r)
+		sl.dmUserLeftRotation(user, r)
 		deleted.Set(user)
 	}
 	return deleted, nil
@@ -187,7 +187,7 @@ func (sl *sl) expandUsers(users *Users) error {
 //  nor assume that any runtime values have been filled.
 func (sl *sl) storeUserWelcomeNew(user *User) (*User, error) {
 	if user.PluginVersion == "" {
-		sl.messageWelcomeNewUser(user)
+		sl.dmUserWelcomeToSolarLottery(user)
 	}
 	err := sl.storeUser(user)
 	if err != nil {

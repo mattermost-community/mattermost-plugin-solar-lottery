@@ -12,8 +12,8 @@ func (sl *sl) FillTask(params InAssignTask) (*OutAssignTask, error) {
 	r := NewRotation()
 	err := sl.Setup(
 		pushAPILogger("FillTask", params),
-		withLoadExpandTask(&params.TaskID, task),
-		withLoadExpandRotation(&task.RotationID, r),
+		withExpandedTask(&params.TaskID, task),
+		withExpandedRotation(&task.RotationID, r),
 	)
 	if err != nil {
 		return nil, err

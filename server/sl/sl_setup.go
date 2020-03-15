@@ -23,26 +23,27 @@ func (sl *sl) Setup(filters ...filterf) error {
 	return nil
 }
 
-func withLoadActiveRotations(activeRotations *types.IDSet) func(sl *sl) error {
+// key is always a constant (for the time being?) so no need for a double-pointer
+func withLoadIDIndex(key string, idx *types.IDSet) func(sl *sl) error {
 	return func(sl *sl) error {
-		loaded, err := sl.Store.IDIndex(KeyActiveRotations).Load()
+		loaded, err := sl.Store.IDIndex(key).Load()
 		if err == kvstore.ErrNotFound {
-			*activeRotations = *types.NewIDSet()
+			idx.From(&types.NewIDSet().ValueSet)
 			return nil
 		}
 		if err != nil {
 			return err
 		}
-		*activeRotations = *loaded
+		idx.From(&loaded.ValueSet)
 		return nil
 	}
 }
 
-func withLoadRotation(rotationID *types.ID, r *Rotation) func(sl *sl) error {
+func withLoadRotation(idref *types.ID, r *Rotation) func(sl *sl) error {
 	return func(sl *sl) error {
-		sl.Logger = sl.Logger.With(bot.LogContext{ctxRotationID: rotationID})
+		sl.Logger = sl.Logger.With(bot.LogContext{ctxRotationID: *idref})
 
-		loaded, err := sl.loadRotation(*rotationID)
+		loaded, err := sl.loadRotation(*idref)
 		if err != nil {
 			return err
 		}
@@ -63,96 +64,48 @@ func withExpandRotationTasks(r *Rotation) func(sl *sl) error {
 	}
 }
 
-func withLoadExpandRotation(rotationID *types.ID, r *Rotation) func(sl *sl) error {
+func withExpandedRotation(idref *types.ID, r *Rotation) func(sl *sl) error {
 	return func(sl *sl) error {
 		return sl.Setup(
-			withLoadRotation(rotationID, r),
+			withLoadRotation(idref, r),
 			withExpandRotationUsers(r),
 			withExpandRotationTasks(r),
 		)
 	}
 }
 
-func withLoadOrMakeUser(mattermostUserID *types.ID, user *User) func(sl *sl) error {
-	return func(sl *sl) error {
-		loadedUser, _, err := sl.loadOrMakeUser(*mattermostUserID)
-		if err != nil {
-			return err
-		}
-		*user = *loadedUser
-		return nil
-	}
-}
-
-func withLoadExpandUser(mattermostUserID types.ID, user *User) func(sl *sl) error {
-	return func(sl *sl) error {
-		err := withLoadOrMakeUser(&mattermostUserID, user)(sl)
-		if err != nil {
-			return err
-		}
-		return sl.expandUser(user)
-	}
-}
-
 func withExpandedActingUser(sl *sl) error {
 	sl.actingUser = NewUser("")
-	err := sl.Setup(withLoadExpandUser(sl.actingMattermostUserID, sl.actingUser))
+
+	user, _, err := sl.loadOrMakeUser(sl.actingMattermostUserID)
 	if err != nil {
 		return err
 	}
-	sl.Logger = sl.Logger.With(bot.LogContext{ctxActingUsername: sl.actingUser.MattermostUsername()})
+	err = sl.expandUser(user)
+	if err != nil {
+		return err
+	}
+	sl.actingUser = user
+	sl.Logger = sl.Logger.With(bot.LogContext{ctxActingUsername: user.MattermostUsername()})
 	return nil
 }
 
-func withLoadUsers(mattermostUserIDs **types.IDSet, users *Users) func(sl *sl) error {
+func withExpandedUsers(idsref **types.IDSet, users *Users) func(sl *sl) error {
 	return func(sl *sl) error {
-		loaded, err := sl.loadStoredUsers(*mattermostUserIDs)
+		loaded, err := sl.LoadUsers(*idsref)
 		if err != nil {
 			return err
 		}
-		*users = *loaded
-		sl.Logger = sl.Logger.With(bot.LogContext{ctxUserIDs: users.IDs()})
-		return nil
-	}
-}
-
-func withExpandUsers(mattermostUserIDs **types.IDSet, users *Users) func(sl *sl) error {
-	return func(sl *sl) error {
-		err := withLoadUsers(mattermostUserIDs, users)(sl)
-		if err != nil {
-			return err
-		}
-		if users.IsEmpty() {
-			return nil
-		}
-		err = sl.expandUsers(users)
-		if err != nil {
-			return err
-		}
+		users.From(&loaded.ValueSet)
 		sl.Logger = sl.Logger.With(bot.LogContext{ctxUsernames: users.String()})
-		return nil
-	}
-}
-
-func withLoadKnownSkills(knownSkills *types.IDSet) func(*sl) error {
-	return func(sl *sl) error {
-		skills, err := sl.Store.IDIndex(KeyKnownSkills).Load()
-		if err == kvstore.ErrNotFound {
-			*knownSkills = *types.NewIDSet()
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		*knownSkills = *skills
 		return nil
 	}
 }
 
 func withValidSkillName(skillName *types.ID) func(sl *sl) error {
 	return func(sl *sl) error {
-		knownSkills := *types.NewIDSet()
-		err := sl.Setup(withLoadKnownSkills(&knownSkills))
+		knownSkills := types.NewIDSet()
+		err := sl.Setup(withLoadIDIndex(KeyKnownSkills, knownSkills))
 		if err != nil {
 			return err
 		}
@@ -163,33 +116,14 @@ func withValidSkillName(skillName *types.ID) func(sl *sl) error {
 	}
 }
 
-func withLoadTask(taskID *types.ID, task *Task) func(sl *sl) error {
+func withExpandedTask(idref *types.ID, task *Task) func(sl *sl) error {
 	return func(sl *sl) error {
-		sl.Logger = sl.Logger.With(bot.LogContext{ctxTaskID: *taskID})
-
-		loaded, err := sl.LoadTask(*taskID)
+		loaded, err := sl.LoadTask(*idref)
 		if err != nil {
 			return err
 		}
 		*task = *loaded
-		return nil
-	}
-}
-
-func withLoadExpandTask(taskID *types.ID, task *Task) func(sl *sl) error {
-	return func(sl *sl) error {
-		sl.Setup(
-			withLoadTask(taskID, task),
-			withExpandUsers(&task.MattermostUserIDs, task.Users),
-		)
-
-		sl.Logger = sl.Logger.With(bot.LogContext{ctxTaskID: *taskID})
-
-		loaded, err := sl.LoadTask(*taskID)
-		if err != nil {
-			return err
-		}
-		*task = *loaded
+		sl.Logger = sl.Logger.With(bot.LogContext{ctxTaskID: task.TaskID})
 		return nil
 	}
 }

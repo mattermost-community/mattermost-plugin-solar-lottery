@@ -12,24 +12,11 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-var ErrMultipleResults = errors.New("multiple resolts found")
-
-type RotationService interface {
-	AddRotation(*Rotation) error
-	ArchiveRotation(rotationID types.ID) (*Rotation, error)
-	DebugDeleteRotation(rotationID types.ID) error
-	LoadActiveRotations() (*types.IDSet, error)
-	LoadRotation(rotationID types.ID) (*Rotation, error)
-	MakeRotation(rotationName string) (*Rotation, error)
-	ResolveRotationName(string) (types.ID, error)
-	UpdateRotation(rotationID types.ID, updatef func(*Rotation) error) (*Rotation, error)
-}
-
 func (sl *sl) AddRotation(r *Rotation) error {
 	active := types.NewIDSet()
 	err := sl.Setup(
 		pushAPILogger("AddRotation", r),
-		withLoadActiveRotations(active),
+		withLoadIDIndex(KeyActiveRotations, active),
 	)
 	if err != nil {
 		return err
@@ -56,7 +43,7 @@ func (sl *sl) AddRotation(r *Rotation) error {
 
 func (sl *sl) LoadActiveRotations() (*types.IDSet, error) {
 	active := types.NewIDSet()
-	err := sl.Setup(withLoadActiveRotations(active))
+	err := sl.Setup(withLoadIDIndex(KeyActiveRotations, active))
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +52,7 @@ func (sl *sl) LoadActiveRotations() (*types.IDSet, error) {
 
 func (sl *sl) ResolveRotationName(pattern string) (types.ID, error) {
 	active := types.NewIDSet()
-	err := sl.Setup(withLoadActiveRotations(active))
+	err := sl.Setup(withLoadIDIndex(KeyActiveRotations, active))
 	if err != nil {
 		return "", err
 	}
@@ -145,7 +132,7 @@ func (sl *sl) DebugDeleteRotation(rotationID types.ID) error {
 
 func (sl *sl) LoadRotation(rotationID types.ID) (*Rotation, error) {
 	r := NewRotation()
-	err := sl.Setup(withLoadExpandRotation(&rotationID, r))
+	err := sl.Setup(withExpandedRotation(&rotationID, r))
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +175,7 @@ func (sl *sl) MakeRotation(rotationName string) (*Rotation, error) {
 
 func (sl *sl) loadRotation(rotationID types.ID) (*Rotation, error) {
 	active := types.NewIDSet()
-	err := sl.Setup(withLoadActiveRotations(active))
+	err := sl.Setup(withLoadIDIndex(KeyActiveRotations, active))
 	if err != nil {
 		return nil, err
 	}
@@ -209,15 +196,7 @@ func (sl *sl) loadRotation(rotationID types.ID) (*Rotation, error) {
 }
 
 func (sl *sl) expandRotationUsers(r *Rotation) error {
-	if r.Users != nil {
-		return nil
-	}
-
-	users, err := sl.loadStoredUsers(r.MattermostUserIDs)
-	if err != nil {
-		return err
-	}
-	err = sl.expandUsers(users)
+	users, err := sl.LoadUsers(r.MattermostUserIDs)
 	if err != nil {
 		return err
 	}
@@ -226,24 +205,15 @@ func (sl *sl) expandRotationUsers(r *Rotation) error {
 }
 
 func (sl *sl) expandRotationTasks(r *Rotation) error {
-	if r.pending != nil { // && r.inProgress != nil {
+	if r.tasks != nil { // && r.inProgress != nil {
 		return nil
 	}
 
-	r.pending = NewTasks()
-	r.inProgress = NewTasks()
 	tasks, err := sl.LoadTasks(r.TaskIDs)
 	if err != nil {
 		return err
 	}
-	for _, task := range tasks.AsArray() {
-		switch task.State {
-		case TaskStatePending:
-			r.pending.Set(task)
-		case TaskStateInProgress:
-			r.inProgress.Set(task)
-		}
-	}
+	r.tasks = tasks
 	return nil
 }
 

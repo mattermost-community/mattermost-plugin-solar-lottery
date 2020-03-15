@@ -3,6 +3,8 @@
 
 package sl
 
-func (sl *sl) ListTasks(rotation *Rotation, taskStatus TaskState) ([]string, error) {
+import "github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
+
+func (sl *sl) ListTasks(rotation *Rotation, taskStatus types.ID) ([]string, error) {
 	return []string{"<><> TODO"}, nil
 }

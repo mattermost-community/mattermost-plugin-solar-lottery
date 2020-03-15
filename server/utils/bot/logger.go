@@ -107,6 +107,15 @@ func (bot *bot) logToAdmins(level, message string) {
 	bot.dmAdmins("(log " + level + ") " + message)
 }
 
+func measure(lc LogContext) {
+	if lc[timed] == nil {
+		return
+	}
+	started := lc[timed].(time.Time)
+	lc[Elapsed] = time.Since(started).String()
+	delete(lc, timed)
+}
+
 type NilLogger struct{}
 
 func (l *NilLogger) With(logContext LogContext) Logger         { return l }
@@ -145,15 +154,6 @@ func (l *TestLogger) logf(prefix, format string, args ...interface{}) {
 		out += fmt.Sprintf(" -- %+v", l.logContext)
 	}
 	l.TB.Logf(out)
-}
-
-func measure(lc LogContext) {
-	if lc[timed] == nil {
-		return
-	}
-	started := lc[timed].(time.Time)
-	lc[Elapsed] = time.Since(started).String()
-	delete(lc, timed)
 }
 
 func (l *TestLogger) Debugf(format string, args ...interface{}) { l.logf("DEBUG", format, args...) }

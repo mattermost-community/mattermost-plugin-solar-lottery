@@ -9,6 +9,30 @@ import (
 )
 
 func (sl *sl) LoadTask(taskID types.ID) (*Task, error) {
+	task, err := sl.loadTask(taskID)
+	if err != nil {
+		return nil, err
+	}
+	err = sl.expandTaskUsers(task)
+	if err != nil {
+		return nil, err
+	}
+	return task, nil
+}
+
+func (sl *sl) LoadTasks(taskIDs *types.IDSet) (*Tasks, error) {
+	tasks := NewTasks()
+	for _, id := range taskIDs.IDs() {
+		t, err := sl.LoadTask(id)
+		if err != nil {
+			return nil, err
+		}
+		tasks.Set(t)
+	}
+	return tasks, nil
+}
+
+func (sl *sl) loadTask(taskID types.ID) (*Task, error) {
 	t := NewTask("")
 	err := sl.Store.Entity(KeyTask).Load(taskID, t)
 	if err != nil {
@@ -17,24 +41,17 @@ func (sl *sl) LoadTask(taskID types.ID) (*Task, error) {
 	return t, nil
 }
 
-func (sl *sl) storeTask(t *Task) error {
-	t.PluginVersion = sl.conf.PluginVersion
-	err := sl.Store.Entity(KeyTask).Store(t.TaskID, t)
+func (sl *sl) storeTask(task *Task) error {
+	task.PluginVersion = sl.conf.PluginVersion
+	err := sl.Store.Entity(KeyTask).Store(task.TaskID, task)
 	if err != nil {
-		return errors.Wrapf(err, "failed to store %s", t.String())
+		return errors.Wrapf(err, "failed to store %s", task.String())
 	}
 	return nil
 }
 
 func (sl *sl) expandTaskUsers(task *Task) error {
-	if task.Users != nil {
-		return nil
-	}
-	users, err := sl.loadStoredUsers(task.MattermostUserIDs)
-	if err != nil {
-		return err
-	}
-	err = sl.expandUsers(users)
+	users, err := sl.LoadUsers(task.MattermostUserIDs)
 	if err != nil {
 		return err
 	}
@@ -96,14 +113,44 @@ func (sl *sl) fillTask(r *Rotation, task *Task) (added *Users, err error) {
 	return added, nil
 }
 
-func (sl *sl) LoadTasks(taskIDs *types.IDSet) (*Tasks, error) {
-	tasks := NewTasks()
-	for _, id := range taskIDs.IDs() {
-		t, err := sl.LoadTask(id)
-		if err != nil {
-			return nil, err
-		}
-		tasks.Set(t)
+var validPriorStates = map[types.ID]*types.IDSet{
+	TaskStatePending:   types.NewIDSet("none"),
+	TaskStateScheduled: types.NewIDSet(TaskStatePending),
+	TaskStateStarted:   types.NewIDSet(TaskStateScheduled),
+}
+
+func (sl *sl) transitionTask(r *Rotation, task *Task, now types.Time, to types.ID) error {
+	if task.State == to {
+		return nil
 	}
-	return tasks, nil
+
+	priorStates, ok := validPriorStates[to]
+	if ok && !priorStates.Contains(task.State) {
+		return errors.Errorf("fail to transition from %s to %s, only allowed for %s", task.State, to, priorStates.IDs())
+	}
+
+	// Touch LastServed for all users.
+	for _, user := range task.Users.AsArray() {
+		user.LastServed.Set(r.RotationID, now.Unix())
+		_, err := sl.storeUserWelcomeNew(user)
+		if err != nil {
+			return err
+		}
+	}
+
+	switch to {
+	case TaskStatePending:
+		sl.announceRotationUsers(r, func(user *User, _ *Rotation) {
+			sl.dmUserTaskPending(user, task)
+		})
+	case TaskStateScheduled:
+		sl.announceTaskUsers(task, sl.dmUserTaskScheduled)
+	case TaskStateStarted:
+		sl.announceTaskUsers(task, sl.dmUserTaskStarted)
+	case TaskStateFinished:
+		sl.announceTaskUsers(task, sl.dmUserTaskFinished)
+	}
+
+	task.State = to
+	return sl.storeTask(task)
 }

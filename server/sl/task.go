@@ -13,15 +13,27 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-type TaskState string
-
 var ErrWrongState = errors.New("operation is not allowed in this state")
 
 const (
-	TaskStatePending    = TaskState("pending")
-	TaskStateScheduled  = TaskState("scheduled")
-	TaskStateInProgress = TaskState("inprogress")
-	TaskStateFinished   = TaskState("finished")
+	// New tasks that have been submitted are Pending. There are no restrictions
+	// on assigning, filling, or un-assigning users to pending tasks.
+	// No DMs are sent to users added to or removed from these tasks.
+	TaskStatePending = types.ID("pending")
+
+	// Scheduled tasks are normally verified to have met the requirements and
+	// constraints. Assigned users receive a message when a task is scheduled. A
+	// scheduled task may no longer be filled, but users can still be assigned
+	// and unassigned manually, with DM notifications. Users added to a
+	// scheduled task get task-related unavailability events added to their
+	// calendars.
+	TaskStateScheduled = types.ID("scheduled")
+
+	// An in-progress task. Users can be assigned, but not filled (nor unassigned?).
+	TaskStateStarted = types.ID("started")
+
+	// Finished tasks are archived, and are not yet used.
+	TaskStateFinished = types.ID("finished")
 )
 
 type Task struct {
@@ -29,7 +41,7 @@ type Task struct {
 	PluginVersion string
 	TaskID        types.ID
 	RotationID    types.ID
-	State         TaskState
+	State         types.ID
 	Created       types.Time
 	Summary       string
 	Description   string
@@ -70,18 +82,18 @@ func (t Task) MarkdownBullets(rotation *Rotation) md.MD {
 	return out
 }
 
-func (t Task) Markdown() md.MD {
-	return md.Markdownf("%s", t.String())
+func (task Task) Markdown() md.MD {
+	return md.Markdownf("%s", task.String())
 }
 
-func (t Task) String() string {
-	return fmt.Sprintf("%s", t.TaskID)
+func (task Task) String() string {
+	return fmt.Sprintf("%s", task.TaskID)
 }
 
-func (t *Task) NewUnavailable() []*Unavailable {
-	interval := t.Actual
+func (task *Task) NewUnavailable() []*Unavailable {
+	interval := task.Actual
 	if interval.IsEmpty() {
-		interval = t.Scheduled
+		interval = task.Scheduled
 	}
 	if interval.IsEmpty() {
 		now := types.NewTime()
@@ -94,19 +106,19 @@ func (t *Task) NewUnavailable() []*Unavailable {
 		{
 			Reason:     ReasonTask,
 			Interval:   interval,
-			TaskID:     t.TaskID,
-			RotationID: t.RotationID,
+			TaskID:     task.TaskID,
+			RotationID: task.RotationID,
 		},
 	}
 
-	if t.Grace > 0 {
+	if task.Grace > 0 {
 		uu = append(uu, &Unavailable{
 			Reason: ReasonGrace,
 			Interval: types.Interval{
 				Start:  interval.Finish,
-				Finish: types.NewTime(interval.Finish.Add(t.Grace)),
+				Finish: types.NewTime(interval.Finish.Add(task.Grace)),
 			},
-			TaskID: t.TaskID,
+			TaskID: task.TaskID,
 		})
 	}
 

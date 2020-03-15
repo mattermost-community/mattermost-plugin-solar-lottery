@@ -58,13 +58,13 @@ const (
 	commandTask        = "task"
 	commandTicket      = "ticket"
 	commandFill        = "fill"
+	commandSchedule    = "schedule"
 	commandUnavailable = "unavailable"
 	commandUser        = "user"
 )
 
 const (
 	flagPFinish   = "f"
-	flagPNumber   = "n"
 	flagPRotation = "r"
 	flagPSkill    = "k"
 	flagPStart    = "s"
@@ -77,10 +77,8 @@ const (
 	// flagNotifyDays = "notify"
 	// flagOff        = "off"
 	// flagSampleSize = "sample"
-	// flagType       = "type"
 	flagClear    = "clear"
 	flagCount    = "count"
-	flagDelete   = "delete"
 	flagDuration = "duration"
 	flagFinish   = "finish"
 	flagForce    = "force"

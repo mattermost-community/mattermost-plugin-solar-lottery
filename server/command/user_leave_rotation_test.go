@@ -23,7 +23,7 @@ func TestCommandUserLeave(t *testing.T) {
 			`)
 		require.NoError(t, err)
 
-		out := sl.OutJoinLeaveRotation{
+		out := sl.OutJoinRotation{
 			Modified: sl.NewUsers(),
 		}
 		_, err = runJSONCommand(t, SL, `

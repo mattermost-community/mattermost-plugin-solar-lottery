@@ -23,7 +23,7 @@ func (sl *sl) Qualify(params InQualify) (*OutQualify, error) {
 	err := sl.Setup(
 		pushAPILogger("Qualify", params),
 		// NOT restricted to: withValidSkillName(&params.SkillLevel.Skill),
-		withExpandUsers(&params.MattermostUserIDs, users),
+		withExpandedUsers(&params.MattermostUserIDs, users),
 	)
 	if err != nil {
 		return nil, err
@@ -38,36 +38,6 @@ func (sl *sl) Qualify(params InQualify) (*OutQualify, error) {
 	out := &OutQualify{
 		Users: users,
 		MD:    md.Markdownf("added skill %s to %s.", params.SkillLevel, users.Markdown()),
-	}
-	sl.LogAPI(out)
-	return out, nil
-}
-
-type InDisqualify struct {
-	MattermostUserIDs *types.IDSet
-	Skill             types.ID
-}
-
-func (sl *sl) Disqualify(params InDisqualify) (*OutQualify, error) {
-	users := NewUsers()
-	err := sl.Setup(
-		pushAPILogger("Qualify", params),
-		withValidSkillName(&params.Skill),
-		withExpandUsers(&params.MattermostUserIDs, users),
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer sl.popLogger()
-
-	err = sl.disqualify(users, params.Skill)
-	if err != nil {
-		return nil, err
-	}
-
-	out := &OutQualify{
-		Users: users,
-		MD:    md.Markdownf("removed skill %s to %s.", params.Skill, users.Markdown()),
 	}
 	sl.LogAPI(out)
 	return out, nil

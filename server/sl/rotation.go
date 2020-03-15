@@ -20,10 +20,9 @@ type Rotation struct {
 	MattermostUserIDs *types.IDSet `json:",omitempty"`
 	TaskIDs           *types.IDSet `json:",omitempty"`
 
-	loaded     bool
-	Users      *Users `json:"-"`
-	pending    *Tasks
-	inProgress *Tasks
+	loaded bool
+	Users  *Users `json:"-"`
+	tasks  *Tasks
 }
 
 func NewRotation() *Rotation {

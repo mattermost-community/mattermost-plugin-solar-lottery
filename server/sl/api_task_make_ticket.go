@@ -26,25 +26,25 @@ func (sl *sl) MakeTicket(params InMakeTicket) (*OutMakeTicket, error) {
 	}
 	defer sl.popLogger()
 
-	var t *Task
+	var task *Task
 	_, err = sl.UpdateRotation(params.RotationID, func(r *Rotation) error {
-		t = r.TaskMaker.newTicket(r, "")
-		t.Summary = params.Summary
-		t.Description = params.Description
+		task = r.TaskMaker.newTicket(r, "")
+		task.Summary = params.Summary
+		task.Description = params.Description
 		var id types.ID
-		id, err = sl.Store.Entity(KeyTask).NewID(string(t.TaskID))
+		id, err = sl.Store.Entity(KeyTask).NewID(string(task.TaskID))
 		if err != nil {
 			return err
 		}
-		t.TaskID = id
+		task.TaskID = id
 
-		err = sl.storeTask(t)
+		err = sl.storeTask(task)
 		if err != nil {
 			return err
 		}
-		r.TaskIDs.Set(t.TaskID)
-		if r.pending != nil {
-			r.pending.Set(t)
+		r.TaskIDs.Set(task.TaskID)
+		if r.tasks != nil {
+			r.tasks.Set(task)
 		}
 		return nil
 	})
@@ -53,8 +53,8 @@ func (sl *sl) MakeTicket(params InMakeTicket) (*OutMakeTicket, error) {
 	}
 
 	out := &OutMakeTicket{
-		MD:   md.Markdownf("created ticket %s.", t.Markdown()),
-		Task: t,
+		MD:   md.Markdownf("created ticket %s.", task.Markdown()),
+		Task: task,
 	}
 	sl.LogAPI(out)
 	return out, nil

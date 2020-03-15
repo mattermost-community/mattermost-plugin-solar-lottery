@@ -45,6 +45,15 @@ func NewValueSet(proto ValueArray, vv ...Value) *ValueSet {
 	return i
 }
 
+func (set *ValueSet) From(other *ValueSet) {
+	set.proto = other.proto
+	set.ids = append([]ID{}, other.ids...)
+	set.m = map[ID]Value{}
+	for id, v := range other.m {
+		set.m[id] = v
+	}
+}
+
 func (set *ValueSet) Contains(id ID) bool {
 	if set.IsEmpty() {
 		return false

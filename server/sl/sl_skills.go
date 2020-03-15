@@ -15,7 +15,7 @@ type SkillService interface {
 
 func (sl *sl) ListKnownSkills() (*types.IDSet, error) {
 	knownSkills := types.NewIDSet()
-	err := sl.Setup(withLoadKnownSkills(knownSkills))
+	err := sl.Setup(withLoadIDIndex(KeyKnownSkills, knownSkills))
 	if err != nil {
 		return nil, err
 	}

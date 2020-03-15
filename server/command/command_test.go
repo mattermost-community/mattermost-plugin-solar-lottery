@@ -48,6 +48,10 @@ func testUserTimezone() model.StringMap {
 }
 
 func getTestSL(t testing.TB, ctrl *gomock.Controller) (sl.SL, kvstore.Store) {
+	return getTestSLWithPoster(t, ctrl, nil)
+}
+
+func getTestSLWithPoster(t testing.TB, ctrl *gomock.Controller, poster bot.Poster) (sl.SL, kvstore.Store) {
 	pluginAPI := mock_sl.NewMockPluginAPI(ctrl)
 
 	pluginAPI.EXPECT().GetMattermostUser(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*model.User, error) {
@@ -69,6 +73,9 @@ func getTestSL(t testing.TB, ctrl *gomock.Controller) (sl.SL, kvstore.Store) {
 		return user, nil
 	})
 
+	if poster == nil {
+		poster = &bot.NilPoster{}
+	}
 	serviceSL := &sl.Service{
 		PluginAPI: pluginAPI,
 		Config:    config.NewTestService(&testConfig),
@@ -79,7 +86,7 @@ func getTestSL(t testing.TB, ctrl *gomock.Controller) (sl.SL, kvstore.Store) {
 		},
 		Logger: &bot.TestLogger{TB: t},
 		// Logger: &bot.NilLogger{},
-		Poster: &bot.NilPoster{},
+		Poster: poster,
 		Store:  kvstore.NewStore(kvstore.NewCacheKVStore(nil)),
 	}
 

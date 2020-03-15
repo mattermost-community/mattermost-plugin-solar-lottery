@@ -21,9 +21,8 @@ func (c *Command) leaveRotation(parameters []string) (md.MD, error) {
 	}
 
 	return c.normalOut(
-		c.SL.JoinLeaveRotation(sl.InJoinLeaveRotation{
+		c.SL.LeaveRotation(sl.InJoinRotation{
 			MattermostUserIDs: mattermostUserIDs,
 			RotationID:        rotationID,
-			Leave:             true,
 		}))
 }

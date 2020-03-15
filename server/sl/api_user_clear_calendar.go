@@ -18,7 +18,7 @@ func (sl *sl) ClearCalendar(params InClearCalendar) (*OutCalendar, error) {
 	users := NewUsers()
 	err := sl.Setup(
 		pushAPILogger("CkearCalendar", params),
-		withExpandUsers(&params.MattermostUserIDs, users),
+		withExpandedUsers(&params.MattermostUserIDs, users),
 	)
 	if err != nil {
 		return nil, err

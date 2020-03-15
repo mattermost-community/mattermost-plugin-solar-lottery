@@ -22,7 +22,7 @@ func (sl *sl) AddToCalendar(params InAddToCalendar) (*OutCalendar, error) {
 	users := NewUsers()
 	err := sl.Setup(
 		pushAPILogger("AddToCalendar", params),
-		withExpandUsers(&params.MattermostUserIDs, users),
+		withExpandedUsers(&params.MattermostUserIDs, users),
 	)
 	if err != nil {
 		return nil, err

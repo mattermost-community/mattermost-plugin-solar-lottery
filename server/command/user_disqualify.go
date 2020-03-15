@@ -22,8 +22,8 @@ func (c *Command) disqualifyUsers(parameters []string) (md.MD, error) {
 	}
 
 	return c.normalOut(
-		c.SL.Disqualify(sl.InDisqualify{
+		c.SL.Disqualify(sl.InQualify{
 			MattermostUserIDs: mattermostUserIDs,
-			Skill:             types.ID(*skill),
+			SkillLevel:        sl.NewSkillLevel(types.ID(*skill), 0),
 		}))
 }
