@@ -9,7 +9,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-var ErrMultipleResults = errors.New("multiple resolts found")
+var ErrMultipleResults = errors.New("multiple results found")
 var ErrAlreadyExists = errors.New("already exists")
 
 type TaskService interface {
