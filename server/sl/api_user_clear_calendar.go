@@ -17,7 +17,7 @@ type InClearCalendar struct {
 func (sl *sl) ClearCalendar(params InClearCalendar) (*OutCalendar, error) {
 	users := NewUsers()
 	err := sl.Setup(
-		pushAPILogger("CkearCalendar", params),
+		pushAPILogger("ClearCalendar", params),
 		withExpandedUsers(&params.MattermostUserIDs, users),
 	)
 	if err != nil {
