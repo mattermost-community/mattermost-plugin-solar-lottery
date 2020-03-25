@@ -307,7 +307,7 @@ func (c *Command) resolveUsernames(args []string) (mattermostUserIDs *types.IDSe
 			return nil, errors.New("`@username`'s expected")
 		}
 		arg = arg[1:]
-		user, err := c.SL.LoadMattermostUsername(arg)
+		user, err := c.SL.LoadMattermostUserByUsername(arg)
 		if err != nil {
 			return nil, err
 		}

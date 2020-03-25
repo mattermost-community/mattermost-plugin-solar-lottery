@@ -21,7 +21,7 @@ func (sl *sl) ActingUser() (*User, error) {
 	return sl.actingUser, nil
 }
 
-func (sl *sl) LoadMattermostUsername(username string) (*User, error) {
+func (sl *sl) LoadMattermostUserByUsername(username string) (*User, error) {
 	if strings.HasPrefix(username, "@") {
 		username = username[1:]
 	}

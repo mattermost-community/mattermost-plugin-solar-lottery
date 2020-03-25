@@ -20,11 +20,12 @@ func (c *Command) info(parameters []string) (md.MD, error) {
 	resp += `
 - [x] info: display this.
 
+- [ ] autopilot
+
 - [ ] task
 	- [x] schedule
 	- [x] close
 	- [x] start
-	- [ ] debug-delete
 	- [ ] list --pending | --in-progress | --all
 	- [ ] new shift
 	- [ ] unassign
@@ -32,6 +33,7 @@ func (c *Command) info(parameters []string) (md.MD, error) {
 	- [x] fill
 	- [x] new ticket
 	- [x] show ROT#id
+	- [ ] debug-delete
 
 - [x] rotation
 	- [x] archive ROT
@@ -57,6 +59,7 @@ func (c *Command) info(parameters []string) (md.MD, error) {
 	- [x] qualify [@user...] --skill 
 	- [x] show [@user...]
 	- [x] unavailable: [@user...] --start --finish [--clear] 
+
 
 	`
 	return resp, nil

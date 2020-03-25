@@ -43,7 +43,7 @@ type SL interface {
 	Config() *config.Config
 
 	LoadUsers(mattermostUserIDs *types.IDSet) (*Users, error)
-	LoadMattermostUsername(username string) (*User, error)
+	LoadMattermostUserByUsername(username string) (*User, error)
 }
 
 type sl struct {
