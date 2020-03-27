@@ -207,6 +207,7 @@ func TestUserWeight(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("%v_%v", tc.lastServed, tc.time), func(t *testing.T) {
+			fmt.Printf("<><> %v_%v\n", tc.lastServed, tc.time)
 			f := makeTestFiller(t, nil, nil, nil, nil)
 			f.time = tc.time.Unix()
 			if tc.doubling > 0 {
