@@ -7,13 +7,12 @@ import "github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 
 func (c *Command) user(parameters []string) (md.MD, error) {
 	subcommands := map[string]func([]string) (md.MD, error){
-		commandDisqualify:  c.disqualifyUsers,
-		commandQualify:     c.qualifyUsers,
-		commandShow:        c.showUser,
+		commandDisqualify:  c.userDisqualify,
+		commandQualify:     c.userQualify,
+		commandShow:        c.userShow,
 		commandUnavailable: c.userUnavailable,
-		// commandForecast:    c.userForecast,
-		commandJoin:  c.joinRotation,
-		commandLeave: c.leaveRotation,
+		commandJoin:        c.userJoin,
+		commandLeave:       c.userLeave,
 	}
 
 	return c.handleCommand(subcommands, parameters)

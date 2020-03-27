@@ -4,17 +4,12 @@
 package command
 
 import (
-	"fmt"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-func (c *Command) joinRotation(parameters []string) (md.MD, error) {
-	var starting types.Time
+func (c *Command) userLeave(parameters []string) (md.MD, error) {
 	c.withFlagRotation()
-	c.fs.Var(&starting, flagStart, fmt.Sprintf("time for user to start participating"))
 	err := c.fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
@@ -26,9 +21,8 @@ func (c *Command) joinRotation(parameters []string) (md.MD, error) {
 	}
 
 	return c.normalOut(
-		c.SL.JoinRotation(sl.InJoinRotation{
+		c.SL.LeaveRotation(sl.InJoinRotation{
 			MattermostUserIDs: mattermostUserIDs,
 			RotationID:        rotationID,
-			Starting:          starting,
 		}))
 }

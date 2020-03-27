@@ -9,7 +9,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-func (c *Command) disqualifyUsers(parameters []string) (md.MD, error) {
+func (c *Command) userDisqualify(parameters []string) (md.MD, error) {
 	skill := c.withFlagSkill()
 	err := c.fs.Parse(parameters)
 	if err != nil {

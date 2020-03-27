@@ -12,15 +12,15 @@ import (
 
 func (c *Command) skill(parameters []string) (md.MD, error) {
 	subcommands := map[string]func([]string) (md.MD, error){
-		commandNew:    c.newSkill,
-		commandDelete: c.deleteSkill,
-		commandList:   c.listSkills,
+		commandNew:    c.skillNew,
+		commandDelete: c.skillDelete,
+		commandList:   c.skillList,
 	}
 
 	return c.handleCommand(subcommands, parameters)
 }
 
-func (c *Command) newSkill(parameters []string) (md.MD, error) {
+func (c *Command) skillNew(parameters []string) (md.MD, error) {
 	fs := c.assureFS()
 	err := fs.Parse(parameters)
 	if err != nil {
@@ -42,7 +42,7 @@ func (c *Command) newSkill(parameters []string) (md.MD, error) {
 	return md.Markdownf("Added **%s** to known skills.", skill), nil
 }
 
-func (c *Command) deleteSkill(parameters []string) (md.MD, error) {
+func (c *Command) skillDelete(parameters []string) (md.MD, error) {
 	fs := c.assureFS()
 	err := fs.Parse(parameters)
 	if err != nil {
@@ -63,7 +63,7 @@ func (c *Command) deleteSkill(parameters []string) (md.MD, error) {
 	return md.Markdownf("Deleted **%s** from known skills. User profiles are not changed.", skill), nil
 }
 
-func (c *Command) listSkills(parameters []string) (md.MD, error) {
+func (c *Command) skillList(parameters []string) (md.MD, error) {
 	fs := c.assureFS()
 	err := fs.Parse(parameters)
 	if err != nil {

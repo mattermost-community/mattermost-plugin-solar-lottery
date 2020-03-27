@@ -10,7 +10,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) qualifyUsers(parameters []string) (md.MD, error) {
+func (c *Command) userQualify(parameters []string) (md.MD, error) {
 	skillLevel := c.withFlagSkillLevel()
 	err := c.fs.Parse(parameters)
 	if err != nil {

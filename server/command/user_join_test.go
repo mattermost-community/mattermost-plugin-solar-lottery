@@ -11,7 +11,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 )
 
-func TestCommandRotationJoin(t *testing.T) {
+func TestCommandUserJoin(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()

@@ -7,7 +7,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) showUser(parameters []string) (md.MD, error) {
+func (c *Command) userShow(parameters []string) (md.MD, error) {
 	fs := c.assureFS()
 	err := fs.Parse(parameters)
 	if err != nil {
