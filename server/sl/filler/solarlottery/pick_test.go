@@ -186,13 +186,11 @@ func TestUserWeight(t *testing.T) {
 		time           types.Time
 		doubling       int64
 		expectedWeight float64
-		epsilon        float64
 	}{
 		{
 			lastServed:     types.MustParseTime("2020-03-01"),
 			time:           types.MustParseTime("2020-03-18"),
-			expectedWeight: 5.3614,
-			epsilon:        0.0001,
+			expectedWeight: 5.383600770529424,
 		}, {
 			lastServed:     types.MustParseTime("2020-03-01"),
 			time:           types.MustParseTime("2020-03-01"),
@@ -206,7 +204,6 @@ func TestUserWeight(t *testing.T) {
 			time:           types.MustParseTime("2035-03-01"),
 			doubling:       28 * 24 * 3600,
 			expectedWeight: 7.840945539427057e+58,
-			epsilon:        0.0001e+58,
 		},
 	} {
 		t.Run(fmt.Sprintf("%v_%v", tc.lastServed, tc.time), func(t *testing.T) {
@@ -218,7 +215,7 @@ func TestUserWeight(t *testing.T) {
 
 			user := sl.NewUser("test").WithLastServed(test.RotationID, tc.lastServed)
 			weight := f.userWeight(user)
-			require.InEpsilon(t, tc.expectedWeight, weight, tc.epsilon)
+			require.Equal(t, tc.expectedWeight, weight)
 		})
 	}
 }
