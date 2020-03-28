@@ -27,7 +27,7 @@ var _ pflag.Value = (*Time)(nil)
 func NewTime(tt ...time.Time) Time {
 	if len(tt) == 0 {
 		return Time{
-			Time: time.Now(),
+			Time: time.Now().UTC(),
 		}
 	}
 
