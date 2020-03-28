@@ -29,10 +29,7 @@ func (c *Command) userUnavailable(parameters []string) (md.MD, error) {
 	if err != nil {
 		return "", err
 	}
-	interval := types.Interval{
-		Start:  *start,
-		Finish: *finish,
-	}
+	interval := types.NewInterval(*start, *finish)
 
 	if *clear {
 		return c.normalOut(

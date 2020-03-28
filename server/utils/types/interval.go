@@ -3,13 +3,29 @@
 
 package types
 
-import (
-	"time"
-)
+import "time"
 
 type Interval struct {
 	Start  Time
 	Finish Time
+}
+
+func NewInterval(start, finish Time) Interval {
+	return Interval{
+		Start:  start,
+		Finish: finish,
+	}
+}
+
+func NewDurationInterval(start Time, d time.Duration) Interval {
+	return Interval{
+		Start:  start,
+		Finish: NewTime(start.Add(d)),
+	}
+}
+
+func MustParseInterval(start, finish string) Interval {
+	return NewInterval(MustParseTime(start), MustParseTime(finish))
 }
 
 func (i *Interval) IsEmpty() bool {
@@ -24,13 +40,4 @@ func (i *Interval) Overlaps(other Interval) bool {
 		other.Finish = i.Finish
 	}
 	return !other.IsEmpty()
-}
-
-type RelInterval struct {
-	Start  time.Duration
-	Finish time.Duration
-}
-
-func (i *RelInterval) IsEmpty() bool {
-	return i != nil && i.Start < i.Finish
 }

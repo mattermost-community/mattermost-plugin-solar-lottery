@@ -4,7 +4,6 @@ package command
 
 import (
 	"testing"
-	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
@@ -31,11 +30,8 @@ func TestCommandUserUnavailable(t *testing.T) {
 		require.Len(t, user.Calendar, 1)
 		require.EqualValues(t,
 			sl.Unavailable{
-				Interval: types.Interval{
-					Start:  types.NewTime(time.Date(2025, 1, 1, 19, 0, 0, 0, time.UTC)),
-					Finish: types.NewTime(time.Date(2025, 1, 2, 17, 30, 0, 0, time.UTC)),
-				},
-				Reason: sl.ReasonPersonal,
+				Interval: types.MustParseInterval("2025-01-01T19:00", "2025-01-02T17:30"),
+				Reason:   sl.ReasonPersonal,
 			},
 			*user.Calendar[0])
 
@@ -58,20 +54,14 @@ func TestCommandUserUnavailable(t *testing.T) {
 		require.Equal(t, 2, len(users.Get("test-user").Calendar))
 		require.EqualValues(t,
 			&sl.Unavailable{
-				Interval: types.Interval{
-					Start:  types.NewTime(time.Date(2025, 1, 1, 19, 0, 0, 0, time.UTC)),
-					Finish: types.NewTime(time.Date(2025, 1, 2, 17, 30, 0, 0, time.UTC)),
-				},
-				Reason: sl.ReasonPersonal,
+				Interval: types.MustParseInterval("2025-01-01T19:00", "2025-01-02T17:30"),
+				Reason:   sl.ReasonPersonal,
 			},
 			users.Get("test-user").Calendar[0])
 		require.EqualValues(t,
 			&sl.Unavailable{
-				Interval: types.Interval{
-					Start:  types.NewTime(time.Date(2025, 6, 28, 7, 0, 0, 0, time.UTC)),
-					Finish: types.NewTime(time.Date(2025, 7, 5, 7, 0, 0, 0, time.UTC)),
-				},
-				Reason: sl.ReasonPersonal,
+				Interval: types.MustParseInterval("2025-06-28T07:00", "2025-07-05T07:00"),
+				Reason:   sl.ReasonPersonal,
 			},
 			users.Get("test-user").Calendar[1])
 	})

@@ -55,15 +55,6 @@ func (p *Period) Set(in string) error {
 	return nil
 }
 
-// func (p *Period) IntervalForTime(beginning, now Time) Interval {
-// 	start := p.StartForTime(beginning, now)
-// 	next := p.Next(start)
-// 	return Interval{
-// 		Start:  start,
-// 		Finish: next,
-// 	}
-// }
-
 func (p *Period) StartForTime(start, now Time) Time {
 	const (
 		maxDay   = time.Hour * 24

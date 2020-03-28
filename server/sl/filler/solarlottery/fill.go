@@ -31,12 +31,12 @@ type fill struct {
 	limit        *sl.Needs
 }
 
-func newFill(r *sl.Rotation, task *sl.Task, time types.Time, logger bot.Logger) *fill {
-	if time.IsZero() && !task.Actual.Start.IsZero() {
-		time = task.Actual.Start
+func newFill(r *sl.Rotation, t *sl.Task, time types.Time, logger bot.Logger) *fill {
+	if time.IsZero() && !t.Actual.Start.IsZero() {
+		time = t.Actual.Start
 	}
-	if time.IsZero() && !task.Scheduled.Start.IsZero() {
-		time = task.Scheduled.Start
+	if time.IsZero() && !t.Start.IsZero() {
+		time = t.Start
 	}
 	if time.IsZero() {
 		time = types.NewTime()
@@ -54,13 +54,13 @@ func newFill(r *sl.Rotation, task *sl.Task, time types.Time, logger bot.Logger) 
 	f := fill{
 		Logger:         logger,
 		r:              r,
-		task:           task,
+		task:           t,
 		time:           time.Unix(),
 		pool:           pool,
 		poolWeights:    map[types.ID]float64{},
 		filled:         sl.NewUsers(),
-		require:        task.Require.Clone(),
-		limit:          task.Limit.Clone(),
+		require:        t.Require.Clone(),
+		limit:          t.Limit.Clone(),
 		requirePools:   map[types.ID]*sl.Users{},
 		doublingPeriod: 7 * 24 * 3600, // 14 days
 	}
@@ -68,7 +68,8 @@ func newFill(r *sl.Rotation, task *sl.Task, time types.Time, logger bot.Logger) 
 
 	// remove any unavailable users from the pool
 	for _, user := range f.pool.AsArray() {
-		overlapping := user.FindUnavailable(task.Scheduled, r.RotationID)
+		overlapping := user.FindUnavailable(
+			types.NewDurationInterval(t.Start, t.Duration), r.RotationID)
 		if len(overlapping) == 0 {
 			continue
 		}
@@ -77,7 +78,7 @@ func newFill(r *sl.Rotation, task *sl.Task, time types.Time, logger bot.Logger) 
 	}
 
 	// fill in all users already in the task
-	for _, user := range task.Users.AsArray() {
+	for _, user := range t.Users.AsArray() {
 		_ = f.fillUser(user, true)
 		f.Debugf("%s is already assigned", user.MarkdownWithSkills())
 	}

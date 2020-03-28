@@ -49,11 +49,6 @@ func (maker *TaskMaker) newTicket(r *Rotation, defaultID string) *Task {
 	return t
 }
 
-// func (maker *TaskMaker) NewShift(prefix string, t types.Time) *Task {
-// 	task := maker.NewTicket(prefix, "")
-// 	return task
-// }
-
 func (maker TaskMaker) MarkdownBullets() string {
 	out := fmt.Sprintf("  - Type: **%s**\n", maker.Type)
 	out += fmt.Sprintf("  - Require: **%s**\n", maker.Require.Markdown())
