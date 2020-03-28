@@ -4,7 +4,7 @@
 package test
 
 import (
-	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 )
 
 // A rotation requires 3 users, 4 different skills.

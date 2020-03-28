@@ -26,7 +26,7 @@ func (sl *sl) Disqualify(params InQualify) (*OutQualify, error) {
 
 	out := &OutQualify{
 		Users: users,
-		MD:    md.Markdownf("removed skill %s to %s.", params.SkillLevel.Skill, users.Markdown()),
+		MD:    md.Markdownf("removed skill %s from %s.", params.SkillLevel.Skill, users.Markdown()),
 	}
 	sl.LogAPI(out)
 	return out, nil

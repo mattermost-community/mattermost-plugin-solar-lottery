@@ -29,7 +29,7 @@ func TestCommandTaskParam(t *testing.T) {
 			/lotto rotation param shift test-rotation -s 2030-01-10 -p monthly`, &r)
 		require.NoError(t, err)
 		require.Equal(t, sl.ShiftMaker, r.TaskMaker.Type)
-		require.Equal(t, "everyMonth", r.TaskMaker.ShiftPeriod.String())
+		require.Equal(t, types.EveryMonth, r.TaskMaker.ShiftPeriod.String())
 		require.Equal(t, "2030-01-10T08:00:00Z", r.TaskMaker.ShiftStart.Format(time.RFC3339))
 	})
 
