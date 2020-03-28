@@ -5,6 +5,7 @@ package kvstore
 
 import (
 	"bytes"
+	"errors"
 )
 
 type cacheKVStore struct {
@@ -14,7 +15,6 @@ type cacheKVStore struct {
 	Data map[string][]byte
 
 	DirtyKeys map[string]bool
-	// expires   map[string]time.Time
 }
 
 var _ KVStore = (*cacheKVStore)(nil)
@@ -81,7 +81,9 @@ func (s *cacheKVStore) Store(key string, data []byte) error {
 }
 
 func (s *cacheKVStore) StoreTTL(key string, data []byte, ttlSeconds int64) error {
-	// TODO Implement expiry
+	if ttlSeconds > 0 {
+		return errors.New("TODO: expiry not implemented yet")
+	}
 	return s.Store(key, data)
 }
 

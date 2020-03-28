@@ -20,7 +20,7 @@ import (
 var _ sl.PluginAPI = (*Plugin)(nil)
 var _ config.Store = (*Plugin)(nil)
 
-// IsPluginAdmin returns true if the user is authorized to use the workflow plugin's admin-level APIs/commands.
+// IsPluginAdmin returns true if the user is authorized to use the plugin's admin-level APIs/commands.
 func (p *Plugin) IsPluginAdmin(mattermostUserID string) (bool, error) {
 	user, err := p.API.GetUser(mattermostUserID)
 	if err != nil {

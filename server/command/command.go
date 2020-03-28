@@ -102,9 +102,9 @@ type Command struct {
 	Args        *model.CommandArgs
 	ChannelID   string
 
-	subcommand string
-	outputJson bool
-	fs         *pflag.FlagSet
+	actualTrigger string
+	outputJson    bool
+	fs            *pflag.FlagSet
 }
 
 // RegisterFunc is a function that allows the runner to register commands with the mattermost server.
@@ -150,7 +150,7 @@ func (c *Command) Handle() (out md.MD, err error) {
 	if err != nil {
 		return "", err
 	}
-	c.subcommand = command
+	c.actualTrigger = command
 	return c.handleCommand(c.commands(), parameters)
 }
 
@@ -182,7 +182,7 @@ func (c *Command) handleCommand(
 	if f == nil {
 		return c.subUsage(subcommands), errors.Errorf("unknown command: %s", parameters[0])
 	}
-	c.subcommand += " " + parameters[0]
+	c.actualTrigger += " " + parameters[0]
 
 	return f(parameters[1:])
 }
@@ -198,7 +198,7 @@ func (c *Command) normalOut(out md.Markdowner, err error) (md.MD, error) {
 }
 
 func (c *Command) flagUsage() md.MD {
-	usage := c.subcommand
+	usage := c.actualTrigger
 	if c.fs != nil {
 		usage += " [flags...]\n\nFlags:\n" + c.fs.FlagUsages()
 	}
@@ -211,9 +211,9 @@ func (c *Command) subUsage(subcommands map[string]func([]string) (md.MD, error))
 		subs = append(subs, sub)
 	}
 	sort.Strings(subs)
-	usage := fmt.Sprintf("`%s %s`", c.subcommand, strings.Join(subs, "|"))
+	usage := fmt.Sprintf("`%s %s`", c.actualTrigger, strings.Join(subs, "|"))
 	return md.Markdownf("Usage: %s\nUse `%s <subcommand> help` for more info.",
-		usage, c.subcommand)
+		usage, c.actualTrigger)
 }
 
 func (c *Command) debugClean(parameters []string) (md.MD, error) {

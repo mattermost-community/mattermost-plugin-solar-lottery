@@ -100,8 +100,8 @@ func runCommand(t testing.TB, sl sl.SL, cmd string) (md.MD, error) {
 	split := strings.Fields(strings.TrimSpace(cmd))
 	require.Greater(t, len(split), 1)
 	c := &Command{
-		SL:         sl,
-		subcommand: split[0],
+		SL:            sl,
+		actualTrigger: split[0],
 	}
 
 	return c.handleCommand(c.commands(), split[1:])
