@@ -9,9 +9,8 @@ import (
 )
 
 func (c *Command) rotationArchive(parameters []string) (md.MD, error) {
-	fs := c.assureFS()
 	c.withFlagRotation()
-	err := fs.Parse(parameters)
+	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}
@@ -30,9 +29,8 @@ func (c *Command) rotationArchive(parameters []string) (md.MD, error) {
 }
 
 func (c *Command) rotationDebugDelete(parameters []string) (md.MD, error) {
-	fs := c.assureFS()
 	c.withFlagRotation()
-	err := fs.Parse(parameters)
+	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}

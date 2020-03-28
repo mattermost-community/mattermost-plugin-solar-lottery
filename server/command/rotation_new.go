@@ -14,16 +14,15 @@ import (
 )
 
 func (c *Command) rotationNew(parameters []string) (md.MD, error) {
-	fs := c.assureFS()
-	err := fs.Parse(parameters)
+	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}
-	if fs.Arg(0) == "" {
+	if c.fs.Arg(0) == "" {
 		return c.flagUsage(), errors.Errorf("must specify rotation name")
 	}
 
-	r, err := c.SL.MakeRotation(fs.Arg(0))
+	r, err := c.SL.MakeRotation(c.fs.Arg(0))
 	if err != nil {
 		return "", err
 	}

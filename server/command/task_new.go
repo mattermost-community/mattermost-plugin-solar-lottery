@@ -17,10 +17,9 @@ func (c *Command) taskNew(parameters []string) (md.MD, error) {
 }
 
 func (c *Command) newTicketTask(parameters []string) (md.MD, error) {
-	fs := c.assureFS()
 	c.withFlagRotation()
 	summary := c.withFlagSummary()
-	err := fs.Parse(parameters)
+	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}

@@ -9,8 +9,7 @@ import (
 )
 
 func (c *Command) taskFill(parameters []string) (md.MD, error) {
-	c.assureFS()
-	err := c.fs.Parse(parameters)
+	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}

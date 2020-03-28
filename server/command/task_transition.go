@@ -11,8 +11,7 @@ import (
 
 func (c *Command) taskTransition(to types.ID) func([]string) (md.MD, error) {
 	return func(parameters []string) (md.MD, error) {
-		c.assureFS()
-		err := c.fs.Parse(parameters)
+		err := c.parse(parameters)
 		if err != nil {
 			return c.flagUsage(), err
 		}

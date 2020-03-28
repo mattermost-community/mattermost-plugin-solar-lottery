@@ -6,9 +6,8 @@ package command
 import "github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 
 func (c *Command) rotationShow(parameters []string) (md.MD, error) {
-	fs := c.assureFS()
 	c.withFlagRotation()
-	err := fs.Parse(parameters)
+	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}

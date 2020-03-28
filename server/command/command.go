@@ -220,6 +220,11 @@ func (c *Command) debugClean(parameters []string) (md.MD, error) {
 	return "Cleaned the KV store", c.SL.Clean()
 }
 
+func (c *Command) parse(parameters []string) error {
+	c.assureFS()
+	return c.fs.Parse(parameters)
+}
+
 func (c *Command) assureFS() *pflag.FlagSet {
 	if c.fs == nil {
 		c.fs = pflag.NewFlagSet("", pflag.ContinueOnError)

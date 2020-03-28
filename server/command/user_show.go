@@ -8,13 +8,12 @@ import (
 )
 
 func (c *Command) userShow(parameters []string) (md.MD, error) {
-	fs := c.assureFS()
-	err := fs.Parse(parameters)
+	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}
 
-	mattermostUserIDs, err := c.resolveUsernames(fs.Args())
+	mattermostUserIDs, err := c.resolveUsernames(c.fs.Args())
 	if err != nil {
 		return "", err
 	}
