@@ -59,7 +59,8 @@ func (f *fill) userWeight(user *sl.User) (w float64) {
 		// pool are new, one of them is picked.
 		return negligibleWeight
 	}
-	fmt.Printf("<><> %v %v %v %v\n", f.time, lastServed, f.doublingPeriod, float64(f.time-lastServed)/float64(f.doublingPeriod))
+	fmt.Printf("<><> %v %v %v\n", f.time, lastServed, f.doublingPeriod)
+	fmt.Printf("<><> %v %v\n", f.time-lastServed, float64(f.time-lastServed)/float64(f.doublingPeriod))
 	return math.Pow(2, float64(f.time-lastServed)/float64(f.doublingPeriod))
 }
 
