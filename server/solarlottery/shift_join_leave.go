@@ -49,6 +49,42 @@ func (sl *solarLottery) JoinShift(mattermostUsernames string, rotation *Rotation
 		sl.actingUser.Markdown(), joined.MarkdownWithSkills(), shift.Markdown())
 	return shift, joined, nil
 }
+
+func (sl *solarLottery) LeaveShift(mattermostUsernames string, rotation *Rotation, shiftNumber int) (*Shift, UserMap, error) {
+	err := sl.Filter(
+		withActingUserExpanded,
+		withMattermostUsersExpanded(mattermostUsernames),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	logger := sl.Logger.Timed().With(bot.LogContext{
+		"Location":            "sl.DeleteUsersFromShift",
+		"ActingUsername":      sl.actingUser.MattermostUsername(),
+		"MattermostUsernames": mattermostUsernames,
+		"RotationID":          rotation.RotationID,
+		"ShiftNumber":         shiftNumber,
+	})
+
+	shift, err := sl.loadShift(rotation, shiftNumber)
+	if err != nil {
+		return nil, nil, errors.Errorf("failed to load shift %v for rotation %s", shiftNumber, rotation.RotationID)
+	}
+	deleted, err := sl.leaveShift(rotation, shiftNumber, shift, sl.users, true)
+	if err != nil {
+		return nil, nil, err
+	}
+	err = sl.ShiftStore.StoreShift(rotation.RotationID, shiftNumber, shift.Shift)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	sl.messageShiftLeft(deleted, rotation, shift)
+	logger.Infof("%s deleted %s from %s.",
+		sl.actingUser.Markdown(), deleted.MarkdownWithSkills(), shift.Markdown())
+	return shift, deleted, nil
+}
+
 func (sl *solarLottery) IsShiftReady(rotation *Rotation, shiftNumber int) (shift *Shift, ready bool, whyNot string, err error) {
 	shift, err = sl.loadShift(rotation, shiftNumber)
 	if err != nil {
@@ -135,4 +171,26 @@ func (sl *solarLottery) joinShift(rotation *Rotation, shiftNumber int, shift *Sh
 	}
 
 	return joined, nil
+}
+
+func (sl *solarLottery) leaveShift(rotation *Rotation, shiftNumber int, shift *Shift, users UserMap, persist bool) (UserMap, error) {
+	if shift.Status == store.ShiftStatusFinished {
+		return nil, errors.Errorf("can't leave a shift with status %s", store.ShiftStatusFinished)
+	}
+
+	deleted := UserMap{}
+	for _, user := range users {
+		if shift.Shift.MattermostUserIDs[user.MattermostUserID] == "" {
+			continue
+		}
+		delete(shift.Shift.MattermostUserIDs, user.MattermostUserID)
+		deleted[user.MattermostUserID] = user
+	}
+
+	err := sl.addEventToUsers(deleted, NewShiftEvent(rotation, shiftNumber, shift), persist)
+	if err != nil {
+		return nil, err
+	}
+
+	return deleted, nil
 }

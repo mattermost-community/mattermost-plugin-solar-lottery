@@ -3,9 +3,11 @@
 
 package solarlottery
 
-import "github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
+import (
+	"fmt"
 
-import "fmt"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
+)
 
 func (sl *solarLottery) dmUser(user *User, message string) {
 	sl.Poster.DM(user.MattermostUserID, message)
@@ -151,6 +153,29 @@ func (sl *solarLottery) messageShiftJoined(joined UserMap, rotation *Rotation, s
 	for _, user := range joined {
 		sl.dmUser(user,
 			fmt.Sprintf("%s joined you into %s",
+				sl.actingUser.Markdown(),
+				shift.Markdown()))
+	}
+}
+
+func (sl *solarLottery) messageShiftLeft(deleted UserMap, rotation *Rotation, shift *Shift) {
+	sl.ExpandRotation(rotation)
+
+	// Notify the previous shift users that users have been deleted from the shift
+	for _, user := range rotation.ShiftUsers(shift) {
+		if deleted[user.MattermostUserID] != nil {
+			continue
+		}
+		sl.dmUser(user,
+			fmt.Sprintf("%s removed users %s from your %s",
+				sl.actingUser.Markdown(),
+				deleted.Markdown(),
+				shift.Markdown()))
+	}
+
+	for _, user := range deleted {
+		sl.dmUser(user,
+			fmt.Sprintf("%s removed you from %s.",
 				sl.actingUser.Markdown(),
 				shift.Markdown()))
 	}

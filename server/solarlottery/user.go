@@ -24,6 +24,7 @@ type Users interface {
 	Disqualify(mattermostUsernames, skillName string) error
 	JoinRotation(mattermostUsernames string, rotation *Rotation, starting time.Time) (added UserMap, err error)
 	JoinShift(mattermostUsernames string, rotation *Rotation, shiftNumber int) (*Shift, UserMap, error)
+	LeaveShift(mattermostUsernames string, rotation *Rotation, shiftNumber int) (*Shift, UserMap, error)
 	LeaveRotation(mattermostUsernames string, rotation *Rotation) (deleted UserMap, err error)
 	Qualify(mattermostUsernames, skillName string, level Level) error
 }
