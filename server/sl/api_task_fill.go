@@ -20,12 +20,24 @@ func (sl *sl) FillTask(params InAssignTask) (*OutAssignTask, error) {
 	}
 	defer sl.popLogger()
 
-	filled, err := sl.fillTask(r, task)
+	filled, err := sl.fillTask(r, task, params.Time)
 	if err != nil {
 		return nil, err
 	}
 
 	err = sl.storeTask(task)
+	if err != nil {
+		return nil, err
+	}
+
+	lastServed := task.ExpectedStart
+	if lastServed.IsZero() {
+		lastServed = params.Time
+	}
+	for _, user := range filled.AsArray() {
+		user.LastServed.Set(r.RotationID, lastServed.Unix())
+	}
+	err = sl.storeUsers(filled)
 	if err != nil {
 		return nil, err
 	}

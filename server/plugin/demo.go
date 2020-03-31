@@ -14,34 +14,34 @@ import (
 const commandCleanInit = `
 /lotto debug-clean
 
-/lotto user qualify -k ABC-FS1 -l intermediate -u @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston
-/lotto user qualify -k DEF-PERF -l intermediate -u @deborah.freeman,@diana.wells,@douglas.daniels,@emily.meyer,@eugene.rodriguez,@frances.elliott
-/lotto user qualify -k GHIJ-FS2 -l intermediate -u @helen.hunter,@janice.armstrong,@jeremy.williamson,@jerry.ramos,@johnny.hansen,@jonathan.watson
-/lotto user qualify -k KL-SRE -l intermediate -u @karen.austin,@karen.martin,@kathryn.mills,@laura.wagner
-/lotto user qualify -k MN-FS3 -l intermediate -u @margaret.morgan,@mark.rodriguez,@matthew.mendoza,@mildred.barnes,@nancy.roberts
-/lotto user qualify -k R-MOBILE -l intermediate -u @ralph.watson,@raymond.austin,@raymond.fisher,@raymond.fox
+/lotto user qualify -s ABC-FS1 -l intermediate -u @aaron.medina,@aaron.peterson,@aaron.ward,@albert.torres,@alice.johnston
+/lotto user qualify -s DEF-PERF -l intermediate -u @deborah.freeman,@diana.wells,@douglas.daniels,@emily.meyer,@eugene.rodriguez,@frances.elliott
+/lotto user qualify -s GHIJ-FS2 -l intermediate -u @helen.hunter,@janice.armstrong,@jeremy.williamson,@jerry.ramos,@johnny.hansen,@jonathan.watson
+/lotto user qualify -s KL-SRE -l intermediate -u @karen.austin,@karen.martin,@kathryn.mills,@laura.wagner
+/lotto user qualify -s MN-FS3 -l intermediate -u @margaret.morgan,@mark.rodriguez,@matthew.mendoza,@mildred.barnes,@nancy.roberts
+/lotto user qualify -s R-MOBILE -l intermediate -u @ralph.watson,@raymond.austin,@raymond.fisher,@raymond.fox
 
-/lotto user qualify -k lead -l intermediate -u @deborah.freeman,@karen.austin,@ralph.watson
-/lotto user qualify -k lead -l advanced -u @aaron.medina,@helen.hunter,@margaret.morgan
+/lotto user qualify -s lead -l intermediate -u @deborah.freeman,@karen.austin,@ralph.watson
+/lotto user qualify -s lead -l advanced -u @aaron.medina,@helen.hunter,@margaret.morgan
 
-/lotto user qualify -k server -l beginner -u @aaron.peterson,@albert.torres,@helen.hunter,@johnny.hansen,@mark.rodriguez,@raymond.fox
-/lotto user qualify -k server -l intermediate -u @alice.johnston,@eugene.rodriguez,@janice.armstrong,@jerry.ramos,@jonathan.watson,@kathryn.mills,@margaret.morgan,@matthew.mendoza,@mildred.barnes
-/lotto user qualify -k server -l advanced -u @aaron.medina,@deborah.freeman,@diana.wells,@emily.meyer,@nancy.roberts
-/lotto user qualify -k server -l expert -u @douglas.daniels
+/lotto user qualify -s server -l beginner -u @aaron.peterson,@albert.torres,@helen.hunter,@johnny.hansen,@mark.rodriguez,@raymond.fox
+/lotto user qualify -s server -l intermediate -u @alice.johnston,@eugene.rodriguez,@janice.armstrong,@jerry.ramos,@jonathan.watson,@kathryn.mills,@margaret.morgan,@matthew.mendoza,@mildred.barnes
+/lotto user qualify -s server -l advanced -u @aaron.medina,@deborah.freeman,@diana.wells,@emily.meyer,@nancy.roberts
+/lotto user qualify -s server -l expert -u @douglas.daniels
 
-/lotto user qualify -k webapp -l beginner -u @emily.meyer,@eugene.rodriguez,@helen.hunter,@janice.armstrong,@johnny.hansen,@karen.martin,@mark.rodriguez,@mildred.barnes,@raymond.austin,@raymond.fisher,@raymond.fox
-/lotto user qualify -k webapp -l intermediate -u @aaron.peterson,@aaron.ward,@deborah.freeman,@jeremy.williamson,@jerry.ramos,@nancy.roberts
-/lotto user qualify -k webapp -l advanced -u @aaron.medina,@frances.elliott,@matthew.mendoza
+/lotto user qualify -s webapp -l beginner -u @emily.meyer,@eugene.rodriguez,@helen.hunter,@janice.armstrong,@johnny.hansen,@karen.martin,@mark.rodriguez,@mildred.barnes,@raymond.austin,@raymond.fisher,@raymond.fox
+/lotto user qualify -s webapp -l intermediate -u @aaron.peterson,@aaron.ward,@deborah.freeman,@jeremy.williamson,@jerry.ramos,@nancy.roberts
+/lotto user qualify -s webapp -l advanced -u @aaron.medina,@frances.elliott,@matthew.mendoza
 
-/lotto user qualify -k mobile -l beginner -u @johnny.hansen,@aaron.peterson,@nancy.roberts
-/lotto user qualify -k mobile -l intermediate -u @raymond.austin,@raymond.fisher,@raymond.fox
-/lotto user qualify -k mobile -l advanced -u @ralph.watson,@frances.elliott
+/lotto user qualify -s mobile -l beginner -u @johnny.hansen,@aaron.peterson,@nancy.roberts
+/lotto user qualify -s mobile -l intermediate -u @raymond.austin,@raymond.fisher,@raymond.fox
+/lotto user qualify -s mobile -l advanced -u @ralph.watson,@frances.elliott
 
-/lotto user qualify -k sre -l beginner -u @karen.martin
-/lotto user qualify -k sre -l intermediate -u @laura.wagner
-/lotto user qualify -k sre -l advanced -u @karen.austin,@kathryn.mills
+/lotto user qualify -s sre -l beginner -u @karen.martin
+/lotto user qualify -s sre -l intermediate -u @laura.wagner
+/lotto user qualify -s sre -l advanced -u @karen.austin,@kathryn.mills
 
-/lotto user qualify -k build -l advanced -u @karen.martin
+/lotto user qualify -s build -l advanced -u @karen.martin
 `
 
 const commandIcebreakerInit = `

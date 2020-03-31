@@ -4,7 +4,6 @@ package command
 
 import (
 	"testing"
-	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -22,15 +21,14 @@ func TestCommandTaskNewTicket(t *testing.T) {
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
 			/lotto rotation param ticket test-rotation
-			/lotto rotation param min -k webapp-2 --count 2 test-rotation
-			/lotto rotation param max -k server-3 --count 1 test-rotation
+			/lotto rotation param min -s webapp-2 --count 2 test-rotation
+			/lotto rotation param max -s server-3 --count 1 test-rotation
 			`)
 		require.NoError(t, err)
 
-		ts := time.Now()
-		out := &sl.OutMakeTicket{}
+		out := &sl.OutMakeTask{}
 		_, err = runJSONCommand(t, SL, `
-		/lotto task new ticket test-rotation --summary test-summary1
+			/lotto task new ticket test-rotation --summary test-summary1
 		`, &out)
 		task := out.Task
 		require.NoError(t, err)
@@ -38,8 +36,8 @@ func TestCommandTaskNewTicket(t *testing.T) {
 		require.Equal(t, types.ID("test-rotation#1"), task.TaskID)
 		require.Equal(t, types.ID("test-rotation"), task.RotationID)
 		require.Equal(t, sl.TaskStatePending, task.State)
-		require.True(t, task.Created.After(ts))
 		require.Equal(t, "test-summary1", task.Summary)
+		require.Equal(t, "0001-01-01", task.ExpectedStart.String())
 
 		require.Equal(t, map[types.ID]int64{"*-*": 1, "webapp-▣": 2}, task.Require.TestAsMap())
 		require.Equal(t, map[types.ID]int64{"server-◈": 1}, task.Limit.TestAsMap())

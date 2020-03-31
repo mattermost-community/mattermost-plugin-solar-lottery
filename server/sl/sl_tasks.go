@@ -33,6 +33,10 @@ func (sl *sl) LoadTasks(taskIDs *types.IDSet) (*Tasks, error) {
 	return tasks, nil
 }
 
+func (sl *sl) ListTasks(rotation *Rotation, taskStatus types.ID) ([]string, error) {
+	return []string{"<><> TODO"}, nil
+}
+
 func (sl *sl) loadTask(taskID types.ID) (*Task, error) {
 	t := NewTask("")
 	err := sl.Store.Entity(KeyTask).Load(taskID, t)
@@ -123,7 +127,7 @@ func (sl *sl) unassignTask(task *Task, users *Users, force bool) (*Users, error)
 	return removed, nil
 }
 
-func (sl *sl) fillTask(r *Rotation, task *Task) (added *Users, err error) {
+func (sl *sl) fillTask(r *Rotation, task *Task, now types.Time) (added *Users, err error) {
 	defer func() {
 		if err != nil {
 			err = errors.Wrapf(err, "failed to fill task %s", task.Markdown())
@@ -139,7 +143,7 @@ func (sl *sl) fillTask(r *Rotation, task *Task) (added *Users, err error) {
 	if err != nil {
 		return nil, err
 	}
-	added, err = filler.FillTask(r, task, sl.Logger)
+	added, err = filler.FillTask(r, task, now, sl.Logger)
 	if err != nil {
 		return nil, err
 	}
@@ -158,38 +162,48 @@ var validPriorStates = map[types.ID]*types.IDSet{
 	TaskStateStarted:   types.NewIDSet(TaskStateScheduled),
 }
 
-func (sl *sl) transitionTask(r *Rotation, task *Task, now types.Time, to types.ID) error {
-	if task.State == to {
+func (sl *sl) transitionTask(r *Rotation, t *Task, now types.Time, to types.ID) error {
+	if t.State == to {
 		return nil
 	}
 
 	priorStates, ok := validPriorStates[to]
-	if ok && !priorStates.Contains(task.State) {
-		return errors.Errorf("fail to transition from %s to %s, only allowed for %s", task.State, to, priorStates.IDs())
+	if ok && !priorStates.Contains(t.State) {
+		return errors.Errorf("fail to transition from %s to %s, only allowed for %s", t.State, to, priorStates.IDs())
 	}
 
-	// Touch LastServed for all users.
-	for _, user := range task.Users.AsArray() {
-		user.LastServed.Set(r.RotationID, now.Unix())
-		_, err := sl.storeUserWelcomeNew(user)
-		if err != nil {
-			return err
+	lastServed := now
+	switch to {
+	case TaskStatePending:
+		lastServed = types.NewTime(t.ExpectedStart.Add(t.ExpectedDuration))
+		sl.announceRotationUsers(r, func(user *User, _ *Rotation) {
+			sl.dmUserTaskPending(user, t)
+		})
+	case TaskStateScheduled:
+		lastServed = types.NewTime(t.ExpectedStart.Add(t.ExpectedDuration))
+		sl.announceTaskUsers(t, sl.dmUserTaskScheduled)
+	case TaskStateStarted:
+		t.ActualStart = now
+		lastServed = types.NewTime(now.Add(t.ExpectedDuration))
+		sl.announceTaskUsers(t, sl.dmUserTaskStarted)
+	case TaskStateFinished:
+		t.ActualFinish = now
+		lastServed = now
+		sl.announceTaskUsers(t, sl.dmUserTaskFinished)
+	}
+
+	uu := t.NewUnavailable()
+	for _, user := range t.Users.AsArray() {
+		user.LastServed.Set(r.RotationID, lastServed.Unix())
+		if to != TaskStatePending {
+			user.AddUnavailable(uu...)
 		}
 	}
 
-	switch to {
-	case TaskStatePending:
-		sl.announceRotationUsers(r, func(user *User, _ *Rotation) {
-			sl.dmUserTaskPending(user, task)
-		})
-	case TaskStateScheduled:
-		sl.announceTaskUsers(task, sl.dmUserTaskScheduled)
-	case TaskStateStarted:
-		sl.announceTaskUsers(task, sl.dmUserTaskStarted)
-	case TaskStateFinished:
-		sl.announceTaskUsers(task, sl.dmUserTaskFinished)
+	err := sl.storeUsers(t.Users)
+	if err != nil {
+		return err
 	}
-
-	task.State = to
-	return sl.storeTask(task)
+	t.State = to
+	return sl.storeTask(t)
 }

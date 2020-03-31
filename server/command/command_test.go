@@ -111,7 +111,7 @@ func runJSONCommand(t testing.TB, sl sl.SL, cmd string, ref interface{}) (md.MD,
 	cmd += " --json"
 	outmd, err := runCommand(t, sl, cmd)
 	if err != nil {
-		return "", err
+		return outmd, err
 	}
 	out := outmd.String()
 	out = strings.Trim(strings.TrimSpace(out), "`")

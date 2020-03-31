@@ -44,9 +44,9 @@ func (c *Command) rotationParamMinMax(min bool, parameters []string) (md.MD, err
 
 	return c.normalOut(
 		c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
-			needsToUpdate := r.TaskMaker.Limit
+			needsToUpdate := r.Limit
 			if min {
-				needsToUpdate = r.TaskMaker.Require
+				needsToUpdate = r.Require
 			}
 			if *clear {
 				needsToUpdate.Delete(skillLevel.AsID())
@@ -71,20 +71,19 @@ func (c *Command) rotationParamGrace(parameters []string) (md.MD, error) {
 
 	return c.normalOut(
 		c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
-			r.TaskMaker.Grace = *dur
+			r.Grace = *dur
 			return nil
 		}))
 }
 
 func (c *Command) rotationParamShift(parameters []string) (md.MD, error) {
-	actingUser, err := c.SL.ActingUser()
+	c.withFlagRotation()
+	period := c.withFlagPeriod()
+	duration := c.withFlagDuration()
+	begin, err := c.withFlagBeginning()
 	if err != nil {
 		return "", err
 	}
-
-	c.withFlagRotation()
-	period := c.withFlagPeriod()
-	start := c.withFlagStart(actingUser)
 	err = c.fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
@@ -96,9 +95,10 @@ func (c *Command) rotationParamShift(parameters []string) (md.MD, error) {
 
 	return c.normalOut(
 		c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
-			r.TaskMaker.Type = sl.ShiftMaker
-			r.TaskMaker.ShiftPeriod = *period
-			r.TaskMaker.ShiftStart = *start
+			r.Type = sl.TypeShift
+			r.ShiftPeriod = *period
+			r.Beginning = *begin
+			r.Duration = *duration
 			return nil
 		}))
 }
@@ -116,7 +116,7 @@ func (c *Command) rotationParamTicket(parameters []string) (md.MD, error) {
 
 	return c.normalOut(
 		c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
-			r.TaskMaker.Type = sl.TicketMaker
+			r.Type = sl.TypeTicket
 			return nil
 		}))
 }

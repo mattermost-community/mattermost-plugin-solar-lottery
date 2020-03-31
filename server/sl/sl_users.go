@@ -238,6 +238,16 @@ func (sl *sl) loadStoredUsers(ids *types.IDSet) (*Users, error) {
 	return users, nil
 }
 
+func (sl *sl) storeUsers(users *Users) error {
+	for _, user := range users.AsArray() {
+		err := sl.storeUser(user)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (sl *sl) addUserUnavailable(user *User, u *Unavailable) error {
 	user.AddUnavailable(u)
 	err := sl.storeUser(user)

@@ -4,6 +4,12 @@
 package sl
 
 import (
+	"fmt"
+	"strconv"
+	"time"
+
+	"github.com/pkg/errors"
+
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
@@ -14,8 +20,18 @@ type Rotation struct {
 	RotationID     types.ID
 	IsArchived     bool
 	TaskFillerType types.ID
-	TaskMaker      *TaskMaker
-	Starts         types.Time
+
+	Type        types.ID     // ticket or shift
+	TaskSeq     int          `json:",omitempty"`
+	Beginning   types.Time   `json:",omitempty"`
+	ShiftPeriod types.Period `json:",omitempty"`
+
+	// Task defaults
+	Require     *Needs        `json:",omitempty"`
+	Limit       *Needs        `json:",omitempty"`
+	Duration    time.Duration `json:",omitempty"`
+	Grace       time.Duration `json:",omitempty"`
+	Description string        `json:",omitempty"`
 
 	MattermostUserIDs *types.IDSet `json:",omitempty"`
 	TaskIDs           *types.IDSet `json:",omitempty"`
@@ -25,10 +41,13 @@ type Rotation struct {
 	tasks  *Tasks
 }
 
+const (
+	TypeTicket = types.ID("Ticket")
+	TypeShift  = types.ID("Shift")
+)
+
 func NewRotation() *Rotation {
-	r := &Rotation{
-		Starts: types.NewTime(),
-	}
+	r := &Rotation{}
 	r.init()
 	return r
 }
@@ -40,8 +59,11 @@ func (r *Rotation) init() {
 	if r.TaskIDs == nil {
 		r.TaskIDs = types.NewIDSet()
 	}
-	if r.TaskMaker == nil {
-		r.TaskMaker = NewTaskMaker()
+	if r.Require == nil {
+		r.Require = NewNeeds()
+	}
+	if r.Limit == nil {
+		r.Limit = NewNeeds()
 	}
 }
 
@@ -78,6 +100,16 @@ func (r *Rotation) MarkdownBullets() md.MD {
 	} else {
 		out += md.Markdownf("  - Users (%v): %s.\n", r.MattermostUserIDs.Len(), r.MattermostUserIDs.IDs())
 	}
+
+	out += md.Markdownf("  - Type: **%s**\n", r.Type)
+	out += md.Markdownf("  - Require: **%s**\n", r.Require.Markdown())
+	out += md.Markdownf("  - Limit: **%v**\n", r.Limit.Markdown())
+	out += md.Markdownf("  - Grace: %v\n", r.Grace)
+	if r.Type == TypeShift {
+		out += md.Markdownf("  - Shift period: **%v**\n", r.ShiftPeriod.String())
+		out += md.Markdownf("  - Shifts beginning: **%v**\n", r.Beginning)
+	}
+
 	// if rotation.Autopilot.On {
 	// 	out += fmt.Sprintf("  - Autopilot: **on**\n")
 	// 	out += fmt.Sprintf("    - Auto-start: **%v**\n", rotation.Autopilot.StartFinish)
@@ -96,4 +128,57 @@ func (r *Rotation) FindUsers(mattermostUserIDs *types.IDSet) []*User {
 		uu = append(uu, r.Users.Get(id))
 	}
 	return uu
+}
+
+func (r *Rotation) newTicket(defaultID string) *Task {
+	r.TaskSeq++
+	t := NewTask(r.RotationID)
+	if defaultID == "" {
+		defaultID = strconv.Itoa(r.TaskSeq)
+	}
+	t.TaskID = types.ID(r.Name() + "#" + defaultID)
+	t.Require = r.Require.Clone()
+	t.Limit = r.Limit.Clone()
+	t.Grace = r.Grace
+	t.ExpectedDuration = r.Duration
+	return t
+}
+
+func (r *Rotation) makeShift(shiftNumber int) (*Task, error) {
+	startTime := r.ShiftPeriod.Next(r.Beginning, shiftNumber-1)
+	nextTime := r.ShiftPeriod.Next(startTime, 1)
+
+	// Check if an overlapping shift already exists
+	int := types.NewInterval(startTime, nextTime)
+	for _, t := range r.tasks.AsArray() {
+		tInt := types.NewDurationInterval(t.ExpectedStart, t.ExpectedDuration)
+		switch t.State {
+		case TaskStateFinished:
+			tInt = types.NewInterval(t.ActualStart, t.ActualFinish)
+		case TaskStateStarted:
+			tInt = types.NewInterval(t.ActualStart, types.NewTime(time.Now()))
+		}
+
+		if int.Overlaps(tInt) {
+			return nil, errors.Errorf(
+				"failed to make shift #%v (%v to %v): shift %s (%v - %v) already exists, state %s",
+				shiftNumber, startTime, nextTime, t.Markdown(), tInt.Start, tInt.Finish, t.State)
+		}
+	}
+
+	t := NewTask(r.RotationID)
+	t.TaskID = types.ID(fmt.Sprintf("%s#%v", r.Name(), shiftNumber))
+	t.Require = r.Require.Clone()
+	t.Limit = r.Limit.Clone()
+	t.Grace = r.Grace
+	t.Description = r.Description
+
+	t.ExpectedStart = startTime
+	if r.Duration > 0 {
+		t.ExpectedDuration = r.Duration
+	} else {
+		t.ExpectedDuration = nextTime.Sub(startTime.Time)
+	}
+
+	return t, nil
 }

@@ -10,13 +10,12 @@ import (
 )
 
 func (c *Command) userUnavailable(parameters []string) (md.MD, error) {
-	actingUser, err := c.SL.ActingUser()
+	clear := c.withFlagClear()
+	start, err := c.withFlagStart()
 	if err != nil {
 		return "", err
 	}
-
-	clear := c.withFlagClear()
-	start, finish := c.withFlagStartFinish(actingUser)
+	finish, err := c.withFlagFinish()
 	if err != nil {
 		return "", err
 	}

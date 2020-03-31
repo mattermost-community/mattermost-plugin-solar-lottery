@@ -4,6 +4,8 @@
 package command
 
 import (
+	"time"
+
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
@@ -11,7 +13,11 @@ import (
 
 func (c *Command) taskTransition(to types.ID) func([]string) (md.MD, error) {
 	return func(parameters []string) (md.MD, error) {
-		err := c.parse(parameters)
+		now, err := c.withFlagDebugNow()
+		if err != nil {
+			return "", err
+		}
+		err = c.parse(parameters)
 		if err != nil {
 			return c.flagUsage(), err
 		}
@@ -20,10 +26,13 @@ func (c *Command) taskTransition(to types.ID) func([]string) (md.MD, error) {
 			return "", err
 		}
 
+		if (*now).IsZero() {
+			*now = types.NewTime(time.Now())
+		}
 		return c.normalOut(c.SL.TransitionTask(sl.InTransitionTask{
 			TaskID: taskID,
 			State:  to,
-			Time:   types.NewTime(),
+			Time:   *now,
 		}))
 	}
 }

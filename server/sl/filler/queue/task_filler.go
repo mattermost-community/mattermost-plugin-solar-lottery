@@ -8,6 +8,7 @@ import (
 
 	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 const Type = "queue"
@@ -20,6 +21,6 @@ func New() sl.TaskFiller {
 	return &taskFiller{}
 }
 
-func (*taskFiller) FillTask(r *sl.Rotation, task *sl.Task, logger bot.Logger) (*sl.Users, error) {
+func (*taskFiller) FillTask(r *sl.Rotation, task *sl.Task, now types.Time, logger bot.Logger) (*sl.Users, error) {
 	return nil, errors.New("Queue autofill is not implemented")
 }

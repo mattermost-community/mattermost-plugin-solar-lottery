@@ -3,7 +3,9 @@
 
 package types
 
-import "time"
+import (
+	"time"
+)
 
 type Interval struct {
 	Start  Time
@@ -29,7 +31,7 @@ func MustParseInterval(start, finish string) Interval {
 }
 
 func (i *Interval) IsEmpty() bool {
-	return i != nil && i.Start.Before(i.Finish.Time)
+	return i != nil && !i.Finish.After(i.Start.Time)
 }
 
 func (i *Interval) Overlaps(other Interval) bool {

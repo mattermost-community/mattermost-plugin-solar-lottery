@@ -12,27 +12,21 @@ import (
 )
 
 const (
-	DateFormat = "2006-01-02"
-	TimeFormat = "2006-01-02T15:04"
+	DateFormat   = "2006-01-02"
+	DateFormatTZ = "2006-01-02MST"
+	TimeFormat   = "2006-01-02T15:04"
+	TimeFormatTZ = "2006-01-02T15:04MST"
 )
 
 type Time struct {
-	time.Time // always in UTC
+	time.Time
 }
 
-// var _ json.Marshaler = (*Time)(nil)
-// var _ json.Unmarshaler = (*Time)(nil)
 var _ pflag.Value = (*Time)(nil)
 
-func NewTime(tt ...time.Time) Time {
-	if len(tt) == 0 {
-		return Time{
-			Time: time.Now().UTC(),
-		}
-	}
-
+func NewTime(t time.Time) Time {
 	return Time{
-		Time: tt[0],
+		Time: t,
 	}
 }
 
@@ -54,15 +48,15 @@ func (t *Time) Set(in string) error {
 		loc = time.UTC
 	}
 
-	tt, err := time.ParseInLocation(TimeFormat, in, loc)
-	if err != nil {
-		tt, err = time.ParseInLocation(DateFormat, in, loc)
-		if err != nil {
-			return err
+	var err error
+	for _, format := range []string{TimeFormatTZ, TimeFormat, DateFormatTZ, DateFormat} {
+		tt, err := time.ParseInLocation(format, in, loc)
+		if err == nil {
+			t.Time = tt
+			return nil
 		}
 	}
-	t.Time = tt
-	return nil
+	return err
 }
 
 // String is in UTC, use LocalString for local time
@@ -103,7 +97,7 @@ func init() {
 }
 
 func MustParseTime(in string) Time {
-	t := NewTime()
+	t := Time{}
 	err := t.Set(in)
 	if err != nil {
 		panic(err.Error())

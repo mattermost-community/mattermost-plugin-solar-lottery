@@ -9,7 +9,11 @@ import (
 )
 
 func (c *Command) taskFill(parameters []string) (md.MD, error) {
-	err := c.parse(parameters)
+	now, err := c.withFlagDebugNow()
+	if err != nil {
+		return "", err
+	}
+	err = c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}
@@ -20,5 +24,6 @@ func (c *Command) taskFill(parameters []string) (md.MD, error) {
 
 	return c.normalOut(c.SL.FillTask(sl.InAssignTask{
 		TaskID: taskID,
+		Time:   *now,
 	}))
 }

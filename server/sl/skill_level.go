@@ -33,6 +33,10 @@ func ParseSkillLevel(in types.ID) SkillLevel {
 }
 
 func (skillLevel SkillLevel) String() string {
+	none := SkillLevel{}
+	if skillLevel == none {
+		return AnySkill.String() + "-" + AnyLevel.String()
+	}
 	return fmt.Sprintf("%s-%s", skillLevel.Skill, skillLevel.Level)
 }
 

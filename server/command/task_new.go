@@ -10,13 +10,14 @@ import (
 
 func (c *Command) taskNew(parameters []string) (md.MD, error) {
 	subcommands := map[string]func([]string) (md.MD, error){
-		commandTicket: c.newTicketTask,
+		commandTicket: c.taskNewTicket,
+		commandShift:  c.taskNewShift,
 	}
 
 	return c.handleCommand(subcommands, parameters)
 }
 
-func (c *Command) newTicketTask(parameters []string) (md.MD, error) {
+func (c *Command) taskNewTicket(parameters []string) (md.MD, error) {
 	c.withFlagRotation()
 	summary := c.withFlagSummary()
 	err := c.parse(parameters)
@@ -31,5 +32,23 @@ func (c *Command) newTicketTask(parameters []string) (md.MD, error) {
 	return c.normalOut(c.SL.MakeTicket(sl.InMakeTicket{
 		RotationID: rotationID,
 		Summary:    *summary,
+	}))
+}
+
+func (c *Command) taskNewShift(parameters []string) (md.MD, error) {
+	c.withFlagRotation()
+	shiftNumber := c.withFlagNumber()
+	err := c.parse(parameters)
+	if err != nil {
+		return c.flagUsage(), err
+	}
+	rotationID, err := c.resolveRotation()
+	if err != nil {
+		return "", err
+	}
+
+	return c.normalOut(c.SL.MakeShift(sl.InMakeShift{
+		RotationID: rotationID,
+		Number:     *shiftNumber,
 	}))
 }

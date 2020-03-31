@@ -13,7 +13,7 @@ import (
 )
 
 type TaskFiller interface {
-	FillTask(rotation *Rotation, task *Task, logger bot.Logger) (*Users, error)
+	FillTask(rotation *Rotation, task *Task, forTime types.Time, logger bot.Logger) (*Users, error)
 }
 
 var ErrFillInsufficient = errors.New("insufficient")

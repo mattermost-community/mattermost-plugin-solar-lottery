@@ -6,6 +6,7 @@ package solarlottery
 import (
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
@@ -31,31 +32,24 @@ type fill struct {
 	limit        *sl.Needs
 }
 
-func newFill(r *sl.Rotation, t *sl.Task, time types.Time, logger bot.Logger) *fill {
-	if time.IsZero() && !t.Actual.Start.IsZero() {
-		time = t.Actual.Start
+func newFill(r *sl.Rotation, t *sl.Task, forTime types.Time, logger bot.Logger) *fill {
+	if forTime.IsZero() && !t.ExpectedStart.IsZero() {
+		forTime = t.ExpectedStart
 	}
-	if time.IsZero() && !t.Start.IsZero() {
-		time = t.Start
-	}
-	if time.IsZero() {
-		time = types.NewTime()
+	if forTime.IsZero() {
+		forTime = types.NewTime(time.Now())
 	}
 
 	pool := sl.NewUsers()
 	if r.Users != nil {
 		pool = r.Users.Clone()
-	} else {
-		if !r.MattermostUserIDs.IsEmpty() {
-			panic("<><> unreacheable")
-		}
 	}
 
 	f := fill{
 		Logger:         logger,
 		r:              r,
 		task:           t,
-		time:           time.Unix(),
+		time:           forTime.Unix(),
 		pool:           pool,
 		poolWeights:    map[types.ID]float64{},
 		filled:         sl.NewUsers(),
@@ -69,7 +63,7 @@ func newFill(r *sl.Rotation, t *sl.Task, time types.Time, logger bot.Logger) *fi
 	// remove any unavailable users from the pool
 	for _, user := range f.pool.AsArray() {
 		overlapping := user.FindUnavailable(
-			types.NewDurationInterval(t.Start, t.Duration), r.RotationID)
+			types.NewDurationInterval(t.ExpectedStart, t.ExpectedDuration), r.RotationID)
 		if len(overlapping) == 0 {
 			continue
 		}

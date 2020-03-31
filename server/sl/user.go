@@ -173,7 +173,7 @@ func (user *User) ClearUnavailable(interval types.Interval, applicableToRotation
 func (user *User) GetLastServed(r *Rotation) int64 {
 	last := user.LastServed.Get(r.RotationID)
 	if last <= 0 {
-		return r.Starts.Unix()
+		return r.Beginning.Unix()
 	}
 	return last
 }

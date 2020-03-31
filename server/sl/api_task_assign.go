@@ -12,6 +12,7 @@ type InAssignTask struct {
 	TaskID            types.ID
 	MattermostUserIDs *types.IDSet
 	Force             bool
+	Time              types.Time
 }
 
 type OutAssignTask struct {

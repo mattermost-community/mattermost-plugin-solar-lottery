@@ -18,7 +18,8 @@ type TaskService interface {
 	FillTask(InAssignTask) (*OutAssignTask, error)
 	LoadTask(types.ID) (*Task, error)
 	TransitionTask(params InTransitionTask) (*OutTransitionTask, error)
-	MakeTicket(InMakeTicket) (*OutMakeTicket, error)
+	MakeTicket(InMakeTicket) (*OutMakeTask, error)
+	MakeShift(InMakeShift) (*OutMakeTask, error)
 }
 
 type UserService interface {

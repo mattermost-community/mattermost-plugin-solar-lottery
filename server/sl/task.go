@@ -42,17 +42,17 @@ type Task struct {
 	TaskID        types.ID
 	RotationID    types.ID
 	State         types.ID
-	Created       types.Time
-	Summary       string
-	Description   string
+	Summary       string `json:",omitempty"`
+	Description   string `json:",omitempty"`
 
-	Start             types.Time     `json:",omitempty"`
-	Duration          time.Duration  `json:",omitempty"`
-	Require           *Needs         `json:",omitempty"`
-	Limit             *Needs         `json:",omitempty"`
-	Actual            types.Interval `json:",omitempty"`
-	Grace             time.Duration  `json:",omitempty"`
-	MattermostUserIDs *types.IDSet   `json:",omitempty"`
+	ExpectedStart     types.Time    `json:",omitempty"`
+	ExpectedDuration  time.Duration `json:",omitempty"`
+	Require           *Needs        `json:",omitempty"`
+	Limit             *Needs        `json:",omitempty"`
+	Grace             time.Duration `json:",omitempty"`
+	MattermostUserIDs *types.IDSet  `json:",omitempty"`
+	ActualStart       types.Time    `json:",omitempty"`
+	ActualFinish      types.Time    `json:",omitempty"`
 
 	Users *Users `json:"-"`
 }
@@ -60,7 +60,6 @@ type Task struct {
 func NewTask(rotationID types.ID) *Task {
 	return &Task{
 		State:             TaskStatePending,
-		Created:           types.NewTime(),
 		RotationID:        rotationID,
 		Require:           NewNeeds(),
 		Limit:             NewNeeds(),
@@ -92,13 +91,12 @@ func (t Task) String() string {
 }
 
 func (t *Task) NewUnavailable() []*Unavailable {
-	interval := t.Actual
+	interval := types.NewInterval(t.ActualStart, t.ActualFinish)
 	if interval.IsEmpty() {
-		interval = types.NewDurationInterval(t.Start, t.Duration)
+		interval = types.NewDurationInterval(t.ExpectedStart, t.ExpectedDuration)
 	}
 	if interval.IsEmpty() {
-		now := types.NewTime()
-		interval = types.NewDurationInterval(now, 0)
+		return nil
 	}
 	uu := []*Unavailable{
 		{

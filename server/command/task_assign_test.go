@@ -4,7 +4,6 @@ package command
 
 import (
 	"testing"
-	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -19,12 +18,11 @@ func TestCommandTaskAssign(t *testing.T) {
 		defer ctrl.Finish()
 		SL, _ := getTestSL(t, ctrl)
 
-		ts := time.Now()
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
 			/lotto rotation param ticket test-rotation
-			/lotto rotation param min -k webapp-2 --count 2 test-rotation
-			/lotto rotation param max -k server-3 --count 1 test-rotation
+			/lotto rotation param min -s webapp-2 --count 2 test-rotation
+			/lotto rotation param max -s server-3 --count 1 test-rotation
 			/lotto task new ticket test-rotation --summary test-summary1
 			/lotto task new ticket test-rotation --summary test-summary2
 			`)
@@ -50,7 +48,6 @@ func TestCommandTaskAssign(t *testing.T) {
 		require.Equal(t, types.ID("test-rotation#2"), task.TaskID)
 		require.Equal(t, types.ID("test-rotation"), task.RotationID)
 		require.Equal(t, sl.TaskStatePending, task.State)
-		require.True(t, task.Created.After(ts))
 		require.Equal(t, "test-summary2", task.Summary)
 
 		// No change in needs
@@ -70,8 +67,8 @@ func TestCommandTaskAssign(t *testing.T) {
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
 			/lotto rotation param ticket test-rotation
-			/lotto rotation param max -k server-1 --count 1 test-rotation
-			/lotto user qualify @test-user1 @test-user2 -k server-1
+			/lotto rotation param max -s server-1 --count 1 test-rotation
+			/lotto user qualify @test-user1 @test-user2 -s server-1
 			/lotto task new ticket test-rotation --summary test-summary1
 			`)
 		require.NoError(t, err)
@@ -91,8 +88,8 @@ func TestCommandTaskAssign(t *testing.T) {
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
 			/lotto rotation param ticket test-rotation
-			/lotto rotation param max -k server-1 --count 1 test-rotation
-			/lotto user qualify @test-user1 @test-user2 -k server-1
+			/lotto rotation param max -s server-1 --count 1 test-rotation
+			/lotto user qualify @test-user1 @test-user2 -s server-1
 			/lotto task new ticket test-rotation --summary test-summary1
 			`)
 		require.NoError(t, err)

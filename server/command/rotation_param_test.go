@@ -26,11 +26,11 @@ func TestCommandTaskParam(t *testing.T) {
 
 		r := sl.NewRotation()
 		_, err = runJSONCommand(t, SL, `
-			/lotto rotation param shift test-rotation -s 2030-01-10 -p monthly`, &r)
+			/lotto rotation param shift test-rotation --beginning 2030-01-10 --period monthly`, &r)
 		require.NoError(t, err)
-		require.Equal(t, sl.ShiftMaker, r.TaskMaker.Type)
-		require.Equal(t, types.EveryMonth, r.TaskMaker.ShiftPeriod.String())
-		require.Equal(t, "2030-01-10T08:00:00Z", r.TaskMaker.ShiftStart.Format(time.RFC3339))
+		require.Equal(t, sl.TypeShift, r.Type)
+		require.Equal(t, types.EveryMonth, r.ShiftPeriod.String())
+		require.Equal(t, "2030-01-10T08:00:00Z", r.Beginning.Format(time.RFC3339))
 	})
 
 	t.Run("ticket", func(t *testing.T) {
@@ -40,14 +40,14 @@ func TestCommandTaskParam(t *testing.T) {
 
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
-			`)
+		`)
 		require.NoError(t, err)
 
 		r := sl.NewRotation()
 		_, err = runJSONCommand(t, SL, `
 			/lotto rotation param ticket test-rotation`, &r)
 		require.NoError(t, err)
-		require.Equal(t, sl.TicketMaker, r.TaskMaker.Type)
+		require.Equal(t, sl.TypeTicket, r.Type)
 	})
 
 	t.Run("max", func(t *testing.T) {
@@ -57,10 +57,10 @@ func TestCommandTaskParam(t *testing.T) {
 
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
-			/lotto rotation param max -k webapp-2 --count 2 test-rotation
-			/lotto rotation param max -k webapp-3 --count 1 test-rotation
-			/lotto rotation param max -k server-1 --count 3 test-rotation
-			/lotto rotation param max -k webapp-3 --clear test-rotation
+			/lotto rotation param max -s webapp-2 --count 2 test-rotation
+			/lotto rotation param max -s webapp-3 --count 1 test-rotation
+			/lotto rotation param max -s server-1 --count 3 test-rotation
+			/lotto rotation param max -s webapp-3 --clear test-rotation
 			`)
 		require.NoError(t, err)
 
@@ -68,8 +68,8 @@ func TestCommandTaskParam(t *testing.T) {
 		_, err = runJSONCommand(t, SL, `
 			/lotto rotation show test-rotation`, &r)
 		require.NoError(t, err)
-		require.Equal(t, map[types.ID]int64{"*-*": 1}, r.TaskMaker.Require.TestAsMap())
-		require.Equal(t, map[types.ID]int64{"server-◉": 3, "webapp-▣": 2}, r.TaskMaker.Limit.TestAsMap())
+		require.Equal(t, map[types.ID]int64{"*-*": 1}, r.Require.TestAsMap())
+		require.Equal(t, map[types.ID]int64{"server-◉": 3, "webapp-▣": 2}, r.Limit.TestAsMap())
 	})
 
 	t.Run("min", func(t *testing.T) {
@@ -79,10 +79,10 @@ func TestCommandTaskParam(t *testing.T) {
 
 		err := runCommands(t, SL, `
 			/lotto rotation new test-rotation
-			/lotto rotation param min -k webapp-2 --count 2 test-rotation
-			/lotto rotation param min -k webapp-3 --count 1 test-rotation
-			/lotto rotation param min -k server --count 3 test-rotation
-			/lotto rotation param min -k webapp-3 --clear test-rotation
+			/lotto rotation param min -s webapp-2 --count 2 test-rotation
+			/lotto rotation param min -s webapp-3 --count 1 test-rotation
+			/lotto rotation param min -s server --count 3 test-rotation
+			/lotto rotation param min -s webapp-3 --clear test-rotation
 			`)
 		require.NoError(t, err)
 
@@ -90,8 +90,8 @@ func TestCommandTaskParam(t *testing.T) {
 		_, err = runJSONCommand(t, SL, `
 			/lotto rotation show test-rotation`, &r)
 		require.NoError(t, err)
-		require.Equal(t, map[types.ID]int64{"*-*": 1, "server-◉": 3, "webapp-▣": 2}, r.TaskMaker.Require.TestAsMap())
-		require.Equal(t, map[types.ID]int64{}, r.TaskMaker.Limit.TestAsMap())
+		require.Equal(t, map[types.ID]int64{"*-*": 1, "server-◉": 3, "webapp-▣": 2}, r.Require.TestAsMap())
+		require.Equal(t, map[types.ID]int64{}, r.Limit.TestAsMap())
 	})
 
 	t.Run("min-max-any", func(t *testing.T) {
@@ -109,20 +109,20 @@ func TestCommandTaskParam(t *testing.T) {
 		_, err = runJSONCommand(t, SL, `
 			/lotto rotation show test-rotation`, &r)
 		require.NoError(t, err)
-		require.Equal(t, []types.ID{}, r.TaskMaker.Limit.IDs())
-		require.Equal(t, []types.ID{sl.AnySkillLevel.AsID()}, r.TaskMaker.Require.IDs())
-		require.Equal(t, int64(1), r.TaskMaker.Require.IntSet.Get(sl.AnySkillLevel.AsID()))
+		require.Equal(t, []types.ID{}, r.Limit.IDs())
+		require.Equal(t, []types.ID{sl.AnySkillLevel.AsID()}, r.Require.IDs())
+		require.Equal(t, int64(1), r.Require.IntSet.Get(sl.AnySkillLevel.AsID()))
 
 		err = runCommands(t, SL, `
-			/lotto rotation param max -k * --count 3 test-rotation
-			/lotto rotation param min -k web-1 --count 1 test-rotation
+			/lotto rotation param max -s * --count 3 test-rotation
+			/lotto rotation param min -s web-1 --count 1 test-rotation
 		`)
 		require.NoError(t, err)
 
 		_, err = runJSONCommand(t, SL, `
 			/lotto rotation show test-rotation`, &r)
 		require.NoError(t, err)
-		require.Equal(t, map[types.ID]int64{"*-*": 3}, r.TaskMaker.Limit.TestAsMap())
-		require.Equal(t, map[types.ID]int64{"*-*": 1, "web-◉": 1}, r.TaskMaker.Require.TestAsMap())
+		require.Equal(t, map[types.ID]int64{"*-*": 3}, r.Limit.TestAsMap())
+		require.Equal(t, map[types.ID]int64{"*-*": 1, "web-◉": 1}, r.Require.TestAsMap())
 	})
 }

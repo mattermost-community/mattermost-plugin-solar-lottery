@@ -94,9 +94,6 @@ func (p *Period) StartForTime(start, now Time) Time {
 	}
 
 	t := start.AddDate(0, months*n, days*n)
-	if now.Before(t) {
-		panic("<><> TODO")
-	}
 	for {
 		next := t.AddDate(0, months, days)
 		if now.Before(next) {
@@ -106,7 +103,7 @@ func (p *Period) StartForTime(start, now Time) Time {
 	}
 }
 
-func (p *Period) Next(start Time) Time {
+func (p *Period) Next(start Time, steps int) Time {
 	days, months := 0, 0
 	switch p.Period {
 	case EveryDuration:
@@ -114,32 +111,26 @@ func (p *Period) Next(start Time) Time {
 		return NewTime(reduced.Round(p.Duration))
 
 	case EveryDay:
-		days = 1
+		days = 1 * steps
 
 	case EveryWeek:
-		days = 7
+		days = 7 * steps
 
 	case EveryTwoWeeks:
-		days = 14
+		days = 14 * steps
 
 	case EveryMonth:
-		months = 1
+		months = 1 * steps
 	}
 
 	return NewTime(start.AddDate(0, months, days))
 }
 
-func (p *Period) NumberForTime(start, now Time) int {
-	if start.Before(now.Time) {
-		return -1
-	}
-
-	n := 0
-	for {
-		if !start.Before(now.Time) {
+func (p *Period) NumberForTime(start, forTime Time) int {
+	for n := -1; ; n++ {
+		if forTime.Before(start.Time) {
 			return n
 		}
-		start = p.Next(start)
-		n++
+		start = p.Next(start, 1)
 	}
 }

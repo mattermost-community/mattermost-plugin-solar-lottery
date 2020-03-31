@@ -26,7 +26,6 @@ const (
 	// commandAutopilot   = "autopilot"
 	// commandForecast    = "forecast"
 	// commandGuess       = "guess"
-	// commandShift       = "shift"
 	commandArchive     = "archive"
 	commandAssign      = "assign"
 	commandDebugDelete = "debug-delete"
@@ -65,33 +64,30 @@ const (
 )
 
 const (
-	flagPFinish   = "f"
-	flagPRotation = "r"
-	flagPSkill    = "k"
-	flagPStart    = "s"
+	flagPNumber   = "n"
 	flagPPeriod   = "p"
+	flagPRotation = "r"
+	flagPSkill    = "s"
 )
 
 const (
-	// flagDebugRun   = "debug-run"
-	// flagFillDays   = "fill-before"
-	// flagNotifyDays = "notify"
-	// flagOff        = "off"
-	// flagSampleSize = "sample"
-	flagClear    = "clear"
-	flagCount    = "count"
-	flagDuration = "duration"
-	flagFinish   = "finish"
-	flagForce    = "force"
-	flagGrace    = "grace"
-	flagJSON     = "json"
-	flagMax      = "max"
-	flagMin      = "min"
-	flagPeriod   = "period"
-	flagRotation = "rotation"
-	flagSkill    = "skill"
-	flagStart    = "start"
-	flagSummary  = "summary"
+	flagBeginning = "beginning"
+	flagClear     = "clear"
+	flagCount     = "count"
+	flagDebugNow  = "debug-now"
+	flagDuration  = "duration"
+	flagFinish    = "finish"
+	flagForce     = "force"
+	flagGrace     = "grace"
+	flagJSON      = "json"
+	flagMax       = "max"
+	flagMin       = "min"
+	flagNumber    = "number"
+	flagPeriod    = "period"
+	flagRotation  = "rotation"
+	flagSkill     = "skill"
+	flagStart     = "start"
+	flagSummary   = "summary"
 )
 
 // Command handles commands
@@ -238,18 +234,30 @@ func (c *Command) withFlagRotation() {
 	c.assureFS().StringP(flagRotation, flagPRotation, "", "rotation reference")
 }
 
-func (c *Command) withFlagStartFinish(actingUser *sl.User) (*types.Time, *types.Time) {
-	start := actingUser.Time(types.NewTime())
-	finish := start
-	c.assureFS().VarP(&start, flagStart, flagPStart, "start of the interval")
-	c.assureFS().VarP(&finish, flagFinish, flagPFinish, "end of the interval")
-	return &start, &finish
+func (c *Command) withTimeFlag(flag, desc string) (*types.Time, error) {
+	actingUser, err := c.SL.ActingUser()
+	if err != nil {
+		return nil, err
+	}
+	t := actingUser.Time(types.Time{})
+	c.assureFS().Var(&t, flag, desc)
+	return &t, nil
 }
 
-func (c *Command) withFlagStart(actingUser *sl.User) *types.Time {
-	start := actingUser.Time(types.NewTime())
-	c.assureFS().VarP(&start, flagStart, flagPStart, "start time")
-	return &start
+func (c *Command) withFlagDebugNow() (*types.Time, error) {
+	return c.withTimeFlag(flagDebugNow, "end time")
+}
+
+func (c *Command) withFlagFinish() (*types.Time, error) {
+	return c.withTimeFlag(flagFinish, "end time")
+}
+
+func (c *Command) withFlagStart() (*types.Time, error) {
+	return c.withTimeFlag(flagStart, "start time")
+}
+
+func (c *Command) withFlagBeginning() (*types.Time, error) {
+	return c.withTimeFlag(flagBeginning, "beginning of time for shifts")
 }
 
 func (c *Command) withFlagPeriod() *types.Period {
@@ -262,6 +270,10 @@ func (c *Command) withFlagClear() *bool {
 	return c.assureFS().Bool(flagClear, false, "mark as available by clearing all overlapping unavailability events")
 }
 
+func (c *Command) withFlagNumber() *int {
+	return c.assureFS().IntP(flagNumber, flagPNumber, 1, "shift number")
+}
+
 func (c *Command) withFlagMin() *bool {
 	return c.assureFS().Bool(flagMin, false, "add/update a minimum headcount requirement for a skill level")
 }
@@ -271,7 +283,7 @@ func (c *Command) withFlagMax() *bool {
 }
 
 func (c *Command) withFlagDuration() *time.Duration {
-	return c.assureFS().Duration(flagDuration, 0, "add a grace period to users after finishing a task")
+	return c.assureFS().Duration(flagDuration, 0, "duration")
 }
 
 func (c *Command) withFlagCount() *int {
