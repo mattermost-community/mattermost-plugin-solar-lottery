@@ -4,6 +4,9 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/mattermost/mattermost-plugin-solar-lottery)](https://goreportcard.com/report/github.com/mattermost/mattermost-plugin-solar-lottery)
 [![Code Coverage](https://img.shields.io/codecov/c/github/mattermost/mattermost-plugin-solar-lottery/master.svg)](https://codecov.io/gh/mattermost/mattermost-plugin-solar-lottery)
 
+**Maintainer:** [@levb](https://github.com/levb)
+**Co-Maintainer:** [@iomodo](https://github.com/iomodo)
+
 A [Mattermost](https://mattermost.com) plugin somewhat similar to pager duty, allows to have rotations with magic "solar lottery" scheduling, or overrides.
 
 ## About
