@@ -180,6 +180,39 @@ func TestPickNeed(t *testing.T) {
 	}
 }
 
+func TestNeedWeight(t *testing.T) {
+	userGuru := test.UserGuru().WithLastServed(test.RotationID, types.MustParseTime("2019-03-01"))
+	usersServer := sl.NewUsers(userGuru, test.UserServer1(), test.UserServer2())
+	usersWebapp := sl.NewUsers(userGuru, test.UserServer2(), test.UserWebapp1(), test.UserWebapp3())
+
+	for _, tc := range []struct {
+		name         string
+		require      *sl.Needs
+		requirePools map[types.ID]*sl.Users // by need ID (SkillLevel as string)
+		limit        *sl.Needs
+	}{
+		{
+			name: "happy",
+			require: sl.NewNeeds(
+				test.C3_Server_L1(),
+				test.C1_Webapp_L2(),
+			),
+			requirePools: map[types.ID]*sl.Users{
+				test.C3_Server_L1().GetID(): usersServer,
+				test.C1_Webapp_L2().GetID(): usersWebapp,
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := makeTestFiller(t, nil, nil, tc.require, tc.limit)
+			f.requirePools = tc.requirePools
+			w := f.requiredNeedWeight(test.C1_Webapp_L2())
+			require.Equal(t, 1.3724873597089898e+15, w)
+			w = f.requiredNeedWeight(test.C3_Server_L1())
+			require.Equal(t, 1.8299831462785262e+15, w)
+		})
+	}
+}
 func TestUserWeight(t *testing.T) {
 	for _, tc := range []struct {
 		lastServed     types.Time

@@ -26,9 +26,14 @@ func TestIntervalOverlaps(t *testing.T) {
 			i2:              MustParseInterval("2025-01-01T15:00", "2026-01-03T11:00"),
 			expectedOverlap: true,
 		}, {
-			name:            "borderline",
+			name:            "continous",
 			i1:              MustParseInterval("2024-01-01T00:00", "2025-01-01T11:00"),
-			i2:              MustParseInterval("2024-01-01T11:00", "2026-01-02T11:00"),
+			i2:              MustParseInterval("2025-01-01T11:00", "2026-01-02T11:00"),
+			expectedOverlap: false,
+		}, {
+			name:            "no overlap",
+			i1:              MustParseInterval("2024-01-01T00:00", "2025-01-01T11:00"),
+			i2:              MustParseInterval("2026-01-01T11:00", "2026-02-02T11:00"),
 			expectedOverlap: false,
 		},
 	}

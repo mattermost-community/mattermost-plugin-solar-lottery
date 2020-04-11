@@ -42,6 +42,7 @@ func (f *fill) pickUser(from *sl.Users) *sl.User {
 }
 
 const negligibleWeight = float64(1e-12)
+const veryLargeWeight = float64(1e12)
 
 func (f *fill) userWeight(user *sl.User) (w float64) {
 	w = f.poolWeights[user.MattermostUserID]
@@ -96,7 +97,7 @@ func (f *fill) requiredNeedWeight(need sl.Need) float64 {
 	var total float64
 	users := f.requirePools[need.GetID()].AsArray()
 	if len(users) == 0 {
-		return negligibleWeight
+		return veryLargeWeight
 	}
 	for _, user := range users {
 		w := f.userWeight(user)
