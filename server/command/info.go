@@ -41,7 +41,7 @@ func (c *Command) info(parameters []string) (string, error) {
 	- [x] fill: evaluates shift readiness, autofills.
 	- [x] finish: finishes a shift.
 	- [x] join: add user(s) to shift.
-	- [ ] leave: remove user(s) from shift.
+	- [x] leave: remove user(s) from shift.
 	- [x] list
 	- [ ] show
 	- [x] start: starts a shift.

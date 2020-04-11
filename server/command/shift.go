@@ -21,7 +21,7 @@ func (c *Command) shift(parameters []string) (string, error) {
 		commandList:        c.listShifts,
 		commandStart:       c.startShift,
 		commandFinish:      c.finishShift,
-		// commandLeave:       c.leaveShift,
+		commandLeave:       c.leaveShift,
 	}
 
 	return c.handleCommand(subcommands, parameters)
