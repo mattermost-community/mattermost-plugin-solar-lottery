@@ -23,17 +23,17 @@ func (c *Command) info(parameters []string) (md.MD, error) {
 - [ ] autopilot
 
 - [ ] task
-	- [x] schedule
-	- [x] close
-	- [x] start
-	- [ ] list --pending | --in-progress | --all
-	- [ ] new shift
-	- [x] unassign
-	- [x] assign
-	- [x] fill
-	- [x] new ticket
-	- [x] show ROT#id
 	- [ ] debug-delete
+	- [ ] list --pending | --in-progress | --all
+	- [x] assign
+	- [x] close
+	- [x] fill
+	- [x] new shift
+	- [x] new ticket
+	- [x] schedule
+	- [x] show ROT#id
+	- [x] start
+	- [x] unassign
 
 - [x] rotation
 	- [x] archive ROT
