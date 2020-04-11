@@ -49,8 +49,9 @@ func (t *Time) Set(in string) error {
 	}
 
 	var err error
+	var tt time.Time
 	for _, format := range []string{TimeFormatTZ, TimeFormat, DateFormatTZ, DateFormat} {
-		tt, err := time.ParseInLocation(format, in, loc)
+		tt, err = time.ParseInLocation(format, in, loc)
 		if err == nil {
 			t.Time = tt
 			return nil
