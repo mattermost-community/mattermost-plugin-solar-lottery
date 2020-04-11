@@ -84,8 +84,8 @@ func getTestSLWithPoster(t testing.TB, ctrl *gomock.Controller, poster bot.Poste
 			solarlottery.Type: solarlottery.New(),
 			"":                solarlottery.New(), // default
 		},
-		Logger: &bot.TestLogger{TB: t},
-		// Logger: &bot.NilLogger{},
+		// Logger: &bot.TestLogger{TB: t},
+		Logger: &bot.NilLogger{},
 		Poster: poster,
 		Store:  kvstore.NewStore(kvstore.NewCacheKVStore(nil)),
 	}
@@ -110,6 +110,9 @@ func runCommand(t testing.TB, sl sl.SL, cmd string) (md.MD, error) {
 func runJSONCommand(t testing.TB, sl sl.SL, cmd string, ref interface{}) (md.MD, error) {
 	cmd += " --json"
 	outmd, err := runCommand(t, sl, cmd)
+	if err != nil {
+		return "", err
+	}
 	out := outmd.String()
 	out = strings.Trim(strings.TrimSpace(out), "`")
 	out = strings.TrimPrefix(out, "json\n")

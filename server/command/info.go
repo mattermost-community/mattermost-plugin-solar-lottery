@@ -28,7 +28,7 @@ func (c *Command) info(parameters []string) (md.MD, error) {
 	- [x] start
 	- [ ] list --pending | --in-progress | --all
 	- [ ] new shift
-	- [ ] unassign
+	- [x] unassign
 	- [x] assign
 	- [x] fill
 	- [x] new ticket

@@ -26,7 +26,7 @@ func (sl *sl) ClearCalendar(params InClearCalendar) (*OutCalendar, error) {
 	defer sl.popLogger()
 
 	for _, user := range users.AsArray() {
-		cleared := user.ClearUnavailable(params.Interval)
+		cleared := user.ClearUnavailable(params.Interval, "")
 		if len(cleared) == 0 {
 			continue
 		}

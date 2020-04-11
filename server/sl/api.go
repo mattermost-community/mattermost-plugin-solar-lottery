@@ -14,6 +14,7 @@ var ErrAlreadyExists = errors.New("already exists")
 
 type TaskService interface {
 	AssignTask(InAssignTask) (*OutAssignTask, error)
+	UnassignTask(InAssignTask) (*OutAssignTask, error)
 	FillTask(InAssignTask) (*OutAssignTask, error)
 	LoadTask(types.ID) (*Task, error)
 	TransitionTask(params InTransitionTask) (*OutTransitionTask, error)

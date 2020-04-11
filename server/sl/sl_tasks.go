@@ -4,6 +4,7 @@
 package sl
 
 import (
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 	"github.com/pkg/errors"
 )
@@ -59,7 +60,20 @@ func (sl *sl) expandTaskUsers(task *Task) error {
 	return nil
 }
 
+var allowedAssignTaskStates = map[bool]*types.IDSet{
+	false: types.NewIDSet(TaskStatePending),
+	true:  types.NewIDSet(TaskStatePending, TaskStateScheduled, TaskStateStarted),
+}
+
 func (sl *sl) assignTask(task *Task, users *Users, force bool) (*Users, error) {
+	if !allowedAssignTaskStates[force].Contains(task.State) {
+		out := "can not "
+		if force {
+			out += "force "
+		}
+		return nil, errors.Errorf("%s assign to task in state %s", out, task.State)
+	}
+
 	limit := NewNeeds(task.Limit.AsArray()...)
 	require := NewNeeds(task.Require.AsArray()...)
 	added := NewUsers()
@@ -82,6 +96,31 @@ func (sl *sl) assignTask(task *Task, users *Users, force bool) (*Users, error) {
 		added.Set(user)
 	}
 	return added, nil
+}
+
+func (sl *sl) unassignTask(task *Task, users *Users, force bool) (*Users, error) {
+	if !allowedAssignTaskStates[force].Contains(task.State) {
+		out := "can not "
+		if force {
+			out += "force "
+		}
+		return nil, errors.Errorf("%s unassign to task in state %s", out, task.State)
+	}
+
+	removed := NewUsers()
+	for _, user := range users.AsArray() {
+		if !task.MattermostUserIDs.Contains(user.MattermostUserID) {
+			return nil, errors.Wrapf(kvstore.ErrNotFound,
+				"User %s is not assigned to task %s", user.Markdown(), task.Markdown())
+		}
+
+		task.MattermostUserIDs.Delete(user.MattermostUserID)
+		if task.Users != nil {
+			task.Users.Delete(user.MattermostUserID)
+		}
+		removed.Set(user)
+	}
+	return removed, nil
 }
 
 func (sl *sl) fillTask(r *Rotation, task *Task) (added *Users, err error) {

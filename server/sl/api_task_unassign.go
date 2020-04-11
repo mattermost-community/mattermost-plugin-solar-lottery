@@ -7,20 +7,22 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (sl *sl) FillTask(params InAssignTask) (*OutAssignTask, error) {
+func (sl *sl) UnassignTask(params InAssignTask) (*OutAssignTask, error) {
+	users := NewUsers()
 	task := NewTask("")
 	r := NewRotation()
 	err := sl.Setup(
-		pushAPILogger("FillTask", params),
+		pushAPILogger("UnassignTask", params),
 		withExpandedTask(&params.TaskID, task),
 		withExpandedRotation(&task.RotationID, r),
+		withExpandedUsers(&params.MattermostUserIDs, users),
 	)
 	if err != nil {
 		return nil, err
 	}
 	defer sl.popLogger()
 
-	filled, err := sl.fillTask(r, task)
+	removed, err := sl.unassignTask(task, users, params.Force)
 	if err != nil {
 		return nil, err
 	}
@@ -31,9 +33,9 @@ func (sl *sl) FillTask(params InAssignTask) (*OutAssignTask, error) {
 	}
 
 	out := &OutAssignTask{
-		MD:      md.Markdownf("Auto-assigned %s to ticket %s.", filled.Markdown(), task.Markdown()),
+		MD:      md.Markdownf("assigned %s to ticket %s.", removed.Markdown(), task.Markdown()),
 		Task:    task,
-		Changed: filled,
+		Changed: removed,
 	}
 	sl.LogAPI(out)
 	return out, nil

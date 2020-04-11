@@ -16,8 +16,8 @@ type InAssignTask struct {
 
 type OutAssignTask struct {
 	md.MD
-	Task  *Task
-	Added *Users
+	Task    *Task
+	Changed *Users
 }
 
 func (sl *sl) AssignTask(params InAssignTask) (*OutAssignTask, error) {
@@ -46,9 +46,9 @@ func (sl *sl) AssignTask(params InAssignTask) (*OutAssignTask, error) {
 	}
 
 	out := &OutAssignTask{
-		MD:    md.Markdownf("assigned %s to ticket %s.", assigned.Markdown(), task.Markdown()),
-		Task:  task,
-		Added: assigned,
+		MD:      md.Markdownf("assigned %s to ticket %s.", assigned.Markdown(), task.Markdown()),
+		Task:    task,
+		Changed: assigned,
 	}
 	sl.LogAPI(out)
 	return out, nil

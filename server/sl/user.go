@@ -140,7 +140,7 @@ func (user *User) FindUnavailable(interval types.Interval, applicableToRotationI
 	return found
 }
 
-func (user *User) ClearUnavailable(interval types.Interval) []*Unavailable {
+func (user *User) ClearUnavailable(interval types.Interval, applicableToRotationID types.ID) []*Unavailable {
 	var cleared, updated []*Unavailable
 	for _, unavailable := range user.Calendar {
 		s, f := unavailable.Start, unavailable.Finish
@@ -152,9 +152,16 @@ func (user *User) ClearUnavailable(interval types.Interval) []*Unavailable {
 		}
 
 		if s.Before(f.Time) {
-			// Overlap
-			cleared = append(cleared, unavailable)
-			continue
+			// Overlap, only consider events applicable to the rotation
+			if applicableToRotationID == "" {
+				cleared = append(cleared, unavailable)
+				continue
+			}
+			if (unavailable.Reason == ReasonTask || unavailable.Reason == ReasonGrace) &&
+				unavailable.RotationID == applicableToRotationID {
+				cleared = append(cleared, unavailable)
+				continue
+			}
 		}
 
 		updated = append(updated, unavailable)

@@ -36,7 +36,7 @@ func TestCommandTaskFill(t *testing.T) {
 		require.NoError(t, err)
 
 		out := &sl.OutAssignTask{
-			Added: sl.NewUsers(),
+			Changed: sl.NewUsers(),
 		}
 		_, err = runJSONCommand(t, SL, `
 			/lotto task fill test-rotation#1 

@@ -246,12 +246,3 @@ func (sl *sl) addUserUnavailable(user *User, u *Unavailable) error {
 	}
 	return nil
 }
-
-func (sl *sl) clearUserUnavailable(user *User, interval types.Interval) error {
-	_ = user.ClearUnavailable(interval)
-	_, err := sl.storeUserWelcomeNew(user)
-	if err != nil {
-		return errors.Wrapf(err, "user %s", user.Markdown())
-	}
-	return nil
-}

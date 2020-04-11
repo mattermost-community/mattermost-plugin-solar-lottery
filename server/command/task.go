@@ -11,6 +11,7 @@ import (
 func (c *Command) task(parameters []string) (md.MD, error) {
 	subcommands := map[string]func([]string) (md.MD, error){
 		commandAssign:   c.taskAssign,
+		commandUnassign: c.taskUnassign,
 		commandFill:     c.taskFill,
 		commandSchedule: c.taskTransition(sl.TaskStateScheduled),
 		commandStart:    c.taskTransition(sl.TaskStateStarted),

@@ -39,7 +39,7 @@ func TestCommandTaskAssign(t *testing.T) {
 		require.Equal(t, map[types.ID]int64{"server-◈": 1}, task.Limit.TestAsMap())
 
 		out := &sl.OutAssignTask{
-			Added: sl.NewUsers(),
+			Changed: sl.NewUsers(),
 		}
 		_, err = runJSONCommand(t, SL, `
 			/lotto task assign test-rotation#2 @test-user1 @test-user2
@@ -98,7 +98,7 @@ func TestCommandTaskAssign(t *testing.T) {
 		require.NoError(t, err)
 
 		out := &sl.OutAssignTask{
-			Added: sl.NewUsers(),
+			Changed: sl.NewUsers(),
 		}
 		_, err = runJSONCommand(t, SL, `
 			/lotto task assign test-rotation#1 @test-user1 @test-user2 --force
