@@ -37,6 +37,6 @@ func (sl *sl) UnassignTask(params InAssignTask) (*OutAssignTask, error) {
 		Task:    task,
 		Changed: removed,
 	}
-	sl.LogAPI(out)
+	sl.logAPI(out)
 	return out, nil
 }

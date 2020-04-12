@@ -8,19 +8,19 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-type InMakeTicket struct {
+type InCreateTicket struct {
 	RotationID  types.ID
 	Summary     string
 	Description string
 }
 
-type OutMakeTask struct {
+type OutCreateTask struct {
 	md.MD
 	Task *Task
 }
 
-func (sl *sl) MakeTicket(params InMakeTicket) (*OutMakeTask, error) {
-	err := sl.Setup(pushAPILogger("MakeTicket", params))
+func (sl *sl) CreateTicket(params InCreateTicket) (*OutCreateTask, error) {
+	err := sl.Setup(pushAPILogger("CreateTicket", params))
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +43,8 @@ func (sl *sl) MakeTicket(params InMakeTicket) (*OutMakeTask, error) {
 			return err
 		}
 		r.TaskIDs.Set(task.TaskID)
-		if r.tasks != nil {
-			r.tasks.Set(task)
+		if r.Tasks != nil {
+			r.Tasks.Set(task)
 		}
 		return nil
 	})
@@ -52,24 +52,24 @@ func (sl *sl) MakeTicket(params InMakeTicket) (*OutMakeTask, error) {
 		return nil, err
 	}
 
-	out := &OutMakeTask{
+	out := &OutCreateTask{
 		MD:   md.Markdownf("created ticket %s.", task.Markdown()),
 		Task: task,
 	}
-	sl.LogAPI(out)
+	sl.logAPI(out)
 	return out, nil
 }
 
-type InMakeShift struct {
+type InCreateShift struct {
 	RotationID types.ID
 	Number     int
 }
 
-func (sl *sl) MakeShift(params InMakeShift) (*OutMakeTask, error) {
+func (sl *sl) CreateShift(in InCreateShift) (*OutCreateTask, error) {
 	r := NewRotation()
 	err := sl.Setup(
-		pushAPILogger("MakeShift", params),
-		withLoadRotation(&params.RotationID, r),
+		pushAPILogger("MakeShift", in),
+		withLoadRotation(&in.RotationID, r),
 		withExpandRotationTasks(r),
 	)
 	if err != nil {
@@ -77,35 +77,19 @@ func (sl *sl) MakeShift(params InMakeShift) (*OutMakeTask, error) {
 	}
 	defer sl.popLogger()
 
-	var task *Task
-	task, err = r.makeShift(params.Number)
+	t, err := sl.createShift(r, in.Number)
 	if err != nil {
 		return nil, err
-	}
-	var id types.ID
-	id, err = sl.Store.Entity(KeyTask).NewID(string(task.TaskID))
-	if err != nil {
-		return nil, err
-	}
-	task.TaskID = id
-	err = sl.storeTask(task)
-	if err != nil {
-		return nil, err
-	}
-
-	r.TaskIDs.Set(task.TaskID)
-	if r.tasks != nil {
-		r.tasks.Set(task)
 	}
 	err = sl.Store.Entity(KeyRotation).Store(r.RotationID, r)
 	if err != nil {
 		return nil, err
 	}
 
-	out := &OutMakeTask{
-		MD:   md.Markdownf("created shift %s.", task.Markdown()),
-		Task: task,
+	out := &OutCreateTask{
+		MD:   md.Markdownf("created shift %s.", t.Markdown()),
+		Task: t,
 	}
-	sl.LogAPI(out)
+	sl.logAPI(out)
 	return out, nil
 }

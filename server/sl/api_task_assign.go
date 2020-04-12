@@ -51,6 +51,6 @@ func (sl *sl) AssignTask(params InAssignTask) (*OutAssignTask, error) {
 		Task:    task,
 		Changed: assigned,
 	}
-	sl.LogAPI(out)
+	sl.logAPI(out)
 	return out, nil
 }

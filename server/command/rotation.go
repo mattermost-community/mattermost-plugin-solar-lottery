@@ -7,14 +7,12 @@ import "github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 
 func (c *Command) rotation(parameters []string) (md.MD, error) {
 	subcommands := map[string]func([]string) (md.MD, error){
-		// commandAutopilot:   c.autopilotRotation,
-		// commandForecast:    c.forecastRotation,
-		// commandGuess:       c.guessRotation,
-		commandNew:         c.rotationNew,
 		commandArchive:     c.rotationArchive,
+		commandAutopilot:   c.rotationAutopilot,
 		commandDebugDelete: c.rotationDebugDelete,
-		commandParam:       c.rotationParam,
 		commandList:        c.rotationList,
+		commandNew:         c.rotationNew,
+		commandParam:       c.rotationParam,
 		commandShow:        c.rotationShow,
 	}
 

@@ -47,6 +47,6 @@ func (sl *sl) FillTask(params InAssignTask) (*OutAssignTask, error) {
 		Task:    task,
 		Changed: filled,
 	}
-	sl.LogAPI(out)
+	sl.logAPI(out)
 	return out, nil
 }

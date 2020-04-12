@@ -29,8 +29,7 @@ func TestIceBreakerManual(t *testing.T) {
 	require.NoError(t, err)
 	poster.Reset()
 
-	out := &sl.OutMakeTask{}
-	_, err = runJSONCommand(t, SL, `/lotto task new shift ICE --number 1`, &out)
+	out, err := runTaskCreateCommand(t, SL, `/lotto task new shift ICE --number 1`)
 	task := out.Task
 	require.NoError(t, err)
 	require.Equal(t, types.ID("ICE#1"), task.TaskID)

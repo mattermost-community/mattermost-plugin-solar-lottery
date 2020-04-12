@@ -20,11 +20,9 @@ func (c *Command) info(parameters []string) (md.MD, error) {
 	resp += `
 - [x] info: display this.
 
-- [ ] autopilot
-
 - [ ] task
 	- [ ] debug-delete
-	- [ ] list --pending | --in-progress | --all
+	- [ ] list --pending | --scheduled | --started | --finished
 	- [x] assign
 	- [x] close
 	- [x] fill
@@ -37,6 +35,14 @@ func (c *Command) info(parameters []string) (md.MD, error) {
 
 - [x] rotation
 	- [x] archive ROT
+	- [ ] autopilot ROT 
+		- [ ] --off
+		- [ ] --create --create-prior[=28d]
+		- [ ] --schedule --schedule-prior[=7d]
+		- [ ] --start-finish
+		- [ ] --notify-start-prior[=3d]
+		- [ ] --notify-finish-prior[=3d]
+		- [ ] --run=time
 	- [x] debug-delete ROT
 	- [x] list
 	- [x] new ROT

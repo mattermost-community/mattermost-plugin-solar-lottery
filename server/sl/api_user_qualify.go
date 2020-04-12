@@ -39,6 +39,6 @@ func (sl *sl) Qualify(params InQualify) (*OutQualify, error) {
 		Users: users,
 		MD:    md.Markdownf("added skill %s to %s.", params.SkillLevel, users.Markdown()),
 	}
-	sl.LogAPI(out)
+	sl.logAPI(out)
 	return out, nil
 }

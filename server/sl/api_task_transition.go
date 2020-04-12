@@ -49,6 +49,6 @@ func (sl *sl) TransitionTask(params InTransitionTask) (*OutTransitionTask, error
 		Task:      task,
 		PrevState: prevState,
 	}
-	sl.LogAPI(out)
+	sl.logAPI(out)
 	return out, nil
 }

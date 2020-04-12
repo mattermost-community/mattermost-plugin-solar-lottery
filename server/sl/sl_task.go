@@ -9,6 +9,30 @@ import (
 	"github.com/pkg/errors"
 )
 
+func (sl *sl) createShift(r *Rotation, shiftNumber int) (*Task, error) {
+	task, err := r.makeShift(shiftNumber)
+	if err != nil {
+		return nil, err
+	}
+	var id types.ID
+	id, err = sl.Store.Entity(KeyTask).NewID(string(task.TaskID))
+	if err != nil {
+		return nil, err
+	}
+	task.TaskID = id
+	err = sl.storeTask(task)
+	if err != nil {
+		return nil, err
+	}
+
+	r.TaskIDs.Set(task.TaskID)
+	if r.Tasks != nil {
+		r.Tasks.Set(task)
+	}
+
+	return task, nil
+}
+
 func (sl *sl) LoadTask(taskID types.ID) (*Task, error) {
 	task, err := sl.loadTask(taskID)
 	if err != nil {

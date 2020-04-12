@@ -41,6 +41,6 @@ func (sl *sl) ClearCalendar(params InClearCalendar) (*OutCalendar, error) {
 		Users: users,
 		MD:    md.Markdownf("deleted events %v from users %s.", params.Interval, users.MarkdownWithSkills()),
 	}
-	sl.LogAPI(out)
+	sl.logAPI(out)
 	return out, nil
 }

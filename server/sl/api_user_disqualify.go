@@ -28,6 +28,6 @@ func (sl *sl) Disqualify(params InQualify) (*OutQualify, error) {
 		Users: users,
 		MD:    md.Markdownf("removed skill %s from %s.", params.SkillLevel.Skill, users.Markdown()),
 	}
-	sl.LogAPI(out)
+	sl.logAPI(out)
 	return out, nil
 }

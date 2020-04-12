@@ -26,8 +26,7 @@ func TestCommandTaskNewShift(t *testing.T) {
 			`)
 		require.NoError(t, err)
 
-		out := &sl.OutMakeTask{}
-		_, err = runJSONCommand(t, SL, `/lotto task new shift test-rotation --number 1`, &out)
+		out, err := runTaskCreateCommand(t, SL, `/lotto task new shift test-rotation --number 1`)
 		task := out.Task
 		require.NoError(t, err)
 		require.Equal(t, types.ID("test-rotation#1"), task.TaskID)
@@ -48,14 +47,12 @@ func TestCommandTaskNewShift(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, []string{"test-rotation#1"}, r.TaskIDs.TestIDs())
 
-		out = &sl.OutMakeTask{}
-		_, err = runJSONCommand(t, SL, `/lotto task new shift test-rotation -n 2`, &out)
+		out, err = runTaskCreateCommand(t, SL, `/lotto task new shift test-rotation -n 2`)
 		require.NoError(t, err)
 		require.Equal(t, types.ID("test-rotation#2"), out.Task.TaskID)
 		require.Equal(t, "2020-03-10T08:00", out.Task.ExpectedStart.String())
 
-		out = &sl.OutMakeTask{}
-		_, err = runJSONCommand(t, SL, `/lotto task new shift test-rotation -n 3`, &out)
+		out, err = runTaskCreateCommand(t, SL, `/lotto task new shift test-rotation -n 3`)
 		require.NoError(t, err)
 		require.Equal(t, types.ID("test-rotation#3"), out.Task.TaskID)
 		require.Equal(t, "2020-03-17T08:00", out.Task.ExpectedStart.String())

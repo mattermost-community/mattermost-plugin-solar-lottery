@@ -16,34 +16,47 @@ import (
 )
 
 type Rotation struct {
-	PluginVersion  string
-	RotationID     types.ID
-	IsArchived     bool
-	TaskFillerType types.ID
+	PluginVersion     string
+	RotationID        types.ID
+	IsArchived        bool
+	Beginning         types.Time
+	FillerType        types.ID
+	TaskType          types.ID
+	TaskSettings      TaskSettings      `json:",omitempty"`
+	AutopilotSettings AutopilotSettings `json:",omitempty"`
+	MattermostUserIDs *types.IDSet      `json:",omitempty"`
+	TaskIDs           *types.IDSet      `json:",omitempty"`
 
-	Type        types.ID     // ticket or shift
-	TaskSeq     int          `json:",omitempty"`
-	Beginning   types.Time   `json:",omitempty"`
-	ShiftPeriod types.Period `json:",omitempty"`
+	loaded bool
+	Users  *Users `json:"-"`
+	Tasks  *Tasks `json:"-"`
+}
 
-	// Task defaults
+type TaskSettings struct {
+	Seq         int           `json:",omitempty"`
+	ShiftPeriod types.Period  `json:",omitempty"`
 	Require     *Needs        `json:",omitempty"`
 	Limit       *Needs        `json:",omitempty"`
 	Duration    time.Duration `json:",omitempty"`
 	Grace       time.Duration `json:",omitempty"`
 	Description string        `json:",omitempty"`
+}
 
-	MattermostUserIDs *types.IDSet `json:",omitempty"`
-	TaskIDs           *types.IDSet `json:",omitempty"`
-
-	loaded bool
-	Users  *Users `json:"-"`
-	tasks  *Tasks
+type AutopilotSettings struct {
+	Create            bool          `json:",omitempty"`
+	CreatePrior       time.Duration `json:",omitempty"`
+	Schedule          bool          `json:",omitempty"`
+	SchedulePrior     time.Duration `json:",omitempty"`
+	StartFinish       bool          `json:",omitempty"`
+	RemindStart       bool          `json:",omitempty"`
+	RemindStartPrior  time.Duration `json:",omitempty"`
+	RemindFinish      bool          `json:",omitempty"`
+	RemindFinishPrior time.Duration `json:",omitempty"`
 }
 
 const (
-	TypeTicket = types.ID("Ticket")
-	TypeShift  = types.ID("Shift")
+	TaskTypeTicket = types.ID("Ticket")
+	TaskTypeShift  = types.ID("Shift")
 )
 
 func NewRotation() *Rotation {
@@ -59,11 +72,11 @@ func (r *Rotation) init() {
 	if r.TaskIDs == nil {
 		r.TaskIDs = types.NewIDSet()
 	}
-	if r.Require == nil {
-		r.Require = NewNeeds()
+	if r.TaskSettings.Require == nil {
+		r.TaskSettings.Require = NewNeeds()
 	}
-	if r.Limit == nil {
-		r.Limit = NewNeeds()
+	if r.TaskSettings.Limit == nil {
+		r.TaskSettings.Limit = NewNeeds()
 	}
 }
 
@@ -101,13 +114,14 @@ func (r *Rotation) MarkdownBullets() md.MD {
 		out += md.Markdownf("  - Users (%v): %s.\n", r.MattermostUserIDs.Len(), r.MattermostUserIDs.IDs())
 	}
 
-	out += md.Markdownf("  - Type: **%s**\n", r.Type)
-	out += md.Markdownf("  - Require: **%s**\n", r.Require.Markdown())
-	out += md.Markdownf("  - Limit: **%v**\n", r.Limit.Markdown())
-	out += md.Markdownf("  - Grace: %v\n", r.Grace)
-	if r.Type == TypeShift {
-		out += md.Markdownf("  - Shift period: **%v**\n", r.ShiftPeriod.String())
-		out += md.Markdownf("  - Shifts beginning: **%v**\n", r.Beginning)
+	out += md.Markdownf("  - Filler type: **%s**\n", r.FillerType)
+	out += md.Markdownf("  - Task type: **%s**\n", r.TaskType)
+	out += md.Markdownf("  - Require: **%s**\n", r.TaskSettings.Require.Markdown())
+	out += md.Markdownf("  - Limit: **%v**\n", r.TaskSettings.Limit.Markdown())
+	out += md.Markdownf("  - Grace: %v\n", r.TaskSettings.Grace)
+	out += md.Markdownf("  - Beginning: **%v**\n", r.Beginning)
+	if r.TaskType == TaskTypeShift {
+		out += md.Markdownf("  - Shift period: **%v**\n", r.TaskSettings.ShiftPeriod.String())
 	}
 
 	// if rotation.Autopilot.On {
@@ -131,26 +145,27 @@ func (r *Rotation) FindUsers(mattermostUserIDs *types.IDSet) []*User {
 }
 
 func (r *Rotation) newTicket(defaultID string) *Task {
-	r.TaskSeq++
+	r.TaskSettings.Seq++
 	t := NewTask(r.RotationID)
 	if defaultID == "" {
-		defaultID = strconv.Itoa(r.TaskSeq)
+		defaultID = strconv.Itoa(r.TaskSettings.Seq)
 	}
 	t.TaskID = types.ID(r.Name() + "#" + defaultID)
-	t.Require = r.Require.Clone()
-	t.Limit = r.Limit.Clone()
-	t.Grace = r.Grace
-	t.ExpectedDuration = r.Duration
+	t.Require = r.TaskSettings.Require.Clone()
+	t.Limit = r.TaskSettings.Limit.Clone()
+	t.Grace = r.TaskSettings.Grace
+	t.ExpectedDuration = r.TaskSettings.Duration
 	return t
 }
 
 func (r *Rotation) makeShift(shiftNumber int) (*Task, error) {
-	startTime := r.ShiftPeriod.Next(r.Beginning, shiftNumber-1)
-	nextTime := r.ShiftPeriod.Next(startTime, 1)
+	def := r.TaskSettings
+	startTime := def.ShiftPeriod.ForNumber(r.Beginning, shiftNumber-1)
+	nextTime := def.ShiftPeriod.ForNumber(startTime, 1)
 
 	// Check if an overlapping shift already exists
 	int := types.NewInterval(startTime, nextTime)
-	for _, t := range r.tasks.AsArray() {
+	for _, t := range r.Tasks.AsArray() {
 		tInt := types.NewDurationInterval(t.ExpectedStart, t.ExpectedDuration)
 		switch t.State {
 		case TaskStateFinished:
@@ -168,17 +183,67 @@ func (r *Rotation) makeShift(shiftNumber int) (*Task, error) {
 
 	t := NewTask(r.RotationID)
 	t.TaskID = types.ID(fmt.Sprintf("%s#%v", r.Name(), shiftNumber))
-	t.Require = r.Require.Clone()
-	t.Limit = r.Limit.Clone()
-	t.Grace = r.Grace
-	t.Description = r.Description
+	t.Require = def.Require.Clone()
+	t.Limit = def.Limit.Clone()
+	t.Grace = def.Grace
+	t.Description = def.Description
 
 	t.ExpectedStart = startTime
-	if r.Duration > 0 {
-		t.ExpectedDuration = r.Duration
+	if def.Duration > 0 {
+		t.ExpectedDuration = def.Duration
 	} else {
 		t.ExpectedDuration = nextTime.Sub(startTime.Time)
 	}
 
 	return t, nil
+}
+
+func (r *Rotation) queryTasks(finclude func(*Task, types.Time) bool, now types.Time) *Tasks {
+	tasks := NewTasks()
+	for _, t := range r.Tasks.AsArray() {
+		if finclude(t, now) {
+			tasks.Set(t)
+		}
+	}
+	return tasks
+}
+
+func (r *Rotation) isAutopilotRemindFinish(t *Task, now types.Time) bool {
+	if t.State == TaskStateStarted && !t.AutopilotRemindedFinish {
+		remindTime := t.ActualStart.Add(t.ExpectedDuration - r.AutopilotSettings.RemindFinishPrior)
+		if !now.Before(remindTime) {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *Rotation) isAutopilotRemindStart(t *Task, now types.Time) bool {
+	if t.State == TaskStateScheduled && !t.AutopilotRemindedStart {
+		remindTime := t.ExpectedStart.Add(-r.AutopilotSettings.RemindStartPrior)
+		if !now.Before(remindTime) {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *Rotation) isAutopilotFinish(t *Task, now types.Time) bool {
+	finishTime := t.ActualStart.Add(t.ExpectedDuration)
+	return t.State == TaskStateStarted && finishTime.Before(now.Time)
+}
+
+func (r *Rotation) isAutopilotStart(t *Task, now types.Time) bool {
+	startTime := t.ExpectedStart.Time
+	return t.State == TaskStateScheduled && !now.Before(startTime)
+}
+
+func (r *Rotation) isPendingForTime(t *Task, now types.Time) bool {
+	return t.State == TaskStatePending &&
+		!(now.Before(t.ExpectedStart.Time) || now.After(t.ExpectedStart.Add(t.ExpectedDuration)))
+}
+
+func (r *Rotation) isAutopilotSchedule(t *Task, now types.Time) bool {
+	scheduleTime := t.ExpectedStart.Time.Add(-r.AutopilotSettings.SchedulePrior)
+	return t.State == TaskStatePending && !now.Before(scheduleTime)
 }

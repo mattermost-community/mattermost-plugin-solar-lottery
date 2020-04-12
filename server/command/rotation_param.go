@@ -44,9 +44,9 @@ func (c *Command) rotationParamMinMax(min bool, parameters []string) (md.MD, err
 
 	return c.normalOut(
 		c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
-			needsToUpdate := r.Limit
+			needsToUpdate := r.TaskSettings.Limit
 			if min {
-				needsToUpdate = r.Require
+				needsToUpdate = r.TaskSettings.Require
 			}
 			if *clear {
 				needsToUpdate.Delete(skillLevel.AsID())
@@ -71,7 +71,7 @@ func (c *Command) rotationParamGrace(parameters []string) (md.MD, error) {
 
 	return c.normalOut(
 		c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
-			r.Grace = *dur
+			r.TaskSettings.Grace = *dur
 			return nil
 		}))
 }
@@ -95,10 +95,10 @@ func (c *Command) rotationParamShift(parameters []string) (md.MD, error) {
 
 	return c.normalOut(
 		c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
-			r.Type = sl.TypeShift
-			r.ShiftPeriod = *period
+			r.TaskType = sl.TaskTypeShift
+			r.TaskSettings.ShiftPeriod = *period
 			r.Beginning = *begin
-			r.Duration = *duration
+			r.TaskSettings.Duration = *duration
 			return nil
 		}))
 }
@@ -116,7 +116,7 @@ func (c *Command) rotationParamTicket(parameters []string) (md.MD, error) {
 
 	return c.normalOut(
 		c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
-			r.Type = sl.TypeTicket
+			r.TaskType = sl.TaskTypeTicket
 			return nil
 		}))
 }

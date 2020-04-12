@@ -125,6 +125,15 @@ func runJSONCommand(t testing.TB, sl sl.SL, cmd string, ref interface{}) (md.MD,
 	return md.MD(out), err
 }
 
+func runTaskCreateCommand(t testing.TB, s sl.SL, cmd string) (*sl.OutCreateTask, error) {
+	out := &sl.OutCreateTask{}
+	_, err := runJSONCommand(t, s, cmd, &out)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func runCommands(t testing.TB, sl sl.SL, in string) error {
 	lines := strings.Split(in, "\n")
 	for _, line := range lines {

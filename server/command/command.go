@@ -23,11 +23,11 @@ import (
 )
 
 const (
-	// commandAutopilot   = "autopilot"
 	// commandForecast    = "forecast"
 	// commandGuess       = "guess"
 	commandArchive     = "archive"
 	commandAssign      = "assign"
+	commandAutopilot   = "autopilot"
 	commandDebugDelete = "debug-delete"
 	commandDelete      = "delete"
 	commandDisqualify  = "disqualify"
@@ -71,23 +71,35 @@ const (
 )
 
 const (
-	flagBeginning = "beginning"
-	flagClear     = "clear"
-	flagCount     = "count"
-	flagDebugNow  = "debug-now"
-	flagDuration  = "duration"
-	flagFinish    = "finish"
-	flagForce     = "force"
-	flagGrace     = "grace"
-	flagJSON      = "json"
-	flagMax       = "max"
-	flagMin       = "min"
-	flagNumber    = "number"
-	flagPeriod    = "period"
-	flagRotation  = "rotation"
-	flagSkill     = "skill"
-	flagStart     = "start"
-	flagSummary   = "summary"
+	flagBeginning         = "beginning"
+	flagClear             = "clear"
+	flagCount             = "count"
+	flagCreate            = "create"
+	flagCreatePrior       = "create-prior"
+	flagDebugNow          = "debug-now"
+	flagDuration          = "duration"
+	flagFinish            = "finish"
+	flagForce             = "force"
+	flagGrace             = "grace"
+	flagJSON              = "json"
+	flagMax               = "max"
+	flagMin               = "min"
+	flagRemindFinish      = "remind-finish"
+	flagRemindFinishPrior = "remind-finish-prior"
+	flagRemindStart       = "remind-start"
+	flagRemindStartPrior  = "remind-start-prior"
+	flagNow               = "now"
+	flagNumber            = "number"
+	flagOff               = "off"
+	flagRun               = "run"
+	flagPeriod            = "period"
+	flagRotation          = "rotation"
+	flagSchedule          = "schedule"
+	flagSchedulePrior     = "schedule-prior"
+	flagSkill             = "skill"
+	flagStart             = "start"
+	flagStartFinish       = "start-finish"
+	flagSummary           = "summary"
 )
 
 // Command handles commands
@@ -306,6 +318,46 @@ func (c *Command) withFlagSummary() *string {
 
 func (c *Command) withFlagForce() *bool {
 	return c.assureFS().Bool(flagForce, false, "ignore constraints")
+}
+
+func (c *Command) withFlagOff() *bool {
+	return c.assureFS().Bool(flagOff, false, "turn off")
+}
+
+func (c *Command) withFlagStartFinish() *bool {
+	return c.assureFS().Bool(flagStartFinish, false, "start and finish scheduled tasks")
+}
+
+func (c *Command) withFlagRun() *bool {
+	return c.assureFS().Bool(flagRun, false, "run now")
+}
+
+func (c *Command) withFlagNow() (*types.Time, error) {
+	return c.withTimeFlag(flagNow, `specify the "now" time`)
+}
+
+func (c *Command) withFlagCreatePrior() (*bool, *time.Duration) {
+	create := c.assureFS().Bool(flagCreate, false, "create shifts automatically")
+	createPrior := c.assureFS().Duration(flagCreatePrior, 0, "create shifts this long before their scheduled start")
+	return create, createPrior
+}
+
+func (c *Command) withFlagSchedulePrior() (*bool, *time.Duration) {
+	schedule := c.assureFS().Bool(flagSchedule, false, "create shifts automatically")
+	schedulePrior := c.assureFS().Duration(flagSchedulePrior, 0, "fill and schedule shifts this long before their scheduled start")
+	return schedule, schedulePrior
+}
+
+func (c *Command) withFlagRemindStartPrior() (*bool, *time.Duration) {
+	notify := c.assureFS().Bool(flagRemindStart, false, "remind shift users prior to start")
+	notifyPrior := c.assureFS().Duration(flagRemindStartPrior, 0, "remind shift users this long before the shift's start")
+	return notify, notifyPrior
+}
+
+func (c *Command) withFlagRemindFinishPrior() (*bool, *time.Duration) {
+	notify := c.assureFS().Bool(flagRemindFinish, false, "remind shift users prior to finish")
+	notifyPrior := c.assureFS().Duration(flagRemindFinishPrior, 0, "remind shift users this long before the shift's finish")
+	return notify, notifyPrior
 }
 
 func (c *Command) resolveUsernames(args []string) (mattermostUserIDs *types.IDSet, err error) {

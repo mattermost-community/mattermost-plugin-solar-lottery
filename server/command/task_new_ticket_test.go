@@ -26,10 +26,7 @@ func TestCommandTaskNewTicket(t *testing.T) {
 			`)
 		require.NoError(t, err)
 
-		out := &sl.OutMakeTask{}
-		_, err = runJSONCommand(t, SL, `
-			/lotto task new ticket test-rotation --summary test-summary1
-		`, &out)
+		out, err := runTaskCreateCommand(t, SL, `/lotto task new ticket test-rotation --summary test-summary1`)
 		task := out.Task
 		require.NoError(t, err)
 		require.Equal(t, "test-plugin-version", task.PluginVersion)

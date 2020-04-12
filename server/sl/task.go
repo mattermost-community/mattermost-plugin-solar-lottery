@@ -42,17 +42,19 @@ type Task struct {
 	TaskID        types.ID
 	RotationID    types.ID
 	State         types.ID
-	Summary       string `json:",omitempty"`
-	Description   string `json:",omitempty"`
 
-	ExpectedStart     types.Time    `json:",omitempty"`
-	ExpectedDuration  time.Duration `json:",omitempty"`
-	Require           *Needs        `json:",omitempty"`
-	Limit             *Needs        `json:",omitempty"`
-	Grace             time.Duration `json:",omitempty"`
-	MattermostUserIDs *types.IDSet  `json:",omitempty"`
-	ActualStart       types.Time    `json:",omitempty"`
-	ActualFinish      types.Time    `json:",omitempty"`
+	ActualFinish            types.Time    `json:",omitempty"`
+	ActualStart             types.Time    `json:",omitempty"`
+	AutopilotRemindedFinish bool          `json:",omitempty"`
+	AutopilotRemindedStart  bool          `json:",omitempty"`
+	Description             string        `json:",omitempty"`
+	ExpectedDuration        time.Duration `json:",omitempty"`
+	ExpectedStart           types.Time    `json:",omitempty"`
+	Grace                   time.Duration `json:",omitempty"`
+	Limit                   *Needs        `json:",omitempty"`
+	MattermostUserIDs       *types.IDSet  `json:",omitempty"`
+	Require                 *Needs        `json:",omitempty"`
+	Summary                 string        `json:",omitempty"`
 
 	Users *Users `json:"-"`
 }

@@ -38,6 +38,6 @@ func (sl *sl) AddToCalendar(params InAddToCalendar) (*OutCalendar, error) {
 		MD: md.Markdownf("added unavailable event %s to %s",
 			sl.actingUser.MarkdownUnavailable(params.Unavailable), users.Markdown()),
 	}
-	sl.LogAPI(out)
+	sl.logAPI(out)
 	return out, nil
 }

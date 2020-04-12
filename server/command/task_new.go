@@ -29,7 +29,7 @@ func (c *Command) taskNewTicket(parameters []string) (md.MD, error) {
 		return "", err
 	}
 
-	return c.normalOut(c.SL.MakeTicket(sl.InMakeTicket{
+	return c.normalOut(c.SL.CreateTicket(sl.InCreateTicket{
 		RotationID: rotationID,
 		Summary:    *summary,
 	}))
@@ -47,7 +47,7 @@ func (c *Command) taskNewShift(parameters []string) (md.MD, error) {
 		return "", err
 	}
 
-	return c.normalOut(c.SL.MakeShift(sl.InMakeShift{
+	return c.normalOut(c.SL.CreateShift(sl.InCreateShift{
 		RotationID: rotationID,
 		Number:     *shiftNumber,
 	}))
