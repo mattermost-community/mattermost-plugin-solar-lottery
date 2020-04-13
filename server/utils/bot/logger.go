@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
 const timed = "__since"
@@ -102,9 +102,18 @@ func (bot *bot) Warnf(format string, args ...interface{}) {
 
 func (bot *bot) logToAdmins(level, message string) {
 	if bot.AdminLogVerbose && len(bot.logContext) > 0 {
-		message += "\n" + utils.JSONBlock(bot.logContext)
+		message += "\n" + md.JSONBlock(bot.logContext).String()
 	}
 	bot.dmAdmins("(log " + level + ") " + message)
+}
+
+func measure(lc LogContext) {
+	if lc[timed] == nil {
+		return
+	}
+	started := lc[timed].(time.Time)
+	lc[Elapsed] = time.Since(started).String()
+	delete(lc, timed)
 }
 
 type NilLogger struct{}
@@ -145,15 +154,6 @@ func (l *TestLogger) logf(prefix, format string, args ...interface{}) {
 		out += fmt.Sprintf(" -- %+v", l.logContext)
 	}
 	l.TB.Logf(out)
-}
-
-func measure(lc LogContext) {
-	if lc[timed] == nil {
-		return
-	}
-	started := lc[timed].(time.Time)
-	lc[Elapsed] = time.Since(started).String()
-	delete(lc, timed)
 }
 
 func (l *TestLogger) Debugf(format string, args ...interface{}) { l.logf("DEBUG", format, args...) }

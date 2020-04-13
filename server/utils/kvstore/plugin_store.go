@@ -86,3 +86,7 @@ func (s *pluginStore) Keys() ([]string, error) {
 	}
 	return keys, nil
 }
+
+func (s *pluginStore) Flush() []error {
+	return nil
+}

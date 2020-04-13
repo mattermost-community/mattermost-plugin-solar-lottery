@@ -3,60 +3,20 @@
 
 package command
 
-import (
-	"github.com/pkg/errors"
-	"github.com/spf13/pflag"
-)
+import "github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 
-func (c *Command) rotation(parameters []string) (string, error) {
-	subcommands := map[string]func([]string) (string, error){
-		commandAutopilot:   c.autopilotRotation,
-		commandAdd:         c.addRotation,
-		commandArchive:     c.archiveRotation,
-		commandDebugDelete: c.debugDeleteRotation,
-		commandForecast:    c.forecastRotation,
-		commandGuess:       c.guessRotation,
-		commandJoin:        c.joinRotation,
-		commandLeave:       c.leaveRotation,
-		commandList:        c.listRotations,
-		commandNeed:        c.rotationNeed,
-		commandShow:        c.showRotation,
-		commandUpdate:      c.updateRotation,
+func (c *Command) rotation(parameters []string) (md.MD, error) {
+	subcommands := map[string]func([]string) (md.MD, error){
+		// commandAutopilot:   c.autopilotRotation,
+		// commandForecast:    c.forecastRotation,
+		// commandGuess:       c.guessRotation,
+		commandNew:         c.rotationNew,
+		commandArchive:     c.rotationArchive,
+		commandDebugDelete: c.rotationDebugDelete,
+		commandParam:       c.rotationParam,
+		commandList:        c.rotationList,
+		commandShow:        c.rotationShow,
 	}
 
 	return c.handleCommand(subcommands, parameters)
-}
-
-func withRotationFlags(fs *pflag.FlagSet, rotationID, rotationName *string) {
-	fs.StringVar(rotationID, flagRotationID, "", "specify rotation ID")
-	fs.StringVarP(rotationName, flagRotation, flagPRotation, "", "specify rotation name")
-}
-
-func (c *Command) parseRotationFlags(id, name string) (rotationID string, err error) {
-	switch {
-	case id == "" && name == "":
-		return "", errors.New("rotation is not specified")
-
-	case id != "" && name != "":
-		return "", errors.New("rotation is specified multiple times")
-
-	case id != "":
-		return id, nil
-
-	}
-	//  name != "":
-	rotationIDs, err := c.SL.ResolveRotationName(name)
-	if err != nil {
-		return "", err
-	}
-	if len(rotationIDs) != 1 {
-		return "", errors.Errorf("name %s is ambigous, please use --%s with one of %s", name, flagRotation, rotationIDs)
-	}
-	return rotationIDs[0], nil
-}
-
-func newRotationFlagSet(rotationID, rotationName *string) *pflag.FlagSet {
-	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
-	withRotationFlags(fs, rotationID, rotationName)
-	return fs
 }

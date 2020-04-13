@@ -6,10 +6,10 @@ package command
 import (
 	"github.com/spf13/pflag"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) log(parameters []string) (string, error) {
+func (c *Command) log(parameters []string) (md.MD, error) {
 	var level string
 	var verbose bool
 	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
@@ -17,12 +17,12 @@ func (c *Command) log(parameters []string) (string, error) {
 	fs.BoolVar(&verbose, "context", false, "include context with log messages")
 	err := fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
 
-	c.SL.UpdateStoredConfig(func(conf *config.Config) {
-		conf.StoredConfig.BotConfig.AdminLogLevel = level
-		conf.StoredConfig.BotConfig.AdminLogVerbose = verbose
-	})
+	sc := c.SL.Config().StoredConfig
+	sc.AdminLogLevel = level
+	sc.AdminLogVerbose = verbose
+	c.ConfigStore.SaveConfig(sc)
 	return "Dispatched config update.", nil
 }

@@ -4,43 +4,38 @@
 package command
 
 import (
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/pkg/errors"
 )
 
-func (c *Command) archiveRotation(parameters []string) (string, error) {
-	var rotationID, rotationName string
-	fs := newRotationFlagSet(&rotationID, &rotationName)
-	err := fs.Parse(parameters)
+func (c *Command) rotationArchive(parameters []string) (md.MD, error) {
+	c.withFlagRotation()
+	err := c.parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
 
-	rotationID, err = c.parseRotationFlags(rotationID, rotationName)
-	if err != nil {
-		return "", err
-	}
-	rotation, err := c.SL.LoadRotation(rotationID)
+	rotationID, err := c.resolveRotation()
 	if err != nil {
 		return "", err
 	}
 
-	err = c.SL.ArchiveRotation(rotation)
+	r, err := c.SL.ArchiveRotation(rotationID)
 	if err != nil {
-		return "", errors.WithMessagef(err, "failed to archive %s", rotation.Name)
+		return "", errors.WithMessagef(err, "failed to archive %s", rotationID)
 	}
 
-	return "Deleted rotation " + rotation.Name, nil
+	return c.normalOut(r, err)
 }
 
-func (c *Command) debugDeleteRotation(parameters []string) (string, error) {
-	var rotationID, rotationName string
-	fs := newRotationFlagSet(&rotationID, &rotationName)
-	err := fs.Parse(parameters)
+func (c *Command) rotationDebugDelete(parameters []string) (md.MD, error) {
+	c.withFlagRotation()
+	err := c.parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
 
-	rotationID, err = c.parseRotationFlags(rotationID, rotationName)
+	rotationID, err := c.resolveRotation()
 	if err != nil {
 		return "", err
 	}
@@ -50,5 +45,5 @@ func (c *Command) debugDeleteRotation(parameters []string) (string, error) {
 		return "", errors.WithMessagef(err, "failed to delete %s", rotationID)
 	}
 
-	return "Deleted rotation " + rotationID, nil
+	return c.normalOut(md.MD(rotationID), err)
 }

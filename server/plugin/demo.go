@@ -6,7 +6,7 @@ package plugin
 import (
 	"strings"
 
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/constants"
 	"github.com/mattermost/mattermost-server/v5/model"
 	"github.com/mattermost/mattermost-server/v5/plugin"
 )
@@ -128,7 +128,7 @@ func (p *Plugin) executeDemoCommand(c *plugin.Context, args *model.CommandArgs) 
 	if len(split) != 3 {
 		return false
 	}
-	if split[0] != "/"+config.CommandTrigger || split[1] != "demo" {
+	if split[0] != "/"+constants.CommandTrigger || split[1] != "demo" {
 		return false
 	}
 

@@ -73,3 +73,51 @@ func (bot *bot) Ephemeral(userId, channelId, format string, args ...interface{})
 	}
 	_ = bot.pluginAPI.SendEphemeralPost(userId, post)
 }
+
+type NilPoster struct{}
+
+func (p *NilPoster) DM(userID, format string, args ...interface{}) error { return nil }
+func (p *NilPoster) DMWithAttachments(userID string, attachments ...*model.SlackAttachment) error {
+	return nil
+}
+func (p *NilPoster) Ephemeral(userID, channelID, format string, args ...interface{}) {}
+
+type TestPost struct {
+	UserID      string
+	ChannelID   string
+	Message     string
+	Attachments []*model.SlackAttachment
+}
+
+type TestPoster struct {
+	DirectPosts    []TestPost
+	EphemeralPosts []TestPost
+}
+
+func (p *TestPoster) DM(userID, format string, args ...interface{}) error {
+	p.DirectPosts = append(p.DirectPosts, TestPost{
+		UserID:  userID,
+		Message: fmt.Sprintf(format, args...),
+	})
+	return nil
+}
+
+func (p *TestPoster) DMWithAttachments(userID string, attachments ...*model.SlackAttachment) error {
+	p.DirectPosts = append(p.DirectPosts, TestPost{
+		UserID:      userID,
+		Attachments: attachments,
+	})
+	return nil
+}
+
+func (p *TestPoster) Ephemeral(userID, channelID, format string, args ...interface{}) {
+	p.EphemeralPosts = append(p.EphemeralPosts, TestPost{
+		UserID:    userID,
+		ChannelID: channelID,
+		Message:   fmt.Sprintf(format, args...),
+	})
+}
+
+func (p *TestPoster) Reset() {
+	*p = TestPoster{}
+}

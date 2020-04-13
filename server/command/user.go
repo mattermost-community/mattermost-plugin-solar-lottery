@@ -3,13 +3,17 @@
 
 package command
 
-func (c *Command) user(parameters []string) (string, error) {
-	subcommands := map[string]func([]string) (string, error){
-		commandDisqualify:  c.disqualifyUsers,
-		commandQualify:     c.qualifyUsers,
-		commandShow:        c.showUser,
+import "github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
+
+func (c *Command) user(parameters []string) (md.MD, error) {
+	subcommands := map[string]func([]string) (md.MD, error){
+		commandDisqualify:  c.userDisqualify,
+		commandQualify:     c.userQualify,
+		commandShow:        c.userShow,
 		commandUnavailable: c.userUnavailable,
-		commandForecast:    c.userForecast,
+		commandJoin:        c.userJoin,
+		commandLeave:       c.userLeave,
 	}
+
 	return c.handleCommand(subcommands, parameters)
 }

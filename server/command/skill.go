@@ -4,65 +4,74 @@
 package command
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 
-	"github.com/spf13/pflag"
-
-	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-func (c *Command) skill(parameters []string) (string, error) {
-	subcommands := map[string]func([]string) (string, error){
-		commandAdd:    c.addSkill,
-		commandDelete: c.deleteSkill,
-		commandList:   c.listSkills,
+func (c *Command) skill(parameters []string) (md.MD, error) {
+	subcommands := map[string]func([]string) (md.MD, error){
+		commandNew:    c.skillNew,
+		commandDelete: c.skillDelete,
+		commandList:   c.skillList,
 	}
 
 	return c.handleCommand(subcommands, parameters)
 }
 
-func (c *Command) addSkill(parameters []string) (string, error) {
-	var skillName string
-	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
-	withSkillFlags(fs, &skillName, nil)
-	err := fs.Parse(parameters)
+func (c *Command) skillNew(parameters []string) (md.MD, error) {
+	err := c.parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
-	err = c.SL.AddSkill(skillName)
+	if len(c.fs.Args()) != 1 {
+		return c.flagUsage(), errors.New("must specify skill")
+	}
+	skill := types.ID(c.fs.Arg(0))
+
+	err = c.SL.AddKnownSkill(skill)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("Added **%s** to known skills.", skillName), nil
+
+	if c.outputJson {
+		return md.JSONBlock(skill), nil
+	}
+	return md.Markdownf("Added **%s** to known skills.", skill), nil
 }
 
-func (c *Command) deleteSkill(parameters []string) (string, error) {
-	var skillName string
-	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
-	withSkillFlags(fs, &skillName, nil)
-	err := fs.Parse(parameters)
+func (c *Command) skillDelete(parameters []string) (md.MD, error) {
+	err := c.parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
-	err = c.SL.DeleteSkill(skillName)
-	if err != nil {
-		return "", err
+	if len(c.fs.Args()) != 1 {
+		return c.flagUsage(), errors.New("must specify skill")
 	}
-	return fmt.Sprintf("Deleted **%s** from known skills. User profiles are not changed.", skillName), nil
-}
+	skill := types.ID(c.fs.Arg(0))
 
-func (c *Command) listSkills(parameters []string) (string, error) {
-	skills, err := c.SL.ListSkills()
+	err = c.SL.DeleteKnownSkill(skill)
 	if err != nil {
 		return "", err
 	}
-	return "Known skills: " + utils.JSONBlock(skills), nil
+	if c.outputJson {
+		return md.JSONBlock(skill), nil
+	}
+	return md.Markdownf("Deleted **%s** from known skills. User profiles are not changed.", skill), nil
 }
 
-func withSkillFlags(fs *pflag.FlagSet, skillName *string, level *sl.Level) {
-	fs.StringVarP(skillName, flagSkill, flagPSkill, "", "Skill name")
-	if level != nil {
-		fs.VarP(level, flagLevel, flagPLevel, "Skill level")
+func (c *Command) skillList(parameters []string) (md.MD, error) {
+	err := c.parse(parameters)
+	if err != nil {
+		return c.flagUsage(), err
 	}
+	skills, err := c.SL.ListKnownSkills()
+	if err != nil {
+		return "", err
+	}
+	if c.outputJson {
+		return md.JSONBlock(skills), nil
+	}
+	return "Known skills: " + md.JSONBlock(skills), nil
 }

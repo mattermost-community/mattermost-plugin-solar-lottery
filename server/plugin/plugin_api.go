@@ -6,18 +6,21 @@ package plugin
 import (
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/mattermost/mattermost-server/v5/model"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
-	sl "github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/store"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/kvstore"
 )
 
 // This file provides an implementation of sl.PluginAPI
 var _ sl.PluginAPI = (*Plugin)(nil)
+var _ config.Store = (*Plugin)(nil)
 
-// IsPluginAdmin returns true if the user is authorized to use the workflow plugin's admin-level APIs/commands.
+// IsPluginAdmin returns true if the user is authorized to use the plugin's admin-level APIs/commands.
 func (p *Plugin) IsPluginAdmin(mattermostUserID string) (bool, error) {
 	user, err := p.API.GetUser(mattermostUserID)
 	if err != nil {
@@ -26,8 +29,7 @@ func (p *Plugin) IsPluginAdmin(mattermostUserID string) (bool, error) {
 	if strings.Contains(user.Roles, "system_admin") {
 		return true, nil
 	}
-	conf := p.getConfig()
-	bot := bot.NewBot(p.API, conf.BotUserID).WithConfig(conf.BotConfig)
+	bot := bot.NewBot(p.API, p.botUserID).WithConfig(p.config.Get().BotConfig)
 	return bot.IsUserAdmin(mattermostUserID), nil
 }
 
@@ -40,7 +42,7 @@ func (p *Plugin) GetMattermostUserByUsername(mattermostUsername string) (*model.
 		return nil, err
 	}
 	if u.DeleteAt != 0 {
-		return nil, store.ErrNotFound
+		return nil, kvstore.ErrNotFound
 	}
 	return u, nil
 }
@@ -51,7 +53,7 @@ func (p *Plugin) GetMattermostUser(mattermostUserID string) (*model.User, error)
 		return nil, err
 	}
 	if mmuser.DeleteAt != 0 {
-		return nil, store.ErrNotFound
+		return nil, kvstore.ErrNotFound
 	}
 	return mmuser, nil
 }
@@ -67,16 +69,31 @@ func (p *Plugin) Clean() error {
 func (p *Plugin) SendEphemeralPost(channelID, userID, message string) {
 	ephemeralPost := &model.Post{
 		ChannelId: channelID,
-		UserId:    p.getConfig().BotUserID,
+		UserId:    p.botUserID,
 		Message:   message,
 	}
 	_ = p.API.SendEphemeralPost(userID, ephemeralPost)
 }
 
-func (p *Plugin) UpdateStoredConfig(f func(*config.Config)) {
-	conf := p.updateConfig(f)
+func (p *Plugin) SaveConfig(conf config.Mapper) {
 	go func() {
-		p.API.SavePluginConfig(conf.ToStorableConfig(nil))
+		p.API.SavePluginConfig(conf.Map(nil))
 	}()
 	return
+}
+
+func (p *Plugin) GetConfig(ref interface{}) error {
+	err := p.API.LoadPluginConfiguration(ref)
+	if err != nil {
+		return errors.WithMessage(err, "failed to load plugin configuration")
+	}
+	return nil
+}
+
+func (p *Plugin) GetMattermostConfig() *model.Config {
+	return p.API.GetConfig()
+}
+
+func (p *Plugin) GetBotUserID() string {
+	return p.botUserID
 }

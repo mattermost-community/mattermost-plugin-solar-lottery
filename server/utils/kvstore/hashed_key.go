@@ -54,6 +54,10 @@ func (s *hashedKeyStore) Keys() ([]string, error) {
 	return matched, nil
 }
 
+func (s *hashedKeyStore) Flush() []error {
+	return nil
+}
+
 func hashKey(prefix, hashableKey string) string {
 	if hashableKey == "" {
 		return prefix

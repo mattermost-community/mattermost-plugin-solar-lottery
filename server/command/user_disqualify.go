@@ -4,24 +4,26 @@
 package command
 
 import (
-	"fmt"
-
-	"github.com/spf13/pflag"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-func (c *Command) disqualifyUsers(parameters []string) (string, error) {
-	var usernames, skillName string
-	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
-	withSkillFlags(fs, &skillName, nil)
-	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to disqualify from skill")
-	err := fs.Parse(parameters)
+func (c *Command) userDisqualify(parameters []string) (md.MD, error) {
+	skill := c.withFlagSkill()
+	err := c.fs.Parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
 
-	err = c.SL.Disqualify(usernames, skillName)
+	mattermostUserIDs, err := c.resolveUsernames(c.fs.Args())
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("Disqualified %s from %s", usernames, skillName), nil
+
+	return c.normalOut(
+		c.SL.Disqualify(sl.InQualify{
+			MattermostUserIDs: mattermostUserIDs,
+			SkillLevel:        sl.NewSkillLevel(types.ID(*skill), 0),
+		}))
 }

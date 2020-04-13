@@ -4,59 +4,63 @@
 package command
 
 import (
-	"fmt"
-
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/config"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/constants"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) info(parameters []string) (string, error) {
-	resp := fmt.Sprintf("Mattermost Solar Lottery plugin version: %s, "+
+func (c *Command) info(parameters []string) (md.MD, error) {
+	resp := md.Markdownf("Mattermost Solar Lottery plugin version: %s, "+
 		"[%s](https://github.com/mattermost/%s/commit/%s), built %s\n",
-		c.Config.PluginVersion,
-		c.Config.BuildHashShort,
-		config.Repository,
-		c.Config.BuildHash,
-		c.Config.BuildDate)
+		c.SL.Config().PluginVersion,
+		c.SL.Config().BuildHashShort,
+		constants.Repository,
+		c.SL.Config().BuildHash,
+		c.SL.Config().BuildDate)
 
 	resp += `
 - [x] info: display this.
 
+- [ ] autopilot
+
+- [ ] task
+	- [x] schedule
+	- [x] close
+	- [x] start
+	- [ ] list --pending | --in-progress | --all
+	- [ ] new shift
+	- [x] unassign
+	- [x] assign
+	- [x] fill
+	- [x] new ticket
+	- [x] show ROT#id
+	- [ ] debug-delete
+
 - [x] rotation
-	- [x] add
-	- [x] archive
-	- [ ] autopilot
-	- [x] debug-delete
-	- [x] forecast
-	- [x] guess
-	- [x] join
-	- [x] leave
+	- [x] archive ROT
+	- [x] debug-delete ROT
 	- [x] list
-	- [x] need (add/delete)
-	- [x] show
-	- [x] update
-
-- [ ] shift
-	- [x] open
-	- [x] debug-delete
-	- [x] fill: evaluates shift readiness, autofills.
-	- [x] finish: finishes a shift.
-	- [x] join: add user(s) to shift.
-	- [x] leave: remove user(s) from shift.
-	- [x] list
-	- [ ] show
-	- [x] start: starts a shift.
-
+	- [x] new ROT
+	- [x] show ROT
+	- [x] param grace --duration 
+	- [x] param max --skill <s-l> (--count | --clear)
+	- [x] param min --skill <s-l> (--count | --clear)
+	- [x] param shift --starting --period
+	- [x] param ticket
+	
 - [x] skill
-	- [x] add
+	- [x] delete SKILL
 	- [x] list
-	- [x] delete
+	- [x] new SKILL
 
-- [x] user: manage my profile.
-	- [x] forecast
-	- [x] show [--users] 
-	- [x] unavailable: --from --to [--clear] [--type=unavailable]
-	- [x] qualify --skill --level --users
-	- [x] disqualify --skill --users
-`
+- [x] user: manage users.
+	- [x] disqualify [@user...] --skill 
+	- [x] join ROT [@user...] --starting
+	- [x] leave ROT [@user...]
+	- [x] qualify [@user...] --skill 
+	- [x] show [@user...]
+	- [x] unavailable: [@user...] --start --finish [--clear] 
+
+
+	`
 	return resp, nil
 }

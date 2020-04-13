@@ -4,23 +4,26 @@
 package command
 
 import (
-	"github.com/spf13/pflag"
-
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) showUser(parameters []string) (string, error) {
-	usernames := ""
-	fs := pflag.NewFlagSet("", pflag.ContinueOnError)
-	fs.StringVarP(&usernames, flagUsers, flagPUsers, "", "users to show")
-	err := fs.Parse(parameters)
+func (c *Command) userShow(parameters []string) (md.MD, error) {
+	err := c.parse(parameters)
 	if err != nil {
-		return c.flagUsage(fs), err
+		return c.flagUsage(), err
 	}
 
-	users, err := c.SL.LoadMattermostUsers(usernames)
+	mattermostUserIDs, err := c.resolveUsernames(c.fs.Args())
 	if err != nil {
 		return "", err
 	}
-	return utils.JSONBlock(users), nil
+	users, err := c.SL.LoadUsers(mattermostUserIDs)
+	if err != nil {
+		return "", err
+	}
+
+	if users.Len() == 1 {
+		return md.JSONBlock(users.AsArray()[0]), nil
+	}
+	return md.JSONBlock(users), nil
 }

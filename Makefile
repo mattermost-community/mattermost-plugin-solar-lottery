@@ -97,13 +97,10 @@ golint:
 mock:
 ifneq ($(HAS_SERVER),)
 	go install github.com/golang/mock/mockgen
-	mockgen -destination server/solarlottery/mock_solarlottery/mock_plugin_api.go github.com/mattermost/mattermost-plugin-solar-lottery/server/solarlottery PluginAPI
-	mockgen -destination server/utils/bot/mock_bot/mock_poster.go github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot Poster
-	mockgen -destination server/utils/bot/mock_bot/mock_admin.go github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot Admin
-	mockgen -destination server/store/mock_store/mock_user_store.go github.com/mattermost/mattermost-plugin-solar-lottery/server/store UserStore
-	mockgen -destination server/store/mock_store/mock_skills_store.go github.com/mattermost/mattermost-plugin-solar-lottery/server/store SkillsStore
-	mockgen -destination server/store/mock_store/mock_shift_store.go github.com/mattermost/mattermost-plugin-solar-lottery/server/store ShiftStore
-	mockgen -destination server/store/mock_store/mock_rotation_store.go github.com/mattermost/mattermost-plugin-solar-lottery/server/store RotationStore
+	mockgen -destination server/sl/mock_sl/mock_plugin_api.go github.com/mattermost/mattermost-plugin-solar-lottery/server/sl PluginAPI
+	# mockgen -destination server/utils/bot/mock_bot/mock_poster.go github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot Poster
+	# mockgen -destination server/utils/bot/mock_bot/mock_admin.go github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot Admin
+	# mockgen -destination server/store/mock_store/mock_store.go github.com/mattermost/mattermost-plugin-solar-lottery/server/store Store
 endif
 
 ## Generates mock golang interfaces for testing
