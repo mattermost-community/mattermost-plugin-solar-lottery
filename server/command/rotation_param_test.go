@@ -13,7 +13,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-func TestCommandTaskParam(t *testing.T) {
+func TestTaskParam(t *testing.T) {
 	t.Run("shift", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()

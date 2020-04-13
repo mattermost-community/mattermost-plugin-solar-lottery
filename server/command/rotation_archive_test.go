@@ -13,7 +13,7 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-func TestCommandRotationArchive(t *testing.T) {
+func TestRotationArchive(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -58,7 +58,7 @@ func TestCommandRotationArchive(t *testing.T) {
 
 }
 
-func TestCommandRotationDelete(t *testing.T) {
+func TestRotationDelete(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()

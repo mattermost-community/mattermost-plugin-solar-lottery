@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCommandSkillList(t *testing.T) {
+func TestSkillList(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()

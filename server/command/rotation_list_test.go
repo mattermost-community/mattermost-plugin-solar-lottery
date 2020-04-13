@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCommandRotationList(t *testing.T) {
+func TestRotationList(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
