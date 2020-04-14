@@ -5,7 +5,6 @@ package solarlottery
 
 import (
 	"math"
-	"math/rand"
 	"sort"
 
 	"gonum.org/v1/gonum/floats"
@@ -30,7 +29,7 @@ func (f *fill) pickUser(from *sl.Users) *sl.User {
 		total += weight
 	}
 	floats.CumSum(cdf, weights)
-	random := rand.Float64() * total
+	random := f.rand.Float64() * total
 	i := sort.Search(len(cdf), func(i int) bool {
 		return cdf[i] >= random
 	})

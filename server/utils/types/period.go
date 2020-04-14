@@ -79,10 +79,16 @@ func (p *Period) ForNumber(beginning Time, num int) Time {
 }
 
 func (p *Period) ForTime(beginning, forTime Time) (int, Time) {
-	for n := -1; ; n++ {
+	if forTime.Before(beginning.Time) {
+		return -1, Time{}
+	}
+
+	last := beginning
+	for n := 0; ; n++ {
 		if forTime.Before(beginning.Time) {
-			return n, beginning
+			return n - 1, last
 		}
+		last = beginning
 		beginning = p.ForNumber(beginning, 1)
 	}
 }

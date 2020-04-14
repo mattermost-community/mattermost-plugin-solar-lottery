@@ -14,7 +14,7 @@ func (c *Command) rotationAutopilot(parameters []string) (md.MD, error) {
 	schedule, schedulePrior := c.withFlagSchedulePrior()
 	startFinish := c.withFlagStartFinish()
 	remindStart, remindStartPrior := c.withFlagRemindStartPrior()
-	remindFinish, remindFinishPrior := c.withFlagRemindStartPrior()
+	remindFinish, remindFinishPrior := c.withFlagRemindFinishPrior()
 	run := c.withFlagRun()
 	now, err := c.withFlagNow()
 	if err != nil {

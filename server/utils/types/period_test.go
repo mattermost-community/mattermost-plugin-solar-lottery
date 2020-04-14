@@ -88,3 +88,64 @@ func TestPeriodForNumber(t *testing.T) {
 		})
 	}
 }
+
+func TestPeriodForTime(t *testing.T) {
+	for _, tc := range []struct {
+		name          string
+		period        Period
+		start         Time
+		now           Time
+		expectedNum   int
+		expectedStart Time
+	}{
+		{
+			name:          "bi-weekly before",
+			period:        Period{Period: EveryTwoWeeks},
+			start:         MustParseTime("2020-02-04T17:00").In(PST),
+			now:           MustParseTime("2020-02-03T17:00").In(PST),
+			expectedNum:   -1,
+			expectedStart: Time{},
+		}, {
+			name:          "bi-weekly on start",
+			period:        Period{Period: EveryTwoWeeks},
+			start:         MustParseTime("2020-02-04T17:00").In(PST),
+			now:           MustParseTime("2020-02-04T17:00").In(PST),
+			expectedNum:   0,
+			expectedStart: MustParseTime("2020-02-04T17:00").In(PST),
+		}, {
+			name:          "bi-weekly in first",
+			period:        Period{Period: EveryTwoWeeks},
+			start:         MustParseTime("2020-02-04T17:00").In(PST),
+			now:           MustParseTime("2020-02-10T17:00").In(PST),
+			expectedNum:   0,
+			expectedStart: MustParseTime("2020-02-04T17:00").In(PST),
+		}, {
+			name:          "bi-weekly on finish first",
+			period:        Period{Period: EveryTwoWeeks},
+			start:         MustParseTime("2020-02-04T17:00").In(PST),
+			now:           MustParseTime("2020-02-18T17:00").In(PST),
+			expectedNum:   1,
+			expectedStart: MustParseTime("2020-02-18T17:00").In(PST),
+		}, {
+			name:          "bi-weekly future DST",
+			period:        Period{Period: EveryTwoWeeks},
+			start:         MustParseTime("2020-02-04T17:00").In(PST),
+			now:           MustParseTime("2020-04-15T17:00").In(PST),
+			expectedNum:   5,
+			expectedStart: MustParseTime("2020-04-14T16:00").In(PST),
+		}, {
+			name:          "bi-weekly future non-DST",
+			period:        Period{Period: EveryTwoWeeks},
+			start:         MustParseTime("2020-02-04T17:00").In(PST),
+			now:           MustParseTime("2020-12-01T17:00").In(PST),
+			expectedNum:   21,
+			expectedStart: MustParseTime("2020-11-24T17:00").In(PST),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			num, start := tc.period.ForTime(tc.start, tc.now)
+			require.Equal(t, tc.expectedNum, num)
+			require.Equal(t, tc.expectedStart, start)
+		})
+	}
+}

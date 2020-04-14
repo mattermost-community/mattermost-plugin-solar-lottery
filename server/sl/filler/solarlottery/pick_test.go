@@ -5,6 +5,7 @@ package solarlottery
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -67,8 +68,11 @@ func TestPickUser(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			counters := map[types.ID]int{}
+			// use the same rand (do not reset) to test for fairness
+			rnd := rand.New(rand.NewSource(0))
 			for i := 0; i < sampleSize; i++ {
 				f := makeTestFiller(t, tc.users, nil, nil, nil)
+				f.rand = rnd
 				origWeightF := f.userWeightF
 				f.userWeightF = func(u *sl.User) float64 {
 					if tc.weights[u.MattermostUserID] != 0 {

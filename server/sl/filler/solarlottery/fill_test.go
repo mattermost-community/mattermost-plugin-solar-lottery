@@ -149,6 +149,7 @@ func makeTestFiller(t testing.TB, pool, assigned *sl.Users, require, limit *sl.N
 	r.RotationID = test.RotationID
 	r.Beginning = types.MustParseTime("2020-01-01")
 	r.Users = pool
+	r.Seed = 1
 
 	task := sl.NewTask(r.RotationID)
 	task.TaskID = r.RotationID + "#2020-02-02"

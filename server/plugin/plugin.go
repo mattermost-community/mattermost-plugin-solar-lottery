@@ -4,9 +4,7 @@
 package plugin
 
 import (
-	"math/rand"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -72,8 +70,6 @@ func (p *Plugin) OnActivate() error {
 	router.Handle("{anything:.*}", http.NotFoundHandler())
 
 	command.Register(p.API.RegisterCommand)
-
-	rand.Seed(time.Now().UnixNano())
 	return nil
 }
 

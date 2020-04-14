@@ -80,11 +80,7 @@ func (c *Command) rotationParamShift(parameters []string) (md.MD, error) {
 	c.withFlagRotation()
 	period := c.withFlagPeriod()
 	duration := c.withFlagDuration()
-	begin, err := c.withFlagBeginning()
-	if err != nil {
-		return "", err
-	}
-	err = c.fs.Parse(parameters)
+	err := c.fs.Parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}
@@ -97,7 +93,6 @@ func (c *Command) rotationParamShift(parameters []string) (md.MD, error) {
 		c.SL.UpdateRotation(rotationID, func(r *sl.Rotation) error {
 			r.TaskType = sl.TaskTypeShift
 			r.TaskSettings.ShiftPeriod = *period
-			r.Beginning = *begin
 			r.TaskSettings.Duration = *duration
 			return nil
 		}))

@@ -84,18 +84,19 @@ const (
 	flagJSON              = "json"
 	flagMax               = "max"
 	flagMin               = "min"
+	flagNow               = "now"
+	flagNumber            = "number"
+	flagOff               = "off"
+	flagPeriod            = "period"
 	flagRemindFinish      = "remind-finish"
 	flagRemindFinishPrior = "remind-finish-prior"
 	flagRemindStart       = "remind-start"
 	flagRemindStartPrior  = "remind-start-prior"
-	flagNow               = "now"
-	flagNumber            = "number"
-	flagOff               = "off"
-	flagRun               = "run"
-	flagPeriod            = "period"
 	flagRotation          = "rotation"
+	flagRun               = "run"
 	flagSchedule          = "schedule"
 	flagSchedulePrior     = "schedule-prior"
+	flagSeed              = "seed"
 	flagSkill             = "skill"
 	flagStart             = "start"
 	flagStartFinish       = "start-finish"
@@ -270,6 +271,10 @@ func (c *Command) withFlagStart() (*types.Time, error) {
 
 func (c *Command) withFlagBeginning() (*types.Time, error) {
 	return c.withTimeFlag(flagBeginning, "beginning of time for shifts")
+}
+
+func (c *Command) withFlagSeed() *int64 {
+	return c.assureFS().Int64(flagSeed, 0xBAADBEEF, "seed to use")
 }
 
 func (c *Command) withFlagPeriod() *types.Period {

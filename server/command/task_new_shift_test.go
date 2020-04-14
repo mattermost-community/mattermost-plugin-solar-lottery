@@ -19,17 +19,17 @@ func TestTaskNewShift(t *testing.T) {
 		SL, _ := getTestSL(t, ctrl)
 
 		err := runCommands(t, SL, `
-			/lotto rotation new test-rotation
-			/lotto rotation param shift test-rotation --period weekly --beginning 2020-03-03
+			/lotto rotation new test-rotation --beginning 2020-03-03
+			/lotto rotation param shift test-rotation --period weekly
 			/lotto rotation param min -s webapp-2 --count 2 test-rotation
 			/lotto rotation param max -s server-3 --count 1 test-rotation
 			`)
 		require.NoError(t, err)
 
-		out, err := runTaskCreateCommand(t, SL, `/lotto task new shift test-rotation --number 1`)
+		out, err := runTaskCreateCommand(t, SL, `/lotto task new shift test-rotation --number 0`)
 		task := out.Task
 		require.NoError(t, err)
-		require.Equal(t, types.ID("test-rotation#1"), task.TaskID)
+		require.Equal(t, types.ID("test-rotation#0"), task.TaskID)
 		require.Equal(t, types.ID("test-rotation"), task.RotationID)
 		require.Equal(t, sl.TaskStatePending, task.State)
 		require.Equal(t, "", task.Summary)
@@ -45,21 +45,21 @@ func TestTaskNewShift(t *testing.T) {
 		r := &sl.Rotation{}
 		_, err = runJSONCommand(t, SL, `/lotto rotation show test-rotation`, r)
 		require.NoError(t, err)
-		require.Equal(t, []string{"test-rotation#1"}, r.TaskIDs.TestIDs())
+		require.Equal(t, []string{"test-rotation#0"}, r.TaskIDs.TestIDs())
+
+		out, err = runTaskCreateCommand(t, SL, `/lotto task new shift test-rotation -n 1`)
+		require.NoError(t, err)
+		require.Equal(t, types.ID("test-rotation#1"), out.Task.TaskID)
+		require.Equal(t, "2020-03-10T08:00", out.Task.ExpectedStart.String())
 
 		out, err = runTaskCreateCommand(t, SL, `/lotto task new shift test-rotation -n 2`)
 		require.NoError(t, err)
 		require.Equal(t, types.ID("test-rotation#2"), out.Task.TaskID)
-		require.Equal(t, "2020-03-10T08:00", out.Task.ExpectedStart.String())
-
-		out, err = runTaskCreateCommand(t, SL, `/lotto task new shift test-rotation -n 3`)
-		require.NoError(t, err)
-		require.Equal(t, types.ID("test-rotation#3"), out.Task.TaskID)
 		require.Equal(t, "2020-03-17T08:00", out.Task.ExpectedStart.String())
 
-		s, err := runCommand(t, SL, `/lotto task new shift test-rotation -n 4`)
+		s, err := runCommand(t, SL, `/lotto task new shift test-rotation -n 3`)
 		require.NoError(t, err)
-		require.Equal(t, "created shift test-rotation#4.", s.String())
+		require.Equal(t, "created shift test-rotation#3", s.String())
 	})
 
 	t.Run("error already exists", func(t *testing.T) {
@@ -68,14 +68,14 @@ func TestTaskNewShift(t *testing.T) {
 		SL, _ := getTestSL(t, ctrl)
 
 		err := runCommands(t, SL, `
-			/lotto rotation new test-rotation
-			/lotto rotation param shift test-rotation --period weekly --beginning 2020-03-03
+			/lotto rotation new test-rotation --beginning 2020-03-03
+			/lotto rotation param shift test-rotation --period weekly
 			/lotto task new shift test-rotation --number 2
 			`)
 		require.NoError(t, err)
 
 		_, err = runCommand(t, SL, `/lotto task new shift test-rotation --number 2`)
 		require.Error(t, err)
-		require.Equal(t, "failed to make shift #2 (2020-03-10T08:00 to 2020-03-17T08:00): shift test-rotation#2 (2020-03-10T08:00 - 2020-03-17T08:00) already exists, state pending", err.Error())
+		require.Equal(t, "failed to make shift #2 (2020-03-17T08:00 to 2020-03-24T08:00): shift test-rotation#2 (2020-03-17T08:00 - 2020-03-24T08:00) already exists, state pending", err.Error())
 	})
 }

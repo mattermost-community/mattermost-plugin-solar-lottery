@@ -63,6 +63,7 @@ func (sl *sl) CreateTicket(params InCreateTicket) (*OutCreateTask, error) {
 type InCreateShift struct {
 	RotationID types.ID
 	Number     int
+	Time       types.Time
 }
 
 func (sl *sl) CreateShift(in InCreateShift) (*OutCreateTask, error) {
@@ -77,7 +78,7 @@ func (sl *sl) CreateShift(in InCreateShift) (*OutCreateTask, error) {
 	}
 	defer sl.popLogger()
 
-	t, err := sl.createShift(r, in.Number)
+	t, err := sl.createShift(r, in.Number, in.Time)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +88,7 @@ func (sl *sl) CreateShift(in InCreateShift) (*OutCreateTask, error) {
 	}
 
 	out := &OutCreateTask{
-		MD:   md.Markdownf("created shift %s.", t.Markdown()),
+		MD:   md.Markdownf("created shift %s", t.Markdown()),
 		Task: t,
 	}
 	sl.logAPI(out)

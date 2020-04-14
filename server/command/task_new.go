@@ -4,8 +4,11 @@
 package command
 
 import (
+	"time"
+
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 func (c *Command) taskNew(parameters []string) (md.MD, error) {
@@ -50,5 +53,6 @@ func (c *Command) taskNewShift(parameters []string) (md.MD, error) {
 	return c.normalOut(c.SL.CreateShift(sl.InCreateShift{
 		RotationID: rotationID,
 		Number:     *shiftNumber,
+		Time:       types.NewTime(time.Now()),
 	}))
 }

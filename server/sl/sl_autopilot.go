@@ -4,17 +4,20 @@
 package sl
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 func (sl *sl) autopilotRemindFinish(r *Rotation, now types.Time) (md.Markdowner, error) {
 	if !r.AutopilotSettings.RemindFinish {
-		return md.MD("task finish reminder: not configured"), nil
+		return md.MD("finish reminder: not configured"), nil
 	}
 	filtered := r.queryTasks(r.isAutopilotRemindFinish, now)
 	if filtered.IsEmpty() {
-		return md.MD("task finish reminder: nothing to do"), nil
+		return md.MD("finish reminder: nothing to do"), nil
 	}
 
 	var notified = NewUsers()
@@ -31,16 +34,16 @@ func (sl *sl) autopilotRemindFinish(r *Rotation, now types.Time) (md.Markdowner,
 		}
 	}
 
-	return md.Markdownf("task finish reminder: messaged %v users of %v tasks", notified.Len(), filtered.Len()), nil
+	return md.Markdownf("finish reminder: messaged %v users of %v tasks", notified.Len(), filtered.Len()), nil
 }
 
 func (sl *sl) autopilotRemindStart(r *Rotation, now types.Time) (md.Markdowner, error) {
 	if !r.AutopilotSettings.RemindStart {
-		return md.MD("task start reminder: not configured"), nil
+		return md.MD("start reminder: not configured"), nil
 	}
 	filtered := r.queryTasks(r.isAutopilotRemindStart, now)
 	if filtered.IsEmpty() {
-		return md.MD("task start reminder: nothing to do"), nil
+		return md.MD("start reminder: nothing to do"), nil
 	}
 
 	var notified = NewUsers()
@@ -57,16 +60,16 @@ func (sl *sl) autopilotRemindStart(r *Rotation, now types.Time) (md.Markdowner, 
 		}
 	}
 
-	return md.Markdownf("task finish reminder: messaged %v users of %v tasks", notified.Len(), filtered.Len()), nil
+	return md.Markdownf("start reminder: messaged %v users of %v tasks", notified.Len(), filtered.Len()), nil
 }
 
 func (sl *sl) autopilotFinish(r *Rotation, now types.Time) (md.Markdowner, error) {
 	if !r.AutopilotSettings.StartFinish {
-		return md.MD("start/finish: not configured"), nil
+		return md.MD("finish: not configured"), nil
 	}
 	filtered := r.queryTasks(r.isAutopilotFinish, now)
 	if filtered.IsEmpty() {
-		return md.MD("start/finish: nothing to do"), nil
+		return md.MD("finish: nothing to do"), nil
 	}
 
 	for _, t := range filtered.AsArray() {
@@ -81,11 +84,11 @@ func (sl *sl) autopilotFinish(r *Rotation, now types.Time) (md.Markdowner, error
 
 func (sl *sl) autopilotStart(r *Rotation, now types.Time) (md.Markdowner, error) {
 	if !r.AutopilotSettings.StartFinish {
-		return md.MD("start/finish: not configured"), nil
+		return md.MD("start: not configured"), nil
 	}
 	filtered := r.queryTasks(r.isAutopilotStart, now)
 	if filtered.IsEmpty() {
-		return md.MD("start/finish: nothing to do"), nil
+		return md.MD("start: nothing to do"), nil
 	}
 
 	for _, t := range filtered.AsArray() {
@@ -107,7 +110,7 @@ func (s *sl) autopilotFillSchedule(r *Rotation, now types.Time) (md.Markdowner, 
 		return md.MD("fill and schedule: nothing to do"), nil
 	}
 
-	var messages []md.Markdowner
+	var messages []string
 	for _, t := range filtered.AsArray() {
 		outFill, err := s.FillTask(InAssignTask{
 			TaskID: t.TaskID,
@@ -125,14 +128,12 @@ func (s *sl) autopilotFillSchedule(r *Rotation, now types.Time) (md.Markdowner, 
 		if err != nil {
 			return nil, err
 		}
-		messages = append(messages, outFill.Markdown(), md.MD(", "), outTransition.Markdown(), md.MD("\n"))
+		messages = append(messages, fmt.Sprintf("    - %s, %s\n", outFill.String(), outTransition.String()))
 	}
 
-	text := md.Markdownf("fill and schedule: processed %v shifts:\n", len(messages))
-	for _, m := range messages {
-		text += m.Markdown()
-	}
-	return text, nil
+	text := fmt.Sprintf("fill and schedule: processed %v tasks:\n", len(messages))
+	text += strings.Join(messages, "")
+	return md.MD(strings.TrimSpace(text)), nil
 }
 
 func (sl *sl) autopilotCreate(r *Rotation, now types.Time) (md.Markdowner, error) {
@@ -146,29 +147,33 @@ func (sl *sl) autopilotCreate(r *Rotation, now types.Time) (md.Markdowner, error
 	var messages []md.Markdowner
 	period := r.TaskSettings.ShiftPeriod
 	upTo := now.Add(r.AutopilotSettings.CreatePrior)
-	for num, start := period.ForTime(r.Beginning, now); start.Before(upTo); num, start = num+1, period.ForNumber(start, 1) {
-		exists := r.queryTasks(r.isPendingForTime, start)
+	for num, start := period.ForTime(r.Beginning, now); start.Before(upTo); num, start = num+1, period.ForNumber(r.Beginning, num+1) {
+		if num == -1 {
+			continue
+		}
+		exists := r.queryTasks(r.allTasksForTime, start)
 		if !exists.IsEmpty() {
 			continue
 		}
 		out, err := sl.CreateShift(InCreateShift{
 			RotationID: r.RotationID,
 			Number:     num,
+			Time:       now,
 		})
 		if err != nil {
 			return nil, err
 		}
-		messages = append(messages, out, md.MD("\n"))
+		messages = append(messages, out)
 	}
 
 	if len(messages) == 0 {
 		return md.MD("create shift: nothing to do"), nil
 	}
-	text := md.Markdownf("create shift: created %v shifts:\n", len(messages))
+	text := fmt.Sprintf("create shift: created %v shifts:\n", len(messages))
 	for _, m := range messages {
-		text += m.Markdown()
+		text += "    - " + m.Markdown().String() + "\n"
 	}
-	return text, nil
+	return md.MD(strings.TrimSpace(text)), nil
 }
 
 // func (sl *sl) autopilotFill(rotation *Rotation, now time.Time, currentShiftNumber int, logger bot.Logger) ([]int, []*Shift, []Users, error) {

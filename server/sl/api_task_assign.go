@@ -47,7 +47,7 @@ func (sl *sl) AssignTask(params InAssignTask) (*OutAssignTask, error) {
 	}
 
 	out := &OutAssignTask{
-		MD:      md.Markdownf("assigned %s to ticket %s.", assigned.Markdown(), task.Markdown()),
+		MD:      md.Markdownf("assigned %s to ticket %s", assigned.Markdown(), task.Markdown()),
 		Task:    task,
 		Changed: assigned,
 	}

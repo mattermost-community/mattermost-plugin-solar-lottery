@@ -5,8 +5,8 @@ package solarlottery
 
 import (
 	"fmt"
+	"math/rand"
 	"sort"
-	"time"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/bot"
@@ -22,6 +22,7 @@ type fill struct {
 	task           *sl.Task
 	time           int64 // seconds, unix time
 	doublingPeriod int64 // seconds
+	rand           *rand.Rand
 
 	// State
 	pool         *sl.Users
@@ -35,9 +36,6 @@ type fill struct {
 func newFill(r *sl.Rotation, t *sl.Task, forTime types.Time, logger bot.Logger) *fill {
 	if forTime.IsZero() && !t.ExpectedStart.IsZero() {
 		forTime = t.ExpectedStart
-	}
-	if forTime.IsZero() {
-		forTime = types.NewTime(time.Now())
 	}
 
 	pool := sl.NewUsers()
@@ -57,6 +55,7 @@ func newFill(r *sl.Rotation, t *sl.Task, forTime types.Time, logger bot.Logger) 
 		limit:          t.Limit.Clone(),
 		requirePools:   map[types.ID]*sl.Users{},
 		doublingPeriod: 7 * 24 * 3600, // 14 days
+		rand:           rand.New(rand.NewSource(r.Seed)),
 	}
 	f.userWeightF = f.userWeight
 

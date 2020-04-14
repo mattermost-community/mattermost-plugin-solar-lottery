@@ -43,7 +43,7 @@ func (sl *sl) FillTask(params InAssignTask) (*OutAssignTask, error) {
 	}
 
 	out := &OutAssignTask{
-		MD:      md.Markdownf("Auto-assigned %s to ticket %s.", filled.Markdown(), task.Markdown()),
+		MD:      md.Markdownf("Auto-assigned %s to ticket %s", filled.Markdown(), task.Markdown()),
 		Task:    task,
 		Changed: filled,
 	}

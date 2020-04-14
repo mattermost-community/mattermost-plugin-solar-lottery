@@ -9,8 +9,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (sl *sl) createShift(r *Rotation, shiftNumber int) (*Task, error) {
-	task, err := r.makeShift(shiftNumber)
+func (sl *sl) createShift(r *Rotation, shiftNumber int, now types.Time) (*Task, error) {
+	task, err := r.makeShift(shiftNumber, now)
 	if err != nil {
 		return nil, err
 	}

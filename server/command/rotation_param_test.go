@@ -20,13 +20,13 @@ func TestTaskParam(t *testing.T) {
 		SL, _ := getTestSL(t, ctrl)
 
 		err := runCommands(t, SL, `
-			/lotto rotation new test-rotation
+			/lotto rotation new test-rotation --beginning 2030-01-10
 			`)
 		require.NoError(t, err)
 
 		r := sl.NewRotation()
 		_, err = runJSONCommand(t, SL, `
-			/lotto rotation param shift test-rotation --beginning 2030-01-10 --period monthly`, &r)
+			/lotto rotation param shift test-rotation --period monthly`, &r)
 		require.NoError(t, err)
 		require.Equal(t, sl.TaskTypeShift, r.TaskType)
 		require.Equal(t, types.EveryMonth, r.TaskSettings.ShiftPeriod.String())

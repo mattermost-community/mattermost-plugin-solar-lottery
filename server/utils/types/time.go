@@ -50,7 +50,7 @@ func (t *Time) Set(in string) error {
 
 	var err error
 	var tt time.Time
-	for _, format := range []string{TimeFormatTZ, TimeFormat, DateFormatTZ, DateFormat} {
+	for _, format := range []string{TimeFormatTZ, TimeFormat, DateFormatTZ, DateFormat, time.RFC3339} {
 		tt, err = time.ParseInLocation(format, in, loc)
 		if err == nil {
 			t.Time = tt

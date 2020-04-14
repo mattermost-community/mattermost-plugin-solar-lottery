@@ -45,7 +45,7 @@ func (sl *sl) TransitionTask(params InTransitionTask) (*OutTransitionTask, error
 	}
 
 	out := &OutTransitionTask{
-		MD:        md.Markdownf("transitioned %s to %s.", task.Markdown(), task.State),
+		MD:        md.Markdownf("transitioned %s to %s", task.Markdown(), task.State),
 		Task:      task,
 		PrevState: prevState,
 	}

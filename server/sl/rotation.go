@@ -26,6 +26,7 @@ type Rotation struct {
 	AutopilotSettings AutopilotSettings `json:",omitempty"`
 	MattermostUserIDs *types.IDSet      `json:",omitempty"`
 	TaskIDs           *types.IDSet      `json:",omitempty"`
+	Seed              int64             `json:",omitempty"`
 
 	loaded bool
 	Users  *Users `json:"-"`
@@ -158,9 +159,9 @@ func (r *Rotation) newTicket(defaultID string) *Task {
 	return t
 }
 
-func (r *Rotation) makeShift(shiftNumber int) (*Task, error) {
+func (r *Rotation) makeShift(shiftNumber int, now types.Time) (*Task, error) {
 	def := r.TaskSettings
-	startTime := def.ShiftPeriod.ForNumber(r.Beginning, shiftNumber-1)
+	startTime := def.ShiftPeriod.ForNumber(r.Beginning, shiftNumber)
 	nextTime := def.ShiftPeriod.ForNumber(startTime, 1)
 
 	// Check if an overlapping shift already exists
@@ -171,7 +172,7 @@ func (r *Rotation) makeShift(shiftNumber int) (*Task, error) {
 		case TaskStateFinished:
 			tInt = types.NewInterval(t.ActualStart, t.ActualFinish)
 		case TaskStateStarted:
-			tInt = types.NewInterval(t.ActualStart, types.NewTime(time.Now()))
+			tInt = types.NewInterval(t.ActualStart, now)
 		}
 
 		if int.Overlaps(tInt) {
@@ -238,9 +239,8 @@ func (r *Rotation) isAutopilotStart(t *Task, now types.Time) bool {
 	return t.State == TaskStateScheduled && !now.Before(startTime)
 }
 
-func (r *Rotation) isPendingForTime(t *Task, now types.Time) bool {
-	return t.State == TaskStatePending &&
-		!(now.Before(t.ExpectedStart.Time) || now.After(t.ExpectedStart.Add(t.ExpectedDuration)))
+func (r *Rotation) allTasksForTime(t *Task, now types.Time) bool {
+	return !now.Before(t.ExpectedStart.Time) && now.Before(t.ExpectedStart.Add(t.ExpectedDuration))
 }
 
 func (r *Rotation) isAutopilotSchedule(t *Task, now types.Time) bool {
