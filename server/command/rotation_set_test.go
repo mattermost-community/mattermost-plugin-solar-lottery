@@ -6,11 +6,53 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
+	"github.com/stretchr/testify/require"
 )
+
+func TestRotationSetAutopilot(t *testing.T) {
+	ctrl, SL := defaultEnv(t)
+	defer ctrl.Finish()
+
+	mustRunMulti(t, SL, `/lotto rotation new TEST --beginning 2020-01-05T09:30 --seed=42`)
+
+	r := mustRunRotation(t, SL, "/lotto rotation set autopilot TEST "+
+		"--create --create-prior 500h "+
+		"--schedule --schedule-prior=100h "+
+		"--start-finish "+
+		"--remind-start --remind-start-prior=24h "+
+		"--remind-finish --remind-finish-prior=24h ")
+	require.Equal(t, types.ID("TEST"), r.RotationID)
+	require.Equal(t, sl.AutopilotSettings{
+		Create:            true,
+		CreatePrior:       500 * time.Hour,
+		RemindFinish:      true,
+		RemindFinishPrior: 24 * time.Hour,
+		RemindStart:       true,
+		RemindStartPrior:  24 * time.Hour,
+		Schedule:          true,
+		SchedulePrior:     100 * time.Hour,
+		StartFinish:       true,
+	}, r.AutopilotSettings)
+
+	r = mustRunRotation(t, SL, "/lotto rotation set autopilot TEST --off")
+	require.Equal(t, sl.AutopilotSettings{}, r.AutopilotSettings)
+}
+
+func TestRotationSetFill(t *testing.T) {
+	t.Run("happy", func(t *testing.T) {
+		ctrl, SL := defaultEnv(t)
+		defer ctrl.Finish()
+		mustRun(t, SL,
+			`/lotto rotation new test-rotation`)
+
+		r := mustRunRotation(t, SL,
+			`/lotto rotation set fill test-rotation --fuzz=2 --seed=1234`)
+		require.Equal(t, int64(2), r.FillSettings.Fuzz)
+		require.Equal(t, int64(1234), r.FillSettings.Seed)
+	})
+}
 
 func TestTaskSet(t *testing.T) {
 	t.Run("limit", func(t *testing.T) {
