@@ -31,7 +31,7 @@ func (sl *sl) ClearCalendar(params InClearCalendar) (*OutCalendar, error) {
 			continue
 		}
 
-		_, err = sl.storeUserWelcomeNew(user)
+		err = sl.storeUserWelcomeNew(user)
 		if err != nil {
 			return nil, errors.WithMessagef(err, "failed to update user %s", user.Markdown())
 		}

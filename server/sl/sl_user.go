@@ -70,7 +70,7 @@ func (sl *sl) qualify(users *Users, skillLevels []SkillLevel) error {
 			return nil
 		}
 
-		user, err := sl.storeUserWelcomeNew(user)
+		err := sl.storeUserWelcomeNew(user)
 		if err != nil {
 			return err
 		}
@@ -92,7 +92,7 @@ func (sl *sl) disqualify(users *Users, skillNames []string) error {
 			return nil
 		}
 
-		user, err := sl.storeUserWelcomeNew(user)
+		err := sl.storeUserWelcomeNew(user)
 		if err != nil {
 			return err
 		}
@@ -115,7 +115,7 @@ func (sl *sl) joinRotation(users *Users, r *Rotation, starting types.Time) (adde
 		// future all but guarantees they won't be selected until then.
 		user.LastServed.Set(r.RotationID, starting.Unix())
 
-		user, err = sl.storeUserWelcomeNew(user)
+		err = sl.storeUserWelcomeNew(user)
 		if err != nil {
 			return added, err
 		}
@@ -139,7 +139,7 @@ func (sl *sl) leaveRotation(users *Users, r *Rotation) (*Users, error) {
 		}
 
 		user.LastServed.Delete(r.RotationID)
-		_, err := sl.storeUserWelcomeNew(user)
+		err := sl.storeUserWelcomeNew(user)
 		if err != nil {
 			return nil, err
 		}
@@ -153,7 +153,8 @@ func (sl *sl) leaveRotation(users *Users, r *Rotation) (*Users, error) {
 func (sl *sl) loadOrMakeUser(mattermostUserID types.ID) (*User, bool, error) {
 	user, err := sl.loadUser(mattermostUserID)
 	if err == kvstore.ErrNotFound {
-		newUser, newErr := sl.storeUserWelcomeNew(NewUser(mattermostUserID))
+		newUser := NewUser(mattermostUserID)
+		newErr := sl.storeUserWelcomeNew(newUser)
 		return newUser, true, newErr
 	}
 	if err != nil {
@@ -213,15 +214,15 @@ func (sl *sl) expandUsers(users *Users) error {
 // storeUserWelcomeNew checks if the user being stored is new, and welcomes the user.
 // note that it can be used inside of filters, so it must not use filters itself,
 //  nor assume that any runtime values have been filled.
-func (sl *sl) storeUserWelcomeNew(user *User) (*User, error) {
+func (sl *sl) storeUserWelcomeNew(user *User) error {
 	if user.PluginVersion == "" {
 		sl.dmUserWelcomeToSolarLottery(user)
 	}
 	err := sl.storeUser(user)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return user, nil
+	return nil
 }
 
 func (sl *sl) storeUser(user *User) error {

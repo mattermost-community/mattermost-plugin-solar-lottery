@@ -29,8 +29,8 @@ func multiseedBench(t testing.TB, rotationID string, lowSeed, highSeed int64, nu
 				_, err := run(t, SL, fmt.Sprintf(`/lotto task fill %v`, taskID))
 				if err == nil {
 					mustRun(t, SL, fmt.Sprintf(`/lotto task schedule %v`, taskID))
-					task, err := SL.LoadTask(taskID)
-					require.NoError(t, err)
+					task, err1 := SL.LoadTask(taskID)
+					require.NoError(t, err1)
 					for _, user := range task.Users.AsArray() {
 						key := user.MarkdownWithSkills().String()
 						served[key]++

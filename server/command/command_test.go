@@ -89,8 +89,8 @@ func getTestSLWithPoster(t testing.TB, ctrl *gomock.Controller, poster bot.Poste
 			solarlottery.Type: solarlottery.New(),
 			"":                solarlottery.New(), // default
 		},
-		Logger: &bot.TestLogger{TB: t},
-		// Logger: &bot.NilLogger{},
+		// Logger: &bot.TestLogger{TB: t},
+		Logger: &bot.NilLogger{},
 		Poster: poster,
 		Store:  kvstore.NewStore(kvstore.NewCacheKVStore(nil)),
 	}
