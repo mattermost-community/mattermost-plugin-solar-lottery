@@ -17,23 +17,23 @@ import (
 )
 
 func (c *Command) rotationNew(parameters []string) (md.MD, error) {
-	fillType := c.assureFS().String("fill-type", "", fmt.Sprintf("fill type: %s or %s", solarlottery.Type, queue.Type))
-	taskType := c.assureFS().String("task-type", "", fmt.Sprintf("task type: %s or %s", sl.TaskTypeShift, sl.TaskTypeTicket))
+	fillType := c.flags().String("fill-type", "", fmt.Sprintf("fill type: %s or %s", solarlottery.Type, queue.Type))
+	taskType := c.flags().String("task-type", "", fmt.Sprintf("task type: %s or %s", sl.TaskTypeShift, sl.TaskTypeTicket))
 	beginning, err := c.withTimeFlag("beginning", "beginning of time for shifts")
 	if err != nil {
 		return c.flagUsage(), err
 	}
 	period := types.Period{}
-	c.assureFS().Var(&period, "period", "recurrence period")
-	seed := c.assureFS().Int64("seed", intNoValue, "seed to use")
-	fuzz := c.assureFS().Int64("fuzz", intNoValue, `increase fill randomness`)
+	c.flags().Var(&period, "period", "recurrence period")
+	seed := c.flags().Int64("seed", intNoValue, "seed to use")
+	fuzz := c.flags().Int64("fuzz", intNoValue, `increase fill randomness`)
 
-	err = c.fs.Parse(parameters)
+	err = c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}
 
-	if c.fs.Arg(0) == "" {
+	if c.flags().Arg(0) == "" {
 		return c.flagUsage(), errors.Errorf("must specify rotation name")
 	}
 
@@ -62,7 +62,7 @@ func (c *Command) rotationNew(parameters []string) (md.MD, error) {
 	if *fuzz == intNoValue {
 		*fuzz = 0
 	}
-	r, err := c.SL.MakeRotation(c.fs.Arg(0))
+	r, err := c.SL.MakeRotation(c.flags().Arg(0))
 	if err != nil {
 		return "", err
 	}

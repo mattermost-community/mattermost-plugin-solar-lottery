@@ -9,8 +9,8 @@ import (
 )
 
 func (c *Command) userQualify(parameters []string) (md.MD, error) {
-	skills := c.assureFS().StringSliceP("skills", "s", nil, "skills, with optional levels (1-4) as in `--skills=web-3,server-2`.")
-	err := c.fs.Parse(parameters)
+	skills := c.flags().StringSliceP("skills", "s", nil, "skills, with optional levels (1-4) as in `--skills=web-3,server-2`.")
+	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}
@@ -25,7 +25,7 @@ func (c *Command) userQualify(parameters []string) (md.MD, error) {
 		skillLevels = append(skillLevels, skillLevel)
 	}
 
-	mattermostUserIDs, err := c.resolveUsernames(c.fs.Args())
+	mattermostUserIDs, err := c.resolveUsernames(c.flags().Args())
 	if err != nil {
 		return "", err
 	}

@@ -17,12 +17,10 @@ func TestUserLeave(t *testing.T) {
 			/lotto user join test-rotation @id1 @id2 @id3 @id4
 			`)
 
-		users := mustRunUsersJoin(t, SL,
-			`/lotto user leave test-rotation @id2 @id3 @id5`)
+		users := mustRunUsersJoin(t, SL, `/lotto user leave test-rotation @id2 @id3 @id5`)
 		require.Equal(t, []string{"id2", "id3"}, users.TestIDs())
 
-		r := mustRunRotation(t, SL,
-			`/lotto rotation show test-rotation`)
+		r := mustRunRotation(t, SL, `/lotto rotation show test-rotation`)
 		require.Equal(t, []string{"id1", "id4"}, r.MattermostUserIDs.TestIDs())
 	})
 }

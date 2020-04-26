@@ -9,12 +9,12 @@ import (
 )
 
 func (c *Command) userDisqualify(parameters []string) (md.MD, error) {
-	skills := c.assureFS().StringSliceP("skills", "s", nil, "skills to disqualify from, e.g. `--skills=web,server`")
-	err := c.fs.Parse(parameters)
+	skills := c.flags().StringSliceP("skills", "s", nil, "skills to disqualify from, e.g. `--skills=web,server`")
+	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}
-	mattermostUserIDs, err := c.resolveUsernames(c.fs.Args())
+	mattermostUserIDs, err := c.resolveUsernames(c.flags().Args())
 	if err != nil {
 		return "", err
 	}

@@ -21,16 +21,16 @@ func (c *Command) rotationSet(parameters []string) (md.MD, error) {
 }
 
 func (c *Command) rotationSetAutopilot(parameters []string) (md.MD, error) {
-	off := c.assureFS().Bool("off", false, "turn off")
-	create := c.assureFS().Bool("create", false, "create shifts automatically")
-	createPrior := c.assureFS().Duration("create-prior", 0, "create shifts this long before their scheduled start")
-	schedule := c.assureFS().Bool("schedule", false, "create shifts automatically")
-	schedulePrior := c.assureFS().Duration("schedule-prior", 0, "fill and schedule shifts this long before their scheduled start")
-	startFinish := c.assureFS().Bool("start-finish", false, "start and finish scheduled tasks")
-	remindStart := c.assureFS().Bool("remind-start", false, "remind shift users prior to start")
-	remindStartPrior := c.assureFS().Duration("remind-start-prior", 0, "remind shift users this long before the shift's start")
-	remindFinish := c.assureFS().Bool("remind-finish", false, "remind shift users prior to finish")
-	remindFinishPrior := c.assureFS().Duration("remind-finish-prior", 0, "remind shift users this long before the shift's finish")
+	off := c.flags().Bool("off", false, "turn off")
+	create := c.flags().Bool("create", false, "create shifts automatically")
+	createPrior := c.flags().Duration("create-prior", 0, "create shifts this long before their scheduled start")
+	schedule := c.flags().Bool("schedule", false, "create shifts automatically")
+	schedulePrior := c.flags().Duration("schedule-prior", 0, "fill and schedule shifts this long before their scheduled start")
+	startFinish := c.flags().Bool("start-finish", false, "start and finish scheduled tasks")
+	remindStart := c.flags().Bool("remind-start", false, "remind shift users prior to start")
+	remindStartPrior := c.flags().Duration("remind-start-prior", 0, "remind shift users this long before the shift's start")
+	remindFinish := c.flags().Bool("remind-finish", false, "remind shift users prior to finish")
+	remindFinishPrior := c.flags().Duration("remind-finish-prior", 0, "remind shift users this long before the shift's finish")
 	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
@@ -68,9 +68,9 @@ func (c *Command) rotationSetAutopilot(parameters []string) (md.MD, error) {
 
 func (c *Command) rotationSetFill(parameters []string) (md.MD, error) {
 	c.withFlagRotation()
-	seed := c.assureFS().Int64("seed", intNoValue, "seed to use")
-	fuzz := c.assureFS().Int64("fuzz", intNoValue, `increase fill randomness`)
-	err := c.fs.Parse(parameters)
+	seed := c.flags().Int64("seed", intNoValue, "seed to use")
+	fuzz := c.flags().Int64("fuzz", intNoValue, `increase fill randomness`)
+	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}
@@ -102,10 +102,10 @@ func (c *Command) rotationSetLimit(parameters []string) (md.MD, error) {
 func (c *Command) rotationSetNeed(require bool, parameters []string) (md.MD, error) {
 	c.withFlagRotation()
 	var skillLevel sl.SkillLevel
-	c.assureFS().VarP(&skillLevel, "skill", "s", "skill, with optional level (1-4) as in `--skill=web-3`.")
-	count := c.assureFS().Int("count", 1, "number of users")
-	clear := c.assureFS().Bool("clear", false, "remove the skill from the list")
-	err := c.fs.Parse(parameters)
+	c.flags().VarP(&skillLevel, "skill", "s", "skill, with optional level (1-4) as in `--skill=web-3`.")
+	count := c.flags().Int("count", 1, "number of users")
+	clear := c.flags().Bool("clear", false, "remove the skill from the list")
+	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}
@@ -131,9 +131,9 @@ func (c *Command) rotationSetNeed(require bool, parameters []string) (md.MD, err
 
 func (c *Command) rotationSetTask(parameters []string) (md.MD, error) {
 	c.withFlagRotation()
-	dur := c.assureFS().Duration("duration", 0, "duration")
-	grace := c.assureFS().Duration("grace", 0, "grace period after finishing a task")
-	err := c.fs.Parse(parameters)
+	dur := c.flags().Duration("duration", 0, "duration")
+	grace := c.flags().Duration("grace", 0, "grace period after finishing a task")
+	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}

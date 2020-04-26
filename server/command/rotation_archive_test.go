@@ -80,8 +80,7 @@ func TestRotationDelete(t *testing.T) {
 		mustRunJSON(t, SL, `/lotto rotation list`, &rr)
 		require.Equal(t, []string{"test", "test-345"}, rr)
 
-		_, err = run(t, SL, `
-			/lotto rotation show test-123`)
+		_, err = run(t, SL, `/lotto rotation show test-123`)
 		require.Equal(t, kvstore.ErrNotFound, err)
 	})
 

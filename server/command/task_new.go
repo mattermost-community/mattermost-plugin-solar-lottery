@@ -22,7 +22,7 @@ func (c *Command) taskNew(parameters []string) (md.MD, error) {
 
 func (c *Command) taskNewTicket(parameters []string) (md.MD, error) {
 	c.withFlagRotation()
-	summary := c.assureFS().String("summary", "", "task summary")
+	summary := c.flags().String("summary", "", "task summary")
 	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
@@ -42,7 +42,7 @@ func (c *Command) taskNewTicket(parameters []string) (md.MD, error) {
 
 func (c *Command) taskNewShift(parameters []string) (md.MD, error) {
 	c.withFlagRotation()
-	shiftNumber := c.assureFS().IntP("number", "n", 1, "shift number")
+	shiftNumber := c.flags().IntP("number", "n", 1, "shift number")
 	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err

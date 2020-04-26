@@ -25,10 +25,10 @@ func (c *Command) skillNew(parameters []string) (md.MD, error) {
 	if err != nil {
 		return c.flagUsage(), err
 	}
-	if len(c.fs.Args()) != 1 {
+	if len(c.flags().Args()) != 1 {
 		return c.flagUsage(), errors.New("must specify skill")
 	}
-	skill := types.ID(c.fs.Arg(0))
+	skill := types.ID(c.flags().Arg(0))
 
 	err = c.SL.AddKnownSkill(skill)
 	if err != nil {
@@ -46,10 +46,10 @@ func (c *Command) skillDelete(parameters []string) (md.MD, error) {
 	if err != nil {
 		return c.flagUsage(), err
 	}
-	if len(c.fs.Args()) != 1 {
+	if len(c.flags().Args()) != 1 {
 		return c.flagUsage(), errors.New("must specify skill")
 	}
-	skill := types.ID(c.fs.Arg(0))
+	skill := types.ID(c.flags().Arg(0))
 
 	err = c.SL.DeleteKnownSkill(skill)
 	if err != nil {

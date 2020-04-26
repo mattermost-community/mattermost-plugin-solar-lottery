@@ -36,22 +36,14 @@ const (
 	commandFill        = "fill"
 	commandFinish      = "finish"
 	commandInfo        = "info"
-	commandIssue       = "issue"
-	commandIssueSource = "issue-source"
 	commandJoin        = "join"
 	commandLeave       = "leave"
 	commandLimit       = "limit"
 	commandList        = "list"
 	commandLog         = "log"
-	commandMax         = "max"
-	commandMin         = "min"
 	commandNew         = "new"
 	commandSet         = "set"
-	commandOpen        = "open"
-	commandParam       = "param"
-	commandPut         = "put"
 	commandQualify     = "qualify"
-	commandRandom      = "random"
 	commandRequire     = "require"
 	commandRotation    = "rotation"
 	commandSchedule    = "schedule"
@@ -68,7 +60,6 @@ const (
 
 // Command handles commands
 type Command struct {
-	// Config      *config.Config
 	SL          sl.SL
 	ConfigStore config.Store
 	Context     *plugin.Context
@@ -199,8 +190,7 @@ func (c *Command) debugClean(parameters []string) (md.MD, error) {
 }
 
 func (c *Command) parse(parameters []string) error {
-	c.assureFS()
-	err := c.fs.Parse(parameters)
+	err := c.flags().Parse(parameters)
 	if err != nil {
 		return err
 	}
@@ -212,7 +202,7 @@ func (c *Command) parse(parameters []string) error {
 	return nil
 }
 
-func (c *Command) assureFS() *pflag.FlagSet {
+func (c *Command) flags() *pflag.FlagSet {
 	if c.fs == nil {
 		c.fs = pflag.NewFlagSet("", pflag.ContinueOnError)
 		c.fs.BoolVar(&c.outputJson, "json", false, "output as JSON")
@@ -227,12 +217,12 @@ func (c *Command) withTimeFlag(flag, desc string) (*types.Time, error) {
 		return nil, err
 	}
 	t := actingUser.Time(types.Time{})
-	c.assureFS().Var(&t, flag, desc)
+	c.flags().Var(&t, flag, desc)
 	return &t, nil
 }
 
 func (c *Command) withFlagRotation() {
-	c.assureFS().StringP("rotation", "r", "", "rotation reference")
+	c.flags().StringP("rotation", "r", "", "rotation reference")
 }
 
 func (c *Command) resolveUsernames(args []string) (mattermostUserIDs *types.IDSet, err error) {
@@ -263,11 +253,11 @@ func (c *Command) resolveUsernames(args []string) (mattermostUserIDs *types.IDSe
 }
 
 func (c *Command) resolveRotationUsernames() (types.ID, *types.IDSet, error) {
-	ref, _ := c.fs.GetString("rotation")
+	ref, _ := c.flags().GetString("rotation")
 	usernames := []string{}
 	rotationID := types.ID(ref)
 
-	for _, arg := range c.fs.Args() {
+	for _, arg := range c.flags().Args() {
 		if strings.HasPrefix(arg, "@") {
 			usernames = append(usernames, arg)
 		} else {
@@ -298,7 +288,7 @@ func (c *Command) resolveRotationUsernames() (types.ID, *types.IDSet, error) {
 }
 
 func (c *Command) resolveTaskIDUsernames() (types.ID, *types.IDSet, error) {
-	args := c.fs.Args()
+	args := c.flags().Args()
 	if len(args) == 0 {
 		return "", nil, errors.New("Task ID is required")
 	}
@@ -322,13 +312,13 @@ func (c *Command) resolveTaskIDUsernames() (types.ID, *types.IDSet, error) {
 
 func (c *Command) resolveRotation() (types.ID, error) {
 	var err error
-	ref, _ := c.fs.GetString("rotation")
+	ref, _ := c.flags().GetString("rotation")
 	rotationID := types.ID(ref)
 	if ref == "" {
-		if len(c.fs.Args()) < 1 {
+		if len(c.flags().Args()) < 1 {
 			return "", errors.New("no rotation specified")
 		}
-		rotationID, err = c.SL.ResolveRotationName(c.fs.Arg(0))
+		rotationID, err = c.SL.ResolveRotationName(c.flags().Arg(0))
 		if err != nil {
 			return "", err
 		}

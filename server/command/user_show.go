@@ -13,7 +13,7 @@ func (c *Command) userShow(parameters []string) (md.MD, error) {
 		return c.flagUsage(), err
 	}
 
-	mattermostUserIDs, err := c.resolveUsernames(c.fs.Args())
+	mattermostUserIDs, err := c.resolveUsernames(c.flags().Args())
 	if err != nil {
 		return "", err
 	}
