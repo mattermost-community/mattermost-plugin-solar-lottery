@@ -92,3 +92,13 @@ func (p *Period) ForTime(beginning, forTime Time) (int, Time) {
 		beginning = p.ForNumber(beginning, 1)
 	}
 }
+
+func (p *Period) AverageDuration() time.Duration {
+	return map[string]time.Duration{
+		EveryDuration: p.Duration,
+		EveryDay:      24 * time.Hour,
+		EveryWeek:     7 * 24 * time.Hour,
+		EveryTwoWeeks: 2 * 7 * 24 * time.Hour,
+		EveryMonth:    time.Duration(730.08 * float64(time.Hour)),
+	}[p.Period]
+}

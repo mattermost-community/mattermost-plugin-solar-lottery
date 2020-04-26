@@ -12,7 +12,7 @@ func (c *Command) rotation(parameters []string) (md.MD, error) {
 		commandDebugDelete: c.rotationDebugDelete,
 		commandList:        c.rotationList,
 		commandNew:         c.rotationNew,
-		commandParam:       c.rotationParam,
+		commandSet:         c.rotationSet,
 		commandShow:        c.rotationShow,
 	}
 

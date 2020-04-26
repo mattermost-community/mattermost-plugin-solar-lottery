@@ -28,6 +28,16 @@ A [Mattermost](https://mattermost.com) plugin somewhat similar to pager duty, al
 3. Configure plugin settings as desired.
 4. Start using the plugin!
 
-## Commands / Usage / Demo
+## By example
 
-For a comprehensive list of commands and use cases please See [Demo](demo.md)
+### Set u
+
+
+
+## Usage
+
+1. Start by creating a rotation with `/lotto rotation new` command
+2. 
+## Commands 
+## Demo
+

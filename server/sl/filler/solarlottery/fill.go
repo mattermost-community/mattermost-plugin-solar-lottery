@@ -20,9 +20,10 @@ type fill struct {
 	// Parameters
 	r              *sl.Rotation
 	task           *sl.Task
-	time           int64 // seconds, unix time
+	forTime        int64 // seconds, unix time
 	doublingPeriod int64 // seconds
 	rand           *rand.Rand
+	pickRequire    func() (done bool, picked *sl.Need)
 
 	// State
 	pool         *sl.Users
@@ -33,9 +34,10 @@ type fill struct {
 	limit        *sl.Needs
 }
 
-func newFill(r *sl.Rotation, t *sl.Task, forTime types.Time, logger bot.Logger) *fill {
-	if forTime.IsZero() && !t.ExpectedStart.IsZero() {
-		forTime = t.ExpectedStart
+func newFill(r *sl.Rotation, t *sl.Task, now types.Time, logger bot.Logger) *fill {
+	forTime := t.Interval().Start
+	if forTime.IsZero() {
+		forTime = now
 	}
 
 	pool := sl.NewUsers()
@@ -43,26 +45,31 @@ func newFill(r *sl.Rotation, t *sl.Task, forTime types.Time, logger bot.Logger) 
 		pool = r.Users.Clone()
 	}
 
+	// Double the weights every period (on average). Specifying fuzz makes the
+	// weights grow slower, thus making the user choice more random.
+	doubling := (1 + r.FillSettings.Fuzz) *
+		int64(r.FillSettings.Period.AverageDuration().Seconds())
+
 	f := fill{
 		Logger:         logger,
 		r:              r,
 		task:           t,
-		time:           forTime.Unix(),
+		forTime:        forTime.Unix(),
 		pool:           pool,
 		poolWeights:    map[types.ID]float64{},
 		filled:         sl.NewUsers(),
 		require:        t.Require.Clone(),
 		limit:          t.Limit.Clone(),
 		requirePools:   map[types.ID]*sl.Users{},
-		doublingPeriod: 7 * 24 * 3600, // 14 days
-		rand:           rand.New(rand.NewSource(r.Seed)),
+		doublingPeriod: doubling,
+		rand:           rand.New(rand.NewSource(r.FillSettings.Seed)),
 	}
 	f.userWeightF = f.userWeight
 
 	// remove any unavailable users from the pool
 	for _, user := range f.pool.AsArray() {
 		overlapping := user.FindUnavailable(
-			types.NewDurationInterval(t.ExpectedStart, t.ExpectedDuration), r.RotationID)
+			types.NewDurationInterval(t.ExpectedStart, t.ExpectedDuration), r.RotationID, "")
 		if len(overlapping) == 0 {
 			continue
 		}
@@ -90,7 +97,12 @@ func (f *fill) fill() (*sl.Users, error) {
 	f.Debugf(f.markdown())
 
 	for {
-		done, need := f.pickRequiredNeed()
+		pickRequire := f.pickRequire
+		if pickRequire == nil {
+			// Changing this will break many tests
+			pickRequire = f.pickRequireWeightedRandom
+		}
+		done, need := pickRequire()
 		if done {
 			break
 		}
@@ -98,7 +110,7 @@ func (f *fill) fill() (*sl.Users, error) {
 		for {
 			user := f.pickUser(f.requirePools[need.GetID()])
 			if user == nil {
-				return nil, f.newError(need, sl.ErrFillInsufficient)
+				return nil, f.newError(*need, sl.ErrFillInsufficient)
 			}
 
 			// The picked user is either accepted, or declined based on Limit
@@ -108,13 +120,12 @@ func (f *fill) fill() (*sl.Users, error) {
 				f.Debugf("...skipped user %s: would exceed limits on %s", user.Markdown(), violated.Markdown())
 				continue
 			}
-			f.Debugf("...picked %s for %s, remaining R: %s, L: %s", user.MarkdownWithSkills(), need.Markdown(), f.require.Markdown(), f.limit.Markdown())
+			f.Debugf("...picked %s for %s", user.MarkdownWithSkills(), need)
 			break
 		}
 	}
 
-	f.Debugf("filled %s into %s", f.filled.MarkdownWithSkills(), f.task.Markdown())
-
+	f.Debugf("filled %s for %s", f.filled.MarkdownWithSkills(), f.task.Markdown())
 	return f.filled, nil
 }
 
@@ -141,14 +152,11 @@ func (f *fill) fillUser(user *sl.User, preassigned bool) (violated *sl.Needs) {
 }
 
 func (f *fill) markdown() string {
-	ws := newSorter(0)
-	total := float64(0)
+	w := NewWeighted()
 	for _, user := range f.pool.AsArray() {
-		weight := f.userWeight(user)
-		ws.Append(user.MattermostUserID, weight)
-		total += weight
+		w.Append(user.MattermostUserID, f.userWeight(user))
 	}
-	sort.Sort(ws)
+	sort.Sort(w)
 	out := ""
 	out += fmt.Sprintf("filling task %s:\n", f.task.Markdown())
 	if !f.require.IsEmpty() {
@@ -157,10 +165,13 @@ func (f *fill) markdown() string {
 	if !f.limit.IsEmpty() {
 		out += fmt.Sprintf("- Limits: %s\n", f.limit.Markdown())
 	}
-	out += fmt.Sprintf("- User pool:\n")
-	for i, id := range ws.IDs {
+	if !f.filled.IsEmpty() {
+		out += fmt.Sprintf("- Pre-assigned users: %s\n", f.filled.MarkdownWithSkills())
+	}
+	out += fmt.Sprintf("- User pool (%v):\n", w.Len())
+	for i, id := range w.ids {
 		user := f.pool.Get(id)
-		out += fmt.Sprintf("  1. **%.3f**: %s\n", ws.Weights[i]/total, user.MarkdownWithSkills())
+		out += fmt.Sprintf("  %v. **%.5f**: %s\n", i, w.weights[i]/w.total, user.MarkdownWithSkills())
 	}
 	return out
 }

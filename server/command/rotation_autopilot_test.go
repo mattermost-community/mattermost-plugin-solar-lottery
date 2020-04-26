@@ -15,23 +15,17 @@ import (
 
 func TestRotationAutopilot(t *testing.T) {
 	t.Run("happy set and off", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
+		ctrl, SL := defaultEnv(t)
 		defer ctrl.Finish()
-		SL, _ := getTestSL(t, ctrl)
 
-		err := runCommands(t, SL, `
-			/lotto rotation new TEST --beginning 2020-01-05T09:30
-		`)
-		require.NoError(t, err)
+		mustRunMulti(t, SL, `/lotto rotation new TEST --beginning 2020-01-05T09:30 --seed=42`)
 
-		r := sl.NewRotation()
-		_, err = runJSONCommand(t, SL, "/lotto rotation autopilot TEST "+
+		r := mustRunRotation(t, SL, "/lotto rotation set autopilot TEST "+
 			"--create --create-prior 500h "+
 			"--schedule --schedule-prior=100h "+
 			"--start-finish "+
 			"--remind-start --remind-start-prior=24h "+
-			"--remind-finish --remind-finish-prior=24h ", r)
-		require.NoError(t, err)
+			"--remind-finish --remind-finish-prior=24h ")
 		require.Equal(t, types.ID("TEST"), r.RotationID)
 		require.Equal(t, sl.AutopilotSettings{
 			Create:            true,
@@ -45,9 +39,7 @@ func TestRotationAutopilot(t *testing.T) {
 			StartFinish:       true,
 		}, r.AutopilotSettings)
 
-		r = sl.NewRotation()
-		_, err = runJSONCommand(t, SL, "/lotto rotation autopilot TEST --off", r)
-		require.NoError(t, err)
+		r = mustRunRotation(t, SL, "/lotto rotation set autopilot TEST --off")
 		require.Equal(t, sl.AutopilotSettings{}, r.AutopilotSettings)
 	})
 
@@ -72,26 +64,24 @@ func TestRotationAutopilot(t *testing.T) {
 		defer ctrl.Finish()
 		SL, store := getTestSL(t, ctrl)
 
-		err := runCommands(t, SL, `
+		mustRunMulti(t, SL, `
 			# 3 week grace period, 2 people/shift need 6 people to function; give 8 people
 			
-			/lotto rotation new TEST --beginning 2020-01-05T09:30 --seed=0
-			/lotto rotation param shift TEST --period biweekly 
-			/lotto rotation param grace TEST --duration 400h
-			/lotto rotation param min TEST --count 2
-			/lotto user join TEST @test-user1 @test-user2 @test-user3 @test-user4 @test-user5 @test-user6 @test-user7 @test-user8
-			/lotto rotation autopilot TEST --create --create-prior 800h --schedule --schedule-prior=100h --start-finish --remind-start --remind-start-prior=24h --remind-finish --remind-finish-prior=24h
+			/lotto rotation new TEST --task-type=shift --beginning=2020-01-05T09:30 --period=biweekly --seed=873647632
+			/lotto rotation set task TEST --grace 400h
+			/lotto rotation set require TEST --count 2
+			/lotto rotation set autopilot TEST --create --create-prior 800h --schedule --schedule-prior=100h --start-finish --remind-start --remind-start-prior=24h --remind-finish --remind-finish-prior=24h
+			/lotto user join TEST @test-user1 @test-user2 @test-user3 @test-user4 @test-user5 @test-user6 @test-user7 @test-user8 --starting 2020-01-01
 		`)
-		require.NoError(t, err)
 
 		check := func(now, expected string) {
-			o, cmderr := runCommand(t, SL, `/lotto rotation autopilot TEST --run --now=`+now)
+			o, cmderr := run(t, SL, `/lotto rotation autopilot TEST --now=`+now)
 			require.NoError(t, cmderr, now)
 			require.Equal(t, expected, string(o), now)
 		}
 
 		checkNothing := func(now string) {
-			check(now, `@test-user-username ran autopilot on TEST for `+now+`.
+			check(now, `@test-user ran autopilot on TEST for `+now+`.
   - finish reminder: nothing to do
   - finish: nothing to do
   - create shift: nothing to do
@@ -100,7 +90,7 @@ func TestRotationAutopilot(t *testing.T) {
   - start: nothing to do`)
 		}
 
-		check(`2020-01-01T12:00`, `@test-user-username ran autopilot on TEST for 2020-01-01T12:00.
+		check(`2020-01-01T12:00`, `@test-user ran autopilot on TEST for 2020-01-01T12:00.
   - finish reminder: nothing to do
   - finish: nothing to do
   - create shift: created 3 shifts:
@@ -112,7 +102,7 @@ func TestRotationAutopilot(t *testing.T) {
   - start: nothing to do`)
 
 		task := sl.Task{}
-		err = store.Entity(sl.KeyTask).Load("TEST#0", &task)
+		err := store.Entity(sl.KeyTask).Load("TEST#0", &task)
 		require.NoError(t, err)
 		require.Equal(t, sl.TaskStatePending, task.State)
 		require.Equal(t, types.Time{}, task.ActualStart)
@@ -150,12 +140,12 @@ func TestRotationAutopilot(t *testing.T) {
 		err = store.Entity(sl.KeyTask).Load("TEST#3", &task)
 		require.Error(t, err)
 
-		check(`2020-01-02T12:00`, `@test-user-username ran autopilot on TEST for 2020-01-02T12:00.
+		check(`2020-01-02T12:00`, `@test-user ran autopilot on TEST for 2020-01-02T12:00.
   - finish reminder: nothing to do
   - finish: nothing to do
   - create shift: nothing to do
   - fill and schedule: processed 1 tasks:
-    - Auto-assigned @test-user8-username, @test-user2-username to ticket TEST#0, transitioned TEST#0 to scheduled
+    - Auto-assigned @test-user6 (none), @test-user2 (none) to ticket TEST#0, transitioned TEST#0 to scheduled
   - start reminder: nothing to do
   - start: nothing to do`)
 
@@ -170,11 +160,11 @@ func TestRotationAutopilot(t *testing.T) {
 		require.Equal(t, 336*time.Hour, task.ExpectedDuration)
 		require.Equal(t, types.MustParseTime("2020-01-05T17:30"), task.ExpectedStart)
 		require.Equal(t, 400*time.Hour, task.Grace)
-		require.Equal(t, []string{"test-user2", "test-user8"}, task.MattermostUserIDs.TestIDs())
+		require.Equal(t, []string{"test-user2", "test-user6"}, task.MattermostUserIDs.TestIDs())
 
 		checkNothing(`2020-01-03T12:00`)
 
-		check(`2020-01-04T12:00`, `@test-user-username ran autopilot on TEST for 2020-01-04T12:00.
+		check(`2020-01-04T12:00`, `@test-user ran autopilot on TEST for 2020-01-04T12:00.
   - finish reminder: nothing to do
   - finish: nothing to do
   - create shift: nothing to do
@@ -182,7 +172,7 @@ func TestRotationAutopilot(t *testing.T) {
   - start reminder: messaged 2 users of 1 tasks
   - start: nothing to do`)
 
-		check(`2020-01-05T12:00`, `@test-user-username ran autopilot on TEST for 2020-01-05T12:00.
+		check(`2020-01-05T12:00`, `@test-user ran autopilot on TEST for 2020-01-05T12:00.
   - finish reminder: nothing to do
   - finish: nothing to do
   - create shift: nothing to do
@@ -209,7 +199,7 @@ func TestRotationAutopilot(t *testing.T) {
 		checkNothing(`2020-01-13`)
 		checkNothing(`2020-01-14`)
 
-		check(`2020-01-15`, `@test-user-username ran autopilot on TEST for 2020-01-15.
+		check(`2020-01-15`, `@test-user ran autopilot on TEST for 2020-01-15.
   - finish reminder: nothing to do
   - finish: nothing to do
   - create shift: created 1 shifts:
@@ -226,19 +216,19 @@ func TestRotationAutopilot(t *testing.T) {
 		require.Error(t, err)
 
 		check(`2020-01-16`,
-			`@test-user-username ran autopilot on TEST for 2020-01-16.
+			`@test-user ran autopilot on TEST for 2020-01-16.
   - finish reminder: nothing to do
   - finish: nothing to do
   - create shift: nothing to do
   - fill and schedule: processed 1 tasks:
-    - Auto-assigned @test-user7-username, @test-user3-username to ticket TEST#1, transitioned TEST#1 to scheduled
+    - Auto-assigned @test-user7 (none), @test-user1 (none) to ticket TEST#1, transitioned TEST#1 to scheduled
   - start reminder: nothing to do
   - start: nothing to do`)
 
 		checkNothing(`2020-01-17`)
 		checkNothing(`2020-01-18`)
 
-		check(`2020-01-19`, `@test-user-username ran autopilot on TEST for 2020-01-19.
+		check(`2020-01-19`, `@test-user ran autopilot on TEST for 2020-01-19.
   - finish reminder: messaged 2 users of 1 tasks
   - finish: nothing to do
   - create shift: nothing to do
@@ -246,7 +236,7 @@ func TestRotationAutopilot(t *testing.T) {
   - start reminder: messaged 2 users of 1 tasks
   - start: nothing to do`)
 
-		check(`2020-01-20`, `@test-user-username ran autopilot on TEST for 2020-01-20.
+		check(`2020-01-20`, `@test-user ran autopilot on TEST for 2020-01-20.
   - finish reminder: nothing to do
   - finished: 1 tasks
   - create shift: nothing to do
@@ -282,7 +272,7 @@ func TestRotationAutopilot(t *testing.T) {
 		checkNothing(`2020-01-27`)
 		checkNothing(`2020-01-28`)
 
-		check(`2020-01-29`, `@test-user-username ran autopilot on TEST for 2020-01-29.
+		check(`2020-01-29`, `@test-user ran autopilot on TEST for 2020-01-29.
   - finish reminder: nothing to do
   - finish: nothing to do
   - create shift: created 1 shifts:
@@ -296,12 +286,12 @@ func TestRotationAutopilot(t *testing.T) {
 		require.Equal(t, sl.TaskStatePending, task.State)
 		require.Equal(t, types.MustParseTime("2020-03-01T17:30"), task.ExpectedStart)
 
-		check(`2020-01-30`, `@test-user-username ran autopilot on TEST for 2020-01-30.
+		check(`2020-01-30`, `@test-user ran autopilot on TEST for 2020-01-30.
   - finish reminder: nothing to do
   - finish: nothing to do
   - create shift: nothing to do
   - fill and schedule: processed 1 tasks:
-    - Auto-assigned @test-user6-username, @test-user1-username to ticket TEST#2, transitioned TEST#2 to scheduled
+    - Auto-assigned @test-user5 (none), @test-user3 (none) to ticket TEST#2, transitioned TEST#2 to scheduled
   - start reminder: nothing to do
   - start: nothing to do`)
 

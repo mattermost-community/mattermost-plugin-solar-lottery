@@ -19,7 +19,7 @@ func New() sl.TaskFiller {
 	return &taskFiller{}
 }
 
-func (*taskFiller) FillTask(r *sl.Rotation, task *sl.Task, forTime types.Time, logger bot.Logger) (*sl.Users, error) {
-	f := newFill(r, task, forTime, logger)
+func (*taskFiller) FillTask(r *sl.Rotation, task *sl.Task, now types.Time, logger bot.Logger) (*sl.Users, error) {
+	f := newFill(r, task, now, logger)
 	return f.fill()
 }

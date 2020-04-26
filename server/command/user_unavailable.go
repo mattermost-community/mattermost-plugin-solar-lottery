@@ -10,12 +10,12 @@ import (
 )
 
 func (c *Command) userUnavailable(parameters []string) (md.MD, error) {
-	clear := c.withFlagClear()
-	start, err := c.withFlagStart()
+	clear := c.assureFS().Bool("clear", false, "mark as available by clearing all overlapping unavailability events")
+	start, err := c.withTimeFlag("start", "start time")
 	if err != nil {
 		return "", err
 	}
-	finish, err := c.withFlagFinish()
+	finish, err := c.withTimeFlag("finish", "end time")
 	if err != nil {
 		return "", err
 	}

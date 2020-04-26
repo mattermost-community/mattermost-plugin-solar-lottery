@@ -131,6 +131,10 @@ type TestLogger struct {
 }
 
 func (l *TestLogger) With(logContext LogContext) Logger {
+	return l
+}
+
+func (l *TestLogger) with(logContext LogContext) Logger {
 	newl := *l
 	if len(newl.logContext) == 0 {
 		newl.logContext = map[string]interface{}{}
@@ -142,9 +146,11 @@ func (l *TestLogger) With(logContext LogContext) Logger {
 }
 
 func (l *TestLogger) Timed() Logger {
-	return l.With(LogContext{
+	newl := *l
+	newl.logContext = map[string]interface{}{
 		timed: time.Now(),
-	})
+	}
+	return &newl
 }
 
 func (l *TestLogger) logf(prefix, format string, args ...interface{}) {

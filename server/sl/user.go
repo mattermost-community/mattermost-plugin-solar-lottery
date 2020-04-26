@@ -10,6 +10,7 @@ import (
 
 	"github.com/mattermost/mattermost-server/v5/model"
 
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
@@ -57,32 +58,32 @@ func (user *User) String() string {
 	}
 }
 
-func (user *User) Markdown() string {
+func (user *User) Markdown() md.MD {
 	if user.mattermostUser != nil {
-		return fmt.Sprintf("@%s", user.mattermostUser.Username)
+		return md.Markdownf("@%s", user.mattermostUser.Username)
 	} else {
-		return fmt.Sprintf("userID `%s`", user.MattermostUserID)
+		return md.Markdownf("userID `%s`", user.MattermostUserID)
 	}
 }
 
-func (user *User) MarkdownUnavailable(u *Unavailable) string {
-	return fmt.Sprintf("%s: %s", u.Reason, user.MarkdownInterval(u.Interval))
+func (user *User) MarkdownUnavailable(u *Unavailable) md.MD {
+	return md.Markdownf("%s: %s", u.Reason, user.MarkdownInterval(u.Interval))
 }
 
 func (user *User) Time(t types.Time) types.Time {
 	return t.In(user.location)
 }
 
-func (user *User) MarkdownInterval(i types.Interval) string {
-	return fmt.Sprintf("%s to %s",
+func (user *User) MarkdownInterval(i types.Interval) md.MD {
+	return md.Markdownf("%s to %s",
 		user.Time(i.Start), user.Time(i.Finish))
 }
 
-func (user *User) MarkdownWithSkills() string {
-	return fmt.Sprintf("%s %s", user.Markdown(), user.MarkdownSkills())
+func (user *User) MarkdownWithSkills() md.MD {
+	return md.Markdownf("%s %s", user.Markdown(), user.MarkdownSkills())
 }
 
-func (user *User) MarkdownSkills() string {
+func (user *User) MarkdownSkills() md.MD {
 	skillLevels := []string{}
 	for _, s := range user.SkillLevels.IDs() {
 		skillLevels = append(skillLevels, NewSkillLevel(s, Level(user.SkillLevels.Get(s))).String())
@@ -91,7 +92,7 @@ func (user *User) MarkdownSkills() string {
 		return "(none)"
 	}
 	ss := strings.Join(skillLevels, ", ")
-	return fmt.Sprintf("(%s)", ss)
+	return md.Markdownf("(%s)", ss)
 }
 
 func (user User) MattermostUsername() string {
@@ -101,7 +102,8 @@ func (user User) MattermostUsername() string {
 	return user.mattermostUser.Username
 }
 
-func (user *User) AddUnavailable(uu ...*Unavailable) {
+func (user *User) AddUnavailable(uu ...*Unavailable) []*Unavailable {
+	var added []*Unavailable
 UNAVAILABLE:
 	for _, u := range uu {
 		for _, existing := range user.Calendar {
@@ -110,70 +112,65 @@ UNAVAILABLE:
 			}
 		}
 		user.Calendar = append(user.Calendar, u)
-		unavailableBy(byStartDate).Sort(user.Calendar)
+		added = append(added, u)
 	}
+	unavailableBy(byStartDate).Sort(user.Calendar)
+	return added
 }
 
-func (user *User) FindUnavailable(interval types.Interval, applicableToRotationID types.ID) []*Unavailable {
+func (user *User) FindUnavailable(matchInterval types.Interval, matchRotationID, matchTaskID types.ID) []*Unavailable {
 	var found []*Unavailable
-	for _, unavailable := range user.Calendar {
-		s, f := unavailable.Start, unavailable.Finish
-		if s.Before(interval.Start.Time) {
-			s = interval.Start
-		}
-		if f.After(interval.Finish.Time) {
-			f = interval.Finish
-		}
-		if !s.Before(f.Time) {
-			continue
-		}
-
-		// Overlap, only consider events applicable to the rotation
-		if applicableToRotationID == "" ||
-			(unavailable.Reason != ReasonTask && unavailable.Reason != ReasonGrace) ||
-			unavailable.RotationID != applicableToRotationID {
-			continue
-		}
-
-		found = append(found, unavailable)
-	}
+	user.ScanUnavailable(
+		matchInterval, matchRotationID, matchTaskID,
+		func(event *Unavailable) {
+			found = append(found, event)
+		},
+		nil,
+	)
 	return found
 }
 
-func (user *User) ClearUnavailable(interval types.Interval, applicableToRotationID types.ID) []*Unavailable {
-	var cleared, updated []*Unavailable
-	for _, unavailable := range user.Calendar {
-		s, f := unavailable.Start, unavailable.Finish
-		if s.Before(interval.Start.Time) {
-			s = interval.Start
-		}
-		if f.After(interval.Finish.Time) {
-			f = interval.Finish
-		}
-
-		if s.Before(f.Time) {
-			// Overlap, only consider events applicable to the rotation
-			if applicableToRotationID == "" {
-				cleared = append(cleared, unavailable)
-				continue
-			}
-			if (unavailable.Reason == ReasonTask || unavailable.Reason == ReasonGrace) &&
-				unavailable.RotationID == applicableToRotationID {
-				cleared = append(cleared, unavailable)
-				continue
-			}
-		}
-
-		updated = append(updated, unavailable)
-	}
-	user.Calendar = updated
+func (user *User) ClearUnavailable(matchInterval types.Interval, matchRotationID, matchTaskID types.ID) []*Unavailable {
+	var cleared, kept []*Unavailable
+	user.ScanUnavailable(
+		matchInterval, matchRotationID, matchTaskID,
+		func(event *Unavailable) {
+			cleared = append(cleared, event)
+		},
+		func(event *Unavailable) {
+			kept = append(kept, event)
+		},
+	)
+	user.Calendar = kept
 	return cleared
 }
 
-func (user *User) GetLastServed(r *Rotation) int64 {
-	last := user.LastServed.Get(r.RotationID)
-	if last <= 0 {
-		return r.Beginning.Unix()
+func (user *User) ScanUnavailable(matchInterval types.Interval, matchRotationID, matchTaskID types.ID,
+	matchf, nonmatchf func(*Unavailable)) {
+	for _, event := range user.Calendar {
+		if !matchInterval.IsEmpty() && !event.Overlaps(matchInterval) {
+			if nonmatchf != nil {
+				nonmatchf(event)
+			}
+			continue
+		}
+		if matchTaskID != "" && event.TaskID != matchTaskID {
+			if nonmatchf != nil {
+				nonmatchf(event)
+			}
+			continue
+		}
+		if matchRotationID != "" {
+			if (event.Reason != ReasonTask && event.Reason != ReasonGrace) ||
+				(event.RotationID != matchRotationID) {
+				if nonmatchf != nil {
+					nonmatchf(event)
+				}
+			}
+		}
+
+		if matchf != nil {
+			matchf(event)
+		}
 	}
-	return last
 }

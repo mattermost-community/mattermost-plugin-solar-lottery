@@ -22,6 +22,8 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
+const intNoValue = int64(0xBAADBEEF)
+
 const (
 	// commandForecast    = "forecast"
 	// commandGuess       = "guess"
@@ -33,7 +35,6 @@ const (
 	commandDisqualify  = "disqualify"
 	commandFill        = "fill"
 	commandFinish      = "finish"
-	commandGrace       = "grace"
 	commandInfo        = "info"
 	commandIssue       = "issue"
 	commandIssueSource = "issue-source"
@@ -45,10 +46,12 @@ const (
 	commandMax         = "max"
 	commandMin         = "min"
 	commandNew         = "new"
+	commandSet         = "set"
 	commandOpen        = "open"
 	commandParam       = "param"
 	commandPut         = "put"
 	commandQualify     = "qualify"
+	commandRandom      = "random"
 	commandRequire     = "require"
 	commandRotation    = "rotation"
 	commandSchedule    = "schedule"
@@ -63,46 +66,6 @@ const (
 	commandUser        = "user"
 )
 
-const (
-	flagPNumber   = "n"
-	flagPPeriod   = "p"
-	flagPRotation = "r"
-	flagPSkill    = "s"
-)
-
-const (
-	flagBeginning         = "beginning"
-	flagClear             = "clear"
-	flagCount             = "count"
-	flagCreate            = "create"
-	flagCreatePrior       = "create-prior"
-	flagDebugNow          = "debug-now"
-	flagDuration          = "duration"
-	flagFinish            = "finish"
-	flagForce             = "force"
-	flagGrace             = "grace"
-	flagJSON              = "json"
-	flagMax               = "max"
-	flagMin               = "min"
-	flagNow               = "now"
-	flagNumber            = "number"
-	flagOff               = "off"
-	flagPeriod            = "period"
-	flagRemindFinish      = "remind-finish"
-	flagRemindFinishPrior = "remind-finish-prior"
-	flagRemindStart       = "remind-start"
-	flagRemindStartPrior  = "remind-start-prior"
-	flagRotation          = "rotation"
-	flagRun               = "run"
-	flagSchedule          = "schedule"
-	flagSchedulePrior     = "schedule-prior"
-	flagSeed              = "seed"
-	flagSkill             = "skill"
-	flagStart             = "start"
-	flagStartFinish       = "start-finish"
-	flagSummary           = "summary"
-)
-
 // Command handles commands
 type Command struct {
 	// Config      *config.Config
@@ -115,6 +78,7 @@ type Command struct {
 	actualTrigger string
 	outputJson    bool
 	fs            *pflag.FlagSet
+	now           *types.Time
 }
 
 // RegisterFunc is a function that allows the runner to register commands with the mattermost server.
@@ -188,6 +152,10 @@ func (c *Command) handleCommand(
 		return c.subUsage(subcommands), errors.New("expected a (sub-)command")
 	}
 
+	if parameters[0] == "help" {
+		return c.subUsage(subcommands), nil
+	}
+
 	f := subcommands[parameters[0]]
 	if f == nil {
 		return c.subUsage(subcommands), errors.Errorf("unknown command: %s", parameters[0])
@@ -232,19 +200,25 @@ func (c *Command) debugClean(parameters []string) (md.MD, error) {
 
 func (c *Command) parse(parameters []string) error {
 	c.assureFS()
-	return c.fs.Parse(parameters)
+	err := c.fs.Parse(parameters)
+	if err != nil {
+		return err
+	}
+
+	if (*c.now).IsZero() {
+		now := types.NewTime(time.Now())
+		c.now = &now
+	}
+	return nil
 }
 
 func (c *Command) assureFS() *pflag.FlagSet {
 	if c.fs == nil {
 		c.fs = pflag.NewFlagSet("", pflag.ContinueOnError)
-		c.fs.BoolVar(&c.outputJson, flagJSON, false, "output as JSON")
+		c.fs.BoolVar(&c.outputJson, "json", false, "output as JSON")
+		c.now, _ = c.withTimeFlag("now", "specify the transaction time (default: now)")
 	}
 	return c.fs
-}
-
-func (c *Command) withFlagRotation() {
-	c.assureFS().StringP(flagRotation, flagPRotation, "", "rotation reference")
 }
 
 func (c *Command) withTimeFlag(flag, desc string) (*types.Time, error) {
@@ -257,112 +231,8 @@ func (c *Command) withTimeFlag(flag, desc string) (*types.Time, error) {
 	return &t, nil
 }
 
-func (c *Command) withFlagDebugNow() (*types.Time, error) {
-	return c.withTimeFlag(flagDebugNow, "end time")
-}
-
-func (c *Command) withFlagFinish() (*types.Time, error) {
-	return c.withTimeFlag(flagFinish, "end time")
-}
-
-func (c *Command) withFlagStart() (*types.Time, error) {
-	return c.withTimeFlag(flagStart, "start time")
-}
-
-func (c *Command) withFlagBeginning() (*types.Time, error) {
-	return c.withTimeFlag(flagBeginning, "beginning of time for shifts")
-}
-
-func (c *Command) withFlagSeed() *int64 {
-	return c.assureFS().Int64(flagSeed, 0xBAADBEEF, "seed to use")
-}
-
-func (c *Command) withFlagPeriod() *types.Period {
-	p := types.Period{}
-	c.assureFS().VarP(&p, flagPeriod, flagPPeriod, "recurrence period")
-	return &p
-}
-
-func (c *Command) withFlagClear() *bool {
-	return c.assureFS().Bool(flagClear, false, "mark as available by clearing all overlapping unavailability events")
-}
-
-func (c *Command) withFlagNumber() *int {
-	return c.assureFS().IntP(flagNumber, flagPNumber, 1, "shift number")
-}
-
-func (c *Command) withFlagMin() *bool {
-	return c.assureFS().Bool(flagMin, false, "add/update a minimum headcount requirement for a skill level")
-}
-
-func (c *Command) withFlagMax() *bool {
-	return c.assureFS().Bool(flagMax, false, "add/update a maximum headcount requirement for a skill level")
-}
-
-func (c *Command) withFlagDuration() *time.Duration {
-	return c.assureFS().Duration(flagDuration, 0, "duration")
-}
-
-func (c *Command) withFlagCount() *int {
-	return c.assureFS().Int(flagCount, 1, "number of users")
-}
-
-func (c *Command) withFlagSkill() *string {
-	return c.assureFS().StringP(flagSkill, flagPSkill, "", "Skill name")
-}
-
-func (c *Command) withFlagSkillLevel() *sl.SkillLevel {
-	var skillLevel sl.SkillLevel
-	c.assureFS().VarP(&skillLevel, flagSkill, flagPSkill, "Skill-level")
-	return &skillLevel
-}
-
-func (c *Command) withFlagSummary() *string {
-	return c.assureFS().String(flagSummary, "", "task summary")
-}
-
-func (c *Command) withFlagForce() *bool {
-	return c.assureFS().Bool(flagForce, false, "ignore constraints")
-}
-
-func (c *Command) withFlagOff() *bool {
-	return c.assureFS().Bool(flagOff, false, "turn off")
-}
-
-func (c *Command) withFlagStartFinish() *bool {
-	return c.assureFS().Bool(flagStartFinish, false, "start and finish scheduled tasks")
-}
-
-func (c *Command) withFlagRun() *bool {
-	return c.assureFS().Bool(flagRun, false, "run now")
-}
-
-func (c *Command) withFlagNow() (*types.Time, error) {
-	return c.withTimeFlag(flagNow, `specify the "now" time`)
-}
-
-func (c *Command) withFlagCreatePrior() (*bool, *time.Duration) {
-	create := c.assureFS().Bool(flagCreate, false, "create shifts automatically")
-	createPrior := c.assureFS().Duration(flagCreatePrior, 0, "create shifts this long before their scheduled start")
-	return create, createPrior
-}
-
-func (c *Command) withFlagSchedulePrior() (*bool, *time.Duration) {
-	schedule := c.assureFS().Bool(flagSchedule, false, "create shifts automatically")
-	schedulePrior := c.assureFS().Duration(flagSchedulePrior, 0, "fill and schedule shifts this long before their scheduled start")
-	return schedule, schedulePrior
-}
-
-func (c *Command) withFlagRemindStartPrior() (*bool, *time.Duration) {
-	notify := c.assureFS().Bool(flagRemindStart, false, "remind shift users prior to start")
-	notifyPrior := c.assureFS().Duration(flagRemindStartPrior, 0, "remind shift users this long before the shift's start")
-	return notify, notifyPrior
-}
-
-func (c *Command) withFlagRemindFinishPrior() (*bool, *time.Duration) {
-	notify := c.assureFS().Bool(flagRemindFinish, false, "remind shift users prior to finish")
-	notifyPrior := c.assureFS().Duration(flagRemindFinishPrior, 0, "remind shift users this long before the shift's finish")
-	return notify, notifyPrior
+func (c *Command) withFlagRotation() {
+	c.assureFS().StringP("rotation", "r", "", "rotation reference")
 }
 
 func (c *Command) resolveUsernames(args []string) (mattermostUserIDs *types.IDSet, err error) {
@@ -393,7 +263,7 @@ func (c *Command) resolveUsernames(args []string) (mattermostUserIDs *types.IDSe
 }
 
 func (c *Command) resolveRotationUsernames() (types.ID, *types.IDSet, error) {
-	ref, _ := c.fs.GetString(flagRotation)
+	ref, _ := c.fs.GetString("rotation")
 	usernames := []string{}
 	rotationID := types.ID(ref)
 
@@ -452,7 +322,7 @@ func (c *Command) resolveTaskIDUsernames() (types.ID, *types.IDSet, error) {
 
 func (c *Command) resolveRotation() (types.ID, error) {
 	var err error
-	ref, _ := c.fs.GetString(flagRotation)
+	ref, _ := c.fs.GetString("rotation")
 	rotationID := types.ID(ref)
 	if ref == "" {
 		if len(c.fs.Args()) < 1 {

@@ -20,6 +20,8 @@ func (c *Command) info(parameters []string) (md.MD, error) {
 	resp += `
 - [x] info: display this.
 
+- [ ] autopilot [--now=datetime]
+
 - [ ] task
 	- [ ] debug-delete
 	- [ ] list --pending | --scheduled | --started | --finished
@@ -35,23 +37,29 @@ func (c *Command) info(parameters []string) (md.MD, error) {
 
 - [x] rotation
 	- [x] archive ROT
-	- [ ] autopilot ROT 
-		- [ ] --off
-		- [ ] --create --create-prior[=28d]
-		- [ ] --schedule --schedule-prior[=7d]
-		- [ ] --start-finish
-		- [ ] --notify-start-prior[=3d]
-		- [ ] --notify-finish-prior[=3d]
-		- [ ] --run=time
 	- [x] debug-delete ROT
 	- [x] list
 	- [x] new ROT
 	- [x] show ROT
-	- [x] param grace --duration 
-	- [x] param max --skill <s-l> (--count | --clear)
-	- [x] param min --skill <s-l> (--count | --clear)
-	- [x] param shift --starting --period
-	- [x] param ticket
+	- [x] set autopilot ROT 
+		- [x] --off
+		- [x] --create --create-prior[=28d]
+		- [x] --schedule --schedule-prior[=7d]
+		- [x] --start-finish
+		- [x] --notify-start-prior[=3d]
+		- [x] --notify-finish-prior[=3d]
+		- [x] --run=time
+	- [x] set fill
+		- [ ] --beginning
+		- [ ] --period
+		- [ ] --seed
+		- [ ] --fuzz
+	- [x] set limit --skill <s-l> (--count | --clear)
+	- [x] set require --skill <s-l> (--count | --clear)
+	- [x] set task
+		- [ ] --type=(shift|ticket)
+		- [ ] --duration
+		- [ ] --grace
 	
 - [x] skill
 	- [x] delete SKILL
@@ -65,8 +73,6 @@ func (c *Command) info(parameters []string) (md.MD, error) {
 	- [x] qualify [@user...] --skill 
 	- [x] show [@user...]
 	- [x] unavailable: [@user...] --start --finish [--clear] 
-
-
 	`
 	return resp, nil
 }

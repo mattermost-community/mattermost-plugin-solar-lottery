@@ -78,14 +78,6 @@ func (p *Plugin) OnConfigurationChange() error {
 }
 
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	wasDemo := p.executeDemoCommand(c, args)
-	if wasDemo {
-		return &model.CommandResponse{
-			ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-			Text:         "Demo done",
-		}, nil
-	}
-
 	command := command.Command{
 		Context:   c,
 		Args:      args,
@@ -93,8 +85,11 @@ func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*mo
 		SL:        p.sl.ActingAs(types.ID(args.UserId)),
 	}
 
-	out, _ := command.Handle()
+	out, err := command.Handle()
 	p.SendEphemeralPost(args.ChannelId, args.UserId, out.String())
+	if err != nil {
+		return nil, model.NewAppError("somewhere", "", nil, err.Error(), 500)
+	}
 	return &model.CommandResponse{}, nil
 }
 

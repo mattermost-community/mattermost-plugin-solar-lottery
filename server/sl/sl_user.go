@@ -49,26 +49,54 @@ func (sl *sl) LoadUsers(mattermostUserIDs *types.IDSet) (*Users, error) {
 	return users, nil
 }
 
-func (sl *sl) qualify(users *Users, skillLevel SkillLevel) error {
-	err := sl.AddKnownSkill(skillLevel.Skill)
-	if err != nil {
-		return err
-	}
-	for _, user := range users.AsArray() {
-		err = sl.updateUserSkill(user, skillLevel)
+func (sl *sl) qualify(users *Users, skillLevels []SkillLevel) error {
+	for _, skillLevel := range skillLevels {
+		err := sl.AddKnownSkill(skillLevel.Skill)
 		if err != nil {
 			return err
 		}
+	}
+
+	for _, user := range users.AsArray() {
+		updated := []SkillLevel{}
+		for _, skillLevel := range skillLevels {
+			newSkill, newLevel := skillLevel.Skill, skillLevel.Level
+			if !user.SkillLevels.Contains(newSkill) || Level(user.SkillLevels.Get(newSkill)) != newLevel {
+				user.SkillLevels.Set(newSkill, int64(newLevel))
+				updated = append(updated, skillLevel)
+			}
+		}
+		if len(updated) == 0 {
+			return nil
+		}
+
+		user, err := sl.storeUserWelcomeNew(user)
+		if err != nil {
+			return err
+		}
+		sl.Debugf("qualified %s for %s", user, updated)
 	}
 	return nil
 }
 
-func (sl *sl) disqualify(users *Users, skillName types.ID) error {
+func (sl *sl) disqualify(users *Users, skillNames []string) error {
 	for _, user := range users.AsArray() {
-		err := sl.updateUserSkill(user, NewSkillLevel(skillName, 0))
+		updated := []types.ID{}
+		for _, skill := range skillNames {
+			if user.SkillLevels.Contains(types.ID(skill)) {
+				user.SkillLevels.Delete(types.ID(skill))
+				updated = append(updated, types.ID(skill))
+			}
+		}
+		if len(updated) == 0 {
+			return nil
+		}
+
+		user, err := sl.storeUserWelcomeNew(user)
 		if err != nil {
 			return err
 		}
+		sl.Debugf("disqualified %s from %s", user, updated)
 	}
 	return nil
 }
@@ -202,27 +230,6 @@ func (sl *sl) storeUser(user *User) error {
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func (sl *sl) updateUserSkill(user *User, skillLevel SkillLevel) error {
-	s, l := skillLevel.Skill, skillLevel.Level
-	if user.SkillLevels.Contains(s) && Level(user.SkillLevels.Get(s)) == l {
-		// nothing to do
-		sl.Debugf("nothing to do for user %s, already is %s", user.Markdown(), skillLevel)
-		return nil
-	}
-
-	if l == 0 {
-		user.SkillLevels.Delete(s)
-	} else {
-		user.SkillLevels.Set(s, int64(l))
-	}
-	user, err := sl.storeUserWelcomeNew(user)
-	if err != nil {
-		return err
-	}
-	sl.Debugf("%s updated to %s", user.Markdown(), skillLevel)
 	return nil
 }
 

@@ -22,7 +22,7 @@ func (c *Command) taskNew(parameters []string) (md.MD, error) {
 
 func (c *Command) taskNewTicket(parameters []string) (md.MD, error) {
 	c.withFlagRotation()
-	summary := c.withFlagSummary()
+	summary := c.assureFS().String("summary", "", "task summary")
 	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
@@ -32,15 +32,17 @@ func (c *Command) taskNewTicket(parameters []string) (md.MD, error) {
 		return "", err
 	}
 
-	return c.normalOut(c.SL.CreateTicket(sl.InCreateTicket{
-		RotationID: rotationID,
-		Summary:    *summary,
-	}))
+	return c.normalOut(
+		c.SL.CreateTicket(sl.InCreateTicket{
+			RotationID: rotationID,
+			Summary:    *summary,
+			Time:       *c.now,
+		}))
 }
 
 func (c *Command) taskNewShift(parameters []string) (md.MD, error) {
 	c.withFlagRotation()
-	shiftNumber := c.withFlagNumber()
+	shiftNumber := c.assureFS().IntP("number", "n", 1, "shift number")
 	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err

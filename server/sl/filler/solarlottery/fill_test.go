@@ -145,11 +145,19 @@ func makeTestFiller(t testing.TB, pool, assigned *sl.Users, require, limit *sl.N
 	if pool.IsEmpty() {
 		pool = sl.NewUsers()
 	}
-	r := sl.NewRotation()
-	r.RotationID = test.RotationID
-	r.Beginning = types.MustParseTime("2020-01-01")
-	r.Users = pool
-	r.Seed = 1
+	r := &sl.Rotation{
+		RotationID: test.RotationID,
+		FillSettings: sl.FillSettings{
+			Beginning: types.MustParseTime("2020-01-01"),
+			Seed:      1,
+			Period: types.Period{
+				Period: types.EveryWeek,
+			},
+		},
+		MattermostUserIDs: types.NewIDSet(pool.IDs()...),
+		Users:             pool,
+	}
+	r.Init()
 
 	task := sl.NewTask(r.RotationID)
 	task.TaskID = r.RotationID + "#2020-02-02"

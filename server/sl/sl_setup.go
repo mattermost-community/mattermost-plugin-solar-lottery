@@ -97,7 +97,6 @@ func withExpandedUsers(idsref **types.IDSet, users *Users) func(sl *sl) error {
 			return err
 		}
 		users.From(&loaded.ValueSet)
-		sl.Logger = sl.Logger.With(bot.LogContext{ctxUsernames: users.String()})
 		return nil
 	}
 }
@@ -111,6 +110,19 @@ func withValidSkillName(skillName *types.ID) func(sl *sl) error {
 		}
 		if !knownSkills.Contains(*skillName) {
 			return errors.Errorf("skill %s is not found", skillName)
+		}
+		return nil
+	}
+}
+
+func withValidSkillNames(skillNames ...string) func(sl *sl) error {
+	return func(sl *sl) error {
+		for _, skill := range skillNames {
+			id := types.ID(skill)
+			err := withValidSkillName(&id)(sl)
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	}

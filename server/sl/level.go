@@ -13,37 +13,38 @@ type Level int64
 var _ pflag.Value = (*Level)(nil)
 
 const (
-	AnyLevel = Level(-1) + iota
-	NoLevel
-	Beginner
-	Intermediate
-	Advanced
-	Expert
+	AnyLevel = Level(iota)
+	BeginnerLevel
+	IntermediateLevel
+	AdvancedLevel
+	ExpertLevel
 )
 
 const (
-	LevelAdvanced           = "advanced"
-	LevelAdvancedSymbol     = "◈"
-	LevelBeginner           = "beginner"
-	LevelBeginnerSymbol     = "◉"
-	LevelExpert             = "expert"
-	LevelExpertSymbol       = "◈◈"
-	LevelIntermediate       = "intermediate"
-	LevelIntermediateSymbol = "▣"
+	AdvancedLevelName       = "advanced"
+	AdvancedLevelSymbol     = "◈"
+	AnyLevelName            = "any"
+	AnyLevelSymbol          = "*"
+	BeginnerLevelName       = "beginner"
+	BeginnerLevelSymbol     = "◉"
+	ExpertLevelName         = "expert"
+	ExpertLevelSymbol       = "◈◈"
+	IntermediateLevelName   = "intermediate"
+	IntermediateLevelSymbol = "▣"
 )
 
 func (level Level) String() string {
 	switch level {
 	case AnyLevel:
-		return "*"
-	case Beginner:
-		return LevelBeginnerSymbol
-	case Intermediate:
-		return LevelIntermediateSymbol
-	case Advanced:
-		return LevelAdvancedSymbol
-	case Expert:
-		return LevelExpertSymbol
+		return AnyLevelSymbol
+	case BeginnerLevel:
+		return BeginnerLevelSymbol
+	case IntermediateLevel:
+		return IntermediateLevelSymbol
+	case AdvancedLevel:
+		return AdvancedLevelSymbol
+	case ExpertLevel:
+		return ExpertLevelSymbol
 	}
 	return "⛔"
 }
@@ -54,30 +55,14 @@ func (level *Level) Type() string {
 
 func (level *Level) Set(in string) error {
 	switch in {
-	case LevelBeginner,
-		LevelBeginnerSymbol,
-		LevelBeginner + LevelBeginnerSymbol,
-		"1":
-		*level = Beginner
-
-	case LevelIntermediate,
-		LevelIntermediateSymbol,
-		LevelIntermediate + LevelIntermediateSymbol,
-		"2":
-		*level = Intermediate
-
-	case LevelAdvanced,
-		LevelAdvancedSymbol,
-		LevelAdvanced + LevelAdvancedSymbol,
-		"3":
-		*level = Advanced
-
-	case LevelExpert,
-		LevelExpertSymbol,
-		LevelExpert + LevelExpertSymbol,
-		"4":
-		*level = Expert
-
+	case BeginnerLevelName, BeginnerLevelSymbol, "1":
+		*level = BeginnerLevel
+	case IntermediateLevelName, IntermediateLevelSymbol, "2":
+		*level = IntermediateLevel
+	case AdvancedLevelName, AdvancedLevelSymbol, "3":
+		*level = AdvancedLevel
+	case ExpertLevelName, ExpertLevelSymbol, "4":
+		*level = ExpertLevel
 	default:
 		return errors.Errorf("%s is not a valid skill level", in)
 	}

@@ -145,9 +145,10 @@ func (sl *sl) autopilotCreate(r *Rotation, now types.Time) (md.Markdowner, error
 	}
 
 	var messages []md.Markdowner
-	period := r.TaskSettings.ShiftPeriod
+	period := r.FillSettings.Period
 	upTo := now.Add(r.AutopilotSettings.CreatePrior)
-	for num, start := period.ForTime(r.Beginning, now); start.Before(upTo); num, start = num+1, period.ForNumber(r.Beginning, num+1) {
+	num, start := period.ForTime(r.FillSettings.Beginning, now)
+	for ; start.Before(upTo); num, start = num+1, period.ForNumber(r.FillSettings.Beginning, num+1) {
 		if num == -1 {
 			continue
 		}

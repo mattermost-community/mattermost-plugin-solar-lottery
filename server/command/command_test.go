@@ -47,6 +47,12 @@ func testUserTimezone() model.StringMap {
 	}
 }
 
+func defaultEnv(t testing.TB) (*gomock.Controller, sl.SL) {
+	ctrl := gomock.NewController(t)
+	sl, _ := getTestSL(t, ctrl)
+	return ctrl, sl
+}
+
 func getTestSL(t testing.TB, ctrl *gomock.Controller) (sl.SL, kvstore.Store) {
 	return getTestSLWithPoster(t, ctrl, nil)
 }
@@ -57,16 +63,15 @@ func getTestSLWithPoster(t testing.TB, ctrl *gomock.Controller, poster bot.Poste
 	pluginAPI.EXPECT().GetMattermostUser(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*model.User, error) {
 		user := &model.User{
 			Id:       id,
-			Username: id + "-username",
+			Username: id,
 			Timezone: testUserTimezone(),
 		}
 		return user, nil
 	})
 
 	pluginAPI.EXPECT().GetMattermostUserByUsername(gomock.Any()).AnyTimes().DoAndReturn(func(username string) (*model.User, error) {
-		id := strings.TrimSuffix(username, "-username")
 		user := &model.User{
-			Id:       id,
+			Id:       username,
 			Username: username,
 			Timezone: testUserTimezone(),
 		}
@@ -84,8 +89,8 @@ func getTestSLWithPoster(t testing.TB, ctrl *gomock.Controller, poster bot.Poste
 			solarlottery.Type: solarlottery.New(),
 			"":                solarlottery.New(), // default
 		},
-		// Logger: &bot.TestLogger{TB: t},
-		Logger: &bot.NilLogger{},
+		Logger: &bot.TestLogger{TB: t},
+		// Logger: &bot.NilLogger{},
 		Poster: poster,
 		Store:  kvstore.NewStore(kvstore.NewCacheKVStore(nil)),
 	}
@@ -93,7 +98,7 @@ func getTestSLWithPoster(t testing.TB, ctrl *gomock.Controller, poster bot.Poste
 	return serviceSL.ActingAs("test-user"), serviceSL.Store
 }
 
-func runCommand(t testing.TB, sl sl.SL, cmd string) (md.MD, error) {
+func run(t testing.TB, sl sl.SL, cmd string) (md.MD, error) {
 	if cmd == "" || cmd[0] == '#' {
 		return "", nil
 	}
@@ -107,14 +112,26 @@ func runCommand(t testing.TB, sl sl.SL, cmd string) (md.MD, error) {
 	return c.handleCommand(c.commands(), split[1:])
 }
 
-func runJSONCommand(t testing.TB, sl sl.SL, cmd string, ref interface{}) (md.MD, error) {
-	cmd += " --json"
-	outmd, err := runCommand(t, sl, cmd)
-	if err != nil {
-		return outmd, err
+func mustRun(t testing.TB, sl sl.SL, cmd string) md.MD {
+	out, err := run(t, sl, cmd)
+	require.NoError(t, err)
+	return out
+}
+
+func mustRunMulti(t testing.TB, sl sl.SL, in string) {
+	lines := strings.Split(in, "\n")
+	for _, line := range lines {
+		mustRun(t, sl, strings.TrimSpace(line))
 	}
-	out := outmd.String()
-	out = strings.Trim(strings.TrimSpace(out), "`")
+}
+
+func runJSON(t testing.TB, sl sl.SL, cmd string, ref interface{}) (md.MD, error) {
+	cmd += " --json"
+	outmd, err := run(t, sl, cmd)
+	if err != nil {
+		return "", err
+	}
+	out := strings.Trim(strings.TrimSpace(outmd.String()), "`")
 	out = strings.TrimPrefix(out, "json\n")
 	if ref != nil && out != "" {
 		errUnmarshal := json.Unmarshal([]byte(out), ref)
@@ -122,25 +139,73 @@ func runJSONCommand(t testing.TB, sl sl.SL, cmd string, ref interface{}) (md.MD,
 			return "", errUnmarshal
 		}
 	}
-	return md.MD(out), err
+	return md.MD(out), nil
 }
 
-func runTaskCreateCommand(t testing.TB, s sl.SL, cmd string) (*sl.OutCreateTask, error) {
+func mustRunJSON(t testing.TB, sl sl.SL, cmd string, ref interface{}) md.MD {
+	out, err := runJSON(t, sl, cmd, ref)
+	require.NoError(t, err)
+	return out
+}
+
+func mustRunTaskCreate(t testing.TB, s sl.SL, cmd string) *sl.Task {
 	out := &sl.OutCreateTask{}
-	_, err := runJSONCommand(t, s, cmd, &out)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
+	mustRunJSON(t, s, cmd, &out)
+	return out.Task
 }
 
-func runCommands(t testing.TB, sl sl.SL, in string) error {
-	lines := strings.Split(in, "\n")
-	for _, line := range lines {
-		_, err := runCommand(t, sl, strings.TrimSpace(line))
-		if err != nil {
-			return err
-		}
+func mustRunTask(t testing.TB, s sl.SL, cmd string) *sl.Task {
+	out := &sl.Task{}
+	mustRunJSON(t, s, cmd, &out)
+	return out
+}
+
+func mustRunRotation(t testing.TB, s sl.SL, cmd string) *sl.Rotation {
+	out := &sl.Rotation{}
+	mustRunJSON(t, s, cmd, &out)
+	return out
+}
+
+func mustRunUser(t testing.TB, s sl.SL, cmd string) *sl.User {
+	out := sl.NewUser("")
+	mustRunJSON(t, s, cmd, &out)
+	return out
+}
+
+func mustRunTaskAssign(t testing.TB, s sl.SL, cmd string) *sl.Task {
+	out := &sl.OutAssignTask{
+		Changed: sl.NewUsers(),
 	}
-	return nil
+	mustRunJSON(t, s, cmd, &out)
+	return out.Task
+}
+
+func mustRunUsersQualify(t testing.TB, s sl.SL, cmd string) *sl.Users {
+	out := sl.OutQualify{
+		Users: sl.NewUsers(),
+	}
+	mustRunJSON(t, s, cmd, &out)
+	return out.Users
+}
+
+func mustRunUsersJoin(t testing.TB, s sl.SL, cmd string) *sl.Users {
+	out := sl.OutJoinRotation{
+		Modified: sl.NewUsers(),
+	}
+	mustRunJSON(t, s, cmd, &out)
+	return out.Modified
+}
+
+func mustRunUsers(t testing.TB, s sl.SL, cmd string) *sl.Users {
+	out := sl.NewUsers()
+	mustRunJSON(t, s, cmd, &out)
+	return out
+}
+
+func mustRunUsersCalendar(t testing.TB, s sl.SL, cmd string) *sl.Users {
+	out := sl.OutCalendar{
+		Users: sl.NewUsers(),
+	}
+	mustRunJSON(t, s, cmd, &out)
+	return out.Users
 }
