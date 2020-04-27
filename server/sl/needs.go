@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
@@ -56,10 +57,14 @@ func (needs *Needs) SetCountForSkillLevel(skillLevel SkillLevel, count int64) {
 	needs.IntSet.Set(id, count)
 }
 
-func (needs Needs) Markdown() string {
+func (needs Needs) Markdown() md.MD {
+	return md.MD(needs.String())
+}
+
+func (needs Needs) String() string {
 	ss := []string{}
 	for _, need := range needs.AsArray() {
-		ss = append(ss, fmt.Sprintf("**%v** %s", need.Count(), need.SkillLevel()))
+		ss = append(ss, need.String())
 	}
 	return strings.Join(ss, ", ")
 }

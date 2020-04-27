@@ -78,14 +78,6 @@ func (p *Plugin) OnConfigurationChange() error {
 }
 
 func (p *Plugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
-	wasDemo := p.executeDemoCommand(c, args)
-	if wasDemo {
-		return &model.CommandResponse{
-			ResponseType: model.COMMAND_RESPONSE_TYPE_EPHEMERAL,
-			Text:         "Demo done",
-		}, nil
-	}
-
 	command := command.Command{
 		Context:   c,
 		Args:      args,

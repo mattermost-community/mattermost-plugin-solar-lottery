@@ -6,24 +6,22 @@ package command
 import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 func (c *Command) userDisqualify(parameters []string) (md.MD, error) {
-	skill := c.withFlagSkill()
-	err := c.fs.Parse(parameters)
+	skills := c.flags().StringSliceP("skills", "s", nil, "skills to disqualify from, e.g. `--skills=web,server`")
+	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}
-
-	mattermostUserIDs, err := c.resolveUsernames(c.fs.Args())
+	mattermostUserIDs, err := c.resolveUsernames(c.flags().Args())
 	if err != nil {
 		return "", err
 	}
 
 	return c.normalOut(
-		c.SL.Disqualify(sl.InQualify{
+		c.SL.Disqualify(sl.InDisqualify{
 			MattermostUserIDs: mattermostUserIDs,
-			SkillLevel:        sl.NewSkillLevel(types.ID(*skill), 0),
+			Skills:            *skills,
 		}))
 }

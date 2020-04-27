@@ -10,21 +10,21 @@ import (
 )
 
 func (c *Command) userUnavailable(parameters []string) (md.MD, error) {
-	clear := c.withFlagClear()
-	start, err := c.withFlagStart()
+	clear := c.flags().Bool("clear", false, "mark as available by clearing all overlapping unavailability events")
+	start, err := c.withTimeFlag("start", "start time")
 	if err != nil {
 		return "", err
 	}
-	finish, err := c.withFlagFinish()
+	finish, err := c.withTimeFlag("finish", "end time")
 	if err != nil {
 		return "", err
 	}
-	err = c.fs.Parse(parameters)
+	err = c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}
 
-	mattermostUserIDs, err := c.resolveUsernames(c.fs.Args())
+	mattermostUserIDs, err := c.resolveUsernames(c.flags().Args())
 	if err != nil {
 		return "", err
 	}

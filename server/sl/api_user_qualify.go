@@ -10,7 +10,7 @@ import (
 
 type InQualify struct {
 	MattermostUserIDs *types.IDSet
-	SkillLevel        SkillLevel
+	SkillLevels       []SkillLevel
 }
 
 type OutQualify struct {
@@ -30,14 +30,14 @@ func (sl *sl) Qualify(params InQualify) (*OutQualify, error) {
 	}
 	defer sl.popLogger()
 
-	err = sl.qualify(users, params.SkillLevel)
+	err = sl.qualify(users, params.SkillLevels)
 	if err != nil {
 		return nil, err
 	}
 
 	out := &OutQualify{
 		Users: users,
-		MD:    md.Markdownf("added skill %s to %s.", params.SkillLevel, users.Markdown()),
+		MD:    md.Markdownf("added skill(s) %s to %s.", params.SkillLevels, users.Markdown()),
 	}
 	sl.logAPI(out)
 	return out, nil

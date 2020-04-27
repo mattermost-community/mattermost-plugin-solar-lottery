@@ -9,8 +9,8 @@ import (
 )
 
 func (c *Command) taskAssign(parameters []string) (md.MD, error) {
-	force := c.withFlagForce()
-	err := c.fs.Parse(parameters)
+	force := c.flags().BoolP("force", "f", false, "ignore constraints")
+	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}

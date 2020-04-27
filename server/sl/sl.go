@@ -53,7 +53,7 @@ type SkillService interface {
 type UserService interface {
 	AddToCalendar(InAddToCalendar) (*OutCalendar, error)
 	ClearCalendar(InClearCalendar) (*OutCalendar, error)
-	Disqualify(InQualify) (*OutQualify, error)
+	Disqualify(InDisqualify) (*OutQualify, error)
 	JoinRotation(InJoinRotation) (*OutJoinRotation, error)
 	LeaveRotation(InJoinRotation) (*OutJoinRotation, error)
 	Qualify(InQualify) (*OutQualify, error)

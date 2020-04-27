@@ -119,13 +119,15 @@ func TestPickNeed(t *testing.T) {
 	)
 
 	for _, tc := range []struct {
-		name         string
-		require      *sl.Needs
-		requirePools map[types.ID]*sl.Users // by need ID (SkillLevel as string)
-		limit        *sl.Needs
-		time         types.Time
-		expectedNeed sl.Need
-		expectedDone bool
+		name                   string
+		require                *sl.Needs
+		requirePools           map[types.ID]*sl.Users // by need ID (SkillLevel as string)
+		limit                  *sl.Needs
+		time                   types.Time
+		expectedHighest        sl.Need
+		expectedRandom         sl.Need
+		expectedWeightedRandom sl.Need
+		expectedDone           bool
 	}{
 		{
 			name: "happy 2",
@@ -137,7 +139,9 @@ func TestPickNeed(t *testing.T) {
 				test.C3_Server_L1().GetID(): usersServer1,
 				test.C1_Webapp_L2().GetID(): usersWebapp2,
 			},
-			expectedNeed: test.C1_Webapp_L2(),
+			expectedHighest:        test.C1_Webapp_L2(),
+			expectedRandom:         test.C3_Server_L1(),
+			expectedWeightedRandom: test.C1_Webapp_L2(),
 		},
 		{
 			name: "happy 3",
@@ -153,7 +157,9 @@ func TestPickNeed(t *testing.T) {
 			},
 
 			// testNeedServer_L2_Min2 is selected since it has the lowest weight/headcount
-			expectedNeed: test.C2_Server_L2(),
+			expectedHighest:        test.C2_Server_L2(),
+			expectedRandom:         test.C3_Server_L1(),
+			expectedWeightedRandom: test.C1_Webapp_L2(),
 		},
 		{
 			name: "happy 3 with constraint",
@@ -171,15 +177,27 @@ func TestPickNeed(t *testing.T) {
 				test.C1_Webapp_L2().GetID(): usersWebapp2,
 			},
 
-			expectedNeed: test.C1_Webapp_L2(),
+			expectedHighest:        test.C1_Webapp_L2(),
+			expectedRandom:         test.C3_Server_L1(),
+			expectedWeightedRandom: test.C1_Webapp_L2(),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			f := makeTestFiller(t, nil, nil, tc.require, tc.limit)
+			f.rand = rand.New(rand.NewSource(50))
 			f.requirePools = tc.requirePools
-			done, need := f.pickRequiredNeed()
-			require.Equal(t, tc.expectedNeed, need)
+
+			done, need := f.pickRequireHighest()
 			require.Equal(t, tc.expectedDone, done)
+			require.Equal(t, &tc.expectedHighest, need)
+
+			done, need = f.pickRequireWeightedRandom()
+			require.Equal(t, tc.expectedDone, done)
+			require.Equal(t, &tc.expectedWeightedRandom, need)
+
+			done, need = f.pickRequireRandom()
+			require.Equal(t, tc.expectedDone, done)
+			require.Equal(t, &tc.expectedRandom, need)
 		})
 	}
 }
@@ -210,9 +228,9 @@ func TestNeedWeight(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			f := makeTestFiller(t, nil, nil, tc.require, tc.limit)
 			f.requirePools = tc.requirePools
-			w := f.requiredNeedWeight(test.C1_Webapp_L2())
+			w := f.requireWeight(test.C1_Webapp_L2())
 			require.Equal(t, 1.3724873597089898e+15, w)
-			w = f.requiredNeedWeight(test.C3_Server_L1())
+			w = f.requireWeight(test.C3_Server_L1())
 			require.Equal(t, 1.8299831462785262e+15, w)
 		})
 	}
@@ -245,7 +263,7 @@ func TestUserWeight(t *testing.T) {
 	} {
 		t.Run(fmt.Sprintf("%v_%v", tc.lastServed, tc.time), func(t *testing.T) {
 			f := makeTestFiller(t, nil, nil, nil, nil)
-			f.time = tc.time.Unix()
+			f.forTime = tc.time.Unix()
 			if tc.doubling > 0 {
 				f.doublingPeriod = tc.doubling
 			}

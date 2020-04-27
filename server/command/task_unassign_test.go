@@ -5,7 +5,6 @@ package command
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
@@ -69,22 +68,16 @@ func TestTaskUnassign(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
+			ctrl, SL := defaultEnv(t)
 			defer ctrl.Finish()
-			SL, _ := getTestSL(t, ctrl)
-
-			err := runCommands(t, SL, `
-				/lotto rotation new test-rotation
-				/lotto rotation param ticket test-rotation
+			mustRunMulti(t, SL, `
+				/lotto rotation new test-rotation --task-type=ticket
 				/lotto task new ticket test-rotation --summary test-summary1
 			`)
-			require.NoError(t, err)
-			err = runCommands(t, SL, "/lotto task assign test-rotation#1 "+tc.assigned)
-			require.NoError(t, err)
+			mustRun(t, SL, "/lotto task assign test-rotation#1 "+tc.assigned)
 
 			for _, transition := range tc.transitions {
-				err = runCommands(t, SL, "/lotto task "+transition+" test-rotation#1")
-				require.NoError(t, err)
+				mustRun(t, SL, "/lotto task "+transition+" test-rotation#1")
 			}
 
 			out := &sl.OutAssignTask{
@@ -94,7 +87,7 @@ func TestTaskUnassign(t *testing.T) {
 			if tc.force {
 				force = force + "--force"
 			}
-			_, err = runJSONCommand(t, SL, "/lotto task unassign test-rotation#1 "+tc.unassign+force, &out)
+			_, err := runJSON(t, SL, "/lotto task unassign test-rotation#1 "+tc.unassign+force, &out)
 			if tc.expectError {
 				require.Error(t, err)
 				return

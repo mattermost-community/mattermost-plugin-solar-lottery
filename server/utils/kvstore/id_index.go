@@ -11,7 +11,7 @@ type IDIndexStore interface {
 	Load() (*types.IDSet, error)
 	Store(*types.IDSet) error
 	Delete(types.ID) error
-	Set(types.ID) error
+	Set(types.ID) (bool, error)
 }
 
 type idIndexStore struct {
@@ -53,7 +53,7 @@ func (s *idIndexStore) Delete(id types.ID) error {
 	return s.Store(index)
 }
 
-func (s *idIndexStore) Set(v types.ID) error {
+func (s *idIndexStore) Set(v types.ID) (bool, error) {
 	index, err := s.Load()
 	switch err {
 	case nil:
@@ -62,10 +62,10 @@ func (s *idIndexStore) Set(v types.ID) error {
 		index = types.NewIDSet()
 
 	default:
-		return err
+		return false, err
 	}
 
+	created := !index.Contains(v)
 	index.Set(v)
-
-	return s.Store(index)
+	return created, s.Store(index)
 }

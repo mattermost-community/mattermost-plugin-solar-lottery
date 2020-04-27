@@ -10,7 +10,7 @@ import (
 
 func (c *Command) rotationList(parameters []string) (md.MD, error) {
 	err := c.parse(parameters)
-	if len(c.fs.Args()) > 0 {
+	if len(c.flags().Args()) > 0 {
 		return c.subUsage(nil), errors.New("unexpected parameters")
 	}
 

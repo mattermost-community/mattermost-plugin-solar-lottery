@@ -15,24 +15,18 @@ func TestSkillList(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		SL, store := getTestSL(t, ctrl)
-
-		err := runCommands(t, SL, `
+		mustRunMulti(t, SL, `
 			/lotto skill new test
 			/lotto skill new test-123
 			/lotto skill new test-345
 			`)
-		require.NoError(t, err)
 
 		knownSkills, err := store.IDIndex(sl.KeyKnownSkills).Load()
 		require.NoError(t, err)
 		require.Equal(t, []string{"test", "test-123", "test-345"}, knownSkills.TestIDs())
 
 		out := []string{}
-		_, err = runJSONCommand(t, SL, `
-			/lotto skill list`, &out)
-		require.NoError(t, err)
+		mustRunJSON(t, SL, `/lotto skill list`, &out)
 		require.Equal(t, []string{"test", "test-123", "test-345"}, out)
-
-		// /lotto skill delete test
 	})
 }

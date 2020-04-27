@@ -17,56 +17,5 @@ func (c *Command) info(parameters []string) (md.MD, error) {
 		c.SL.Config().BuildHash,
 		c.SL.Config().BuildDate)
 
-	resp += `
-- [x] info: display this.
-
-- [ ] task
-	- [ ] debug-delete
-	- [ ] list --pending | --scheduled | --started | --finished
-	- [x] assign
-	- [x] close
-	- [x] fill
-	- [x] new shift
-	- [x] new ticket
-	- [x] schedule
-	- [x] show ROT#id
-	- [x] start
-	- [x] unassign
-
-- [x] rotation
-	- [x] archive ROT
-	- [ ] autopilot ROT 
-		- [ ] --off
-		- [ ] --create --create-prior[=28d]
-		- [ ] --schedule --schedule-prior[=7d]
-		- [ ] --start-finish
-		- [ ] --notify-start-prior[=3d]
-		- [ ] --notify-finish-prior[=3d]
-		- [ ] --run=time
-	- [x] debug-delete ROT
-	- [x] list
-	- [x] new ROT
-	- [x] show ROT
-	- [x] param grace --duration 
-	- [x] param max --skill <s-l> (--count | --clear)
-	- [x] param min --skill <s-l> (--count | --clear)
-	- [x] param shift --starting --period
-	- [x] param ticket
-	
-- [x] skill
-	- [x] delete SKILL
-	- [x] list
-	- [x] new SKILL
-
-- [x] user: manage users.
-	- [x] disqualify [@user...] --skill 
-	- [x] join ROT [@user...] --starting
-	- [x] leave ROT [@user...]
-	- [x] qualify [@user...] --skill 
-	- [x] show [@user...]
-	- [x] unavailable: [@user...] --start --finish [--clear] 
-
-
-	`
 	return resp, nil
 }

@@ -36,7 +36,7 @@ func (sl *sl) AssignTask(params InAssignTask) (*OutAssignTask, error) {
 	}
 	defer sl.popLogger()
 
-	assigned, err := sl.assignTask(task, users, params.Force)
+	assigned, err := sl.assignTask(r, task, users, params.Force)
 	if err != nil {
 		return nil, err
 	}

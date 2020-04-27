@@ -27,7 +27,7 @@ func (sl *sl) AddRotation(r *Rotation) error {
 		return ErrAlreadyExists
 	}
 
-	err = sl.Store.IDIndex(KeyActiveRotations).Set(r.RotationID)
+	_, err = sl.Store.IDIndex(KeyActiveRotations).Set(r.RotationID)
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,10 @@ func (sl *sl) LoadRotation(rotationID types.ID) (*Rotation, error) {
 
 func (sl *sl) UpdateRotation(rotationID types.ID, updatef func(*Rotation) error) (*Rotation, error) {
 	r := NewRotation()
-	err := sl.Setup(withLoadRotation(&rotationID, r))
+	err := sl.Setup(
+		withExpandedActingUser,
+		withLoadRotation(&rotationID, r),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +192,7 @@ func (sl *sl) loadRotation(rotationID types.ID) (*Rotation, error) {
 	if err != nil {
 		return nil, err
 	}
-	r.init()
+	r.Init()
 	r.loaded = true
 
 	return r, nil

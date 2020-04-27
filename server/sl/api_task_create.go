@@ -4,6 +4,8 @@
 package sl
 
 import (
+	"time"
+
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
@@ -12,6 +14,7 @@ type InCreateTicket struct {
 	RotationID  types.ID
 	Summary     string
 	Description string
+	Time        types.Time
 }
 
 type OutCreateTask struct {
@@ -25,12 +28,16 @@ func (sl *sl) CreateTicket(params InCreateTicket) (*OutCreateTask, error) {
 		return nil, err
 	}
 	defer sl.popLogger()
+	if params.Time.IsZero() {
+		params.Time = types.NewTime(time.Now())
+	}
 
 	var task *Task
 	_, err = sl.UpdateRotation(params.RotationID, func(r *Rotation) error {
 		task = r.newTicket("")
 		task.Summary = params.Summary
 		task.Description = params.Description
+		task.ExpectedStart = params.Time
 		var id types.ID
 		id, err = sl.Store.Entity(KeyTask).NewID(string(task.TaskID))
 		if err != nil {
@@ -77,6 +84,9 @@ func (sl *sl) CreateShift(in InCreateShift) (*OutCreateTask, error) {
 		return nil, err
 	}
 	defer sl.popLogger()
+	if in.Time.IsZero() {
+		in.Time = types.NewTime(time.Now())
+	}
 
 	t, err := sl.createShift(r, in.Number, in.Time)
 	if err != nil {

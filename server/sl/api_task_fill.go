@@ -29,21 +29,13 @@ func (sl *sl) FillTask(params InAssignTask) (*OutAssignTask, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	lastServed := task.ExpectedStart
-	if lastServed.IsZero() {
-		lastServed = params.Time
-	}
-	for _, user := range filled.AsArray() {
-		user.LastServed.Set(r.RotationID, lastServed.Unix())
-	}
 	err = sl.storeUsers(filled)
 	if err != nil {
 		return nil, err
 	}
 
 	out := &OutAssignTask{
-		MD:      md.Markdownf("Auto-assigned %s to ticket %s", filled.Markdown(), task.Markdown()),
+		MD:      md.Markdownf("Auto-assigned %s to ticket %s", filled.MarkdownWithSkills(), task.Markdown()),
 		Task:    task,
 		Changed: filled,
 	}

@@ -4,23 +4,28 @@
 package command
 
 import (
-	"github.com/pkg/errors"
-
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
 func (c *Command) userQualify(parameters []string) (md.MD, error) {
-	skillLevel := c.withFlagSkillLevel()
-	err := c.fs.Parse(parameters)
+	skills := c.flags().StringSliceP("skills", "s", nil, "skills, with optional levels (1-4) as in `--skills=web-3,server-2`.")
+	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}
-	if skillLevel.Skill == "" || skillLevel.Level == 0 {
-		return c.flagUsage(), errors.New("must provide --level and --skill values")
+
+	var skillLevels []sl.SkillLevel
+	for _, s := range *skills {
+		skillLevel := sl.SkillLevel{}
+		err = skillLevel.Set(s)
+		if err != nil {
+			return c.flagUsage(), err
+		}
+		skillLevels = append(skillLevels, skillLevel)
 	}
 
-	mattermostUserIDs, err := c.resolveUsernames(c.fs.Args())
+	mattermostUserIDs, err := c.resolveUsernames(c.flags().Args())
 	if err != nil {
 		return "", err
 	}
@@ -28,6 +33,6 @@ func (c *Command) userQualify(parameters []string) (md.MD, error) {
 	return c.normalOut(
 		c.SL.Qualify(sl.InQualify{
 			MattermostUserIDs: mattermostUserIDs,
-			SkillLevel:        *skillLevel,
+			SkillLevels:       skillLevels,
 		}))
 }

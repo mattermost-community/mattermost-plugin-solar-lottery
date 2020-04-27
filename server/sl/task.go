@@ -74,6 +74,12 @@ func (t Task) GetID() types.ID {
 	return t.TaskID
 }
 
+func (t *Task) WrapError(err *error, verb string) {
+	if *err != nil {
+		*err = errors.Wrapf(*err, "failed to %v task %s", verb, t.Markdown())
+	}
+}
+
 func (t Task) MarkdownBullets(rotation *Rotation) md.MD {
 	out := md.Markdownf("- %s\n", t.Markdown())
 	out += md.Markdownf("  - Status: **%s**\n", t.State)
@@ -93,13 +99,11 @@ func (t Task) String() string {
 }
 
 func (t *Task) NewUnavailable() []*Unavailable {
-	interval := types.NewInterval(t.ActualStart, t.ActualFinish)
-	if interval.IsEmpty() {
-		interval = types.NewDurationInterval(t.ExpectedStart, t.ExpectedDuration)
-	}
+	interval := t.Interval()
 	if interval.IsEmpty() {
 		return nil
 	}
+
 	uu := []*Unavailable{
 		{
 			Reason:     ReasonTask,
@@ -108,7 +112,6 @@ func (t *Task) NewUnavailable() []*Unavailable {
 			RotationID: t.RotationID,
 		},
 	}
-
 	if t.Grace > 0 {
 		uu = append(uu, &Unavailable{
 			Reason:     ReasonGrace,
@@ -117,8 +120,19 @@ func (t *Task) NewUnavailable() []*Unavailable {
 			RotationID: t.RotationID,
 		})
 	}
-
 	return uu
+}
+
+func (t *Task) Interval() types.Interval {
+	switch {
+	case !t.ActualStart.IsZero() && !t.ActualFinish.IsZero():
+		return types.NewInterval(t.ActualStart, t.ActualFinish)
+	case !t.ActualStart.IsZero() && t.ExpectedDuration != 0:
+		return types.NewDurationInterval(t.ActualStart, t.ExpectedDuration)
+	case !t.ExpectedStart.IsZero() && t.ExpectedDuration != 0:
+		return types.NewDurationInterval(t.ExpectedStart, t.ExpectedDuration)
+	}
+	return types.Interval{}
 }
 
 func (t *Task) isReadyToStart() (ready bool, whyNot string, err error) {
