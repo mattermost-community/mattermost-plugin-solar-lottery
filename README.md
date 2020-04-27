@@ -30,41 +30,55 @@ A [Mattermost](https://mattermost.com) plugin somewhat similar to pager duty, al
 
 ## Commands
   ### `/lotto rotation`
+  
   Tools to manage rotations. 
+  
   Usage: `/lotto <subcommand> <rotation-ID> [--flags]`.
-  Subcommands: **archive** - **list** - **new** - **show** - **set** (autopilot|fill|limit|require|task)
+  
+  Subcommands: **archive** - **list** - **new** - **show** - **set** (**autopilot** | **fill** | **limit** | **require** | **task**)
   
   #### `/lotto rotation new`
+  
   Creates a new rotation. Certain parameters can be specified only at creation
   time and may not be changed later.
 
   Flags:
-    - `--beginning=datetime` - Beginning of time for shifts. Default: now.
-    - `--fill-type=solar-lottery` - Task auto-assign type: only `solar-lottery` is currently supported,
-    - `--fuzz int` - increase randomness of task assignment. Works by increasing the user weight doubling time by this many periods. Setting it above 3 will essentially make task assignemts random. Default: 0.
-    - `--period=(weekly|biweekly|monthly)` - Recurrence period. For shifts, it is directly relevant; for tasks it affects how the user weights are calculated (shorter period leads to stricter rotation rules, much like lower fuzz). Default: `weekly`.
-    - `--task-type=(shift|ticket)` - Currently, a rotation can only have _shifts_, i.e. recurring tasks, or _tickets_ that are submitted from an external source. Default: `shift`.
+  
+  - `--beginning=datetime` - Beginning of time for shifts. Default: now.
+  - `--fill-type=solar-lottery` - Task auto-assign type: only `solar-lottery` is currently supported.
+  - `--fuzz int` - increase randomness of task assignment. Works by increasing the user weight doubling time by this many periods. Setting it above 3 will essentially make task assignemts random. Default: 0.
+  - `--period=(weekly|biweekly|monthly)` - Recurrence period. For shifts, it is directly relevant; for tasks it affects how the user weights are calculated (shorter period leads to stricter rotation rules, much like lower fuzz). Default: `weekly`.
+  - `--task-type=(shift|ticket)` - Currently, a rotation can only have _shifts_, i.e. recurring tasks, or _tickets_ that are submitted from an external source. Default: `shift`.
   
   #### `/lotto rotation archive`
+  
   Archives a rotation.
 
   #### `/lotto rotation list`
+  
   Lists active rotations.
 
   #### `/lotto rotation show`
+  
   Shows rotation details.
 
   #### `/lotto rotation set autopilot`
+  
   Changes rotation's autopilot settings.
 
   Flags:
+  
       - `--off` - turns autopilot off for the rotation
+  
       - [x] --create --create-prior[=28d]
       - [x] --schedule --schedule-prior[=7d]
       - [x] --start-finish
       - [x] --notify-start-prior[=3d]
       - [x] --notify-finish-prior[=3d]
       - [x] --run=time
+  
+  dasd
+  
     - [x] set fill
       - [ ] --beginning
       - [ ] --period
