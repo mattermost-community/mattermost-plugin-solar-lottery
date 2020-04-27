@@ -34,14 +34,25 @@ A [Mattermost](https://mattermost.com) plugin somewhat similar to pager duty, al
 3. Configure plugin settings as desired.
 4. Start using the plugin!
 
+## Examples 
+
+- ["Ice Breaker"](./server/command/use_case_ice_breaker_test.go) - a simple
+rotation to select 2 individuals for a weeklt meeting's "ice breaker" 5 minute
+intro.
+- [SET](./server/command/use_case_set_test.go) - a monthly shift rotation with
+  several skill requirements and constraints.
+- [Autopilot](./server/command/rotation_autopilot_test.go) - an illustration of
+  what happens when running autopilot.
+
 ## Commands
+
 ### `/lotto rotation`
 
 Tools to manage rotations. 
 
 Usage: `/lotto <subcommand> <rotation-ID> [--flags]`.
 
-Subcommands: [archive](#lotto-rotation-archive) - [list](#lotto-rotation-list) - [new](#lotto-rotation-new) - [show]](#lotto-rotation-show) - [set autopilot](#lotto-rotation-set-autopilot) | [set fill](#lotto-rotation-set-fill) | [set limit](#lotto-rotation-set-limit) | [set require](#lotto-rotation-set-require) | [set task](#lotto-rotation-set-task)
+Subcommands: [archive](#lotto-rotation-archive) - [list](#lotto-rotation-list) - [new](#lotto-rotation-new) - [show](#lotto-rotation-show) - [set autopilot](#lotto-rotation-set-autopilot) | [set fill](#lotto-rotation-set-fill) | [set limit](#lotto-rotation-set-limit) | [set require](#lotto-rotation-set-require) | [set task](#lotto-rotation-set-task)
 
 #### `/lotto rotation new`
 
@@ -137,7 +148,7 @@ Flags:
 
 
 
-
+((TODO))
 - [ ] task
   - [ ] debug-delete
   - [ ] list --pending | --scheduled | --started | --finished
@@ -163,6 +174,4 @@ Flags:
   - [x] delete SKILL
   - [x] list
   - [x] new SKILL
-
-## Examples 
 
