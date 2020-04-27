@@ -11,15 +11,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-func (c *Command) taskNew(parameters []string) (md.MD, error) {
-	subcommands := map[string]func([]string) (md.MD, error){
-		commandTicket: c.taskNewTicket,
-		commandShift:  c.taskNewShift,
-	}
-
-	return c.handleCommand(subcommands, parameters)
-}
-
 func (c *Command) taskNewTicket(parameters []string) (md.MD, error) {
 	c.withFlagRotation()
 	summary := c.flags().String("summary", "", "task summary")

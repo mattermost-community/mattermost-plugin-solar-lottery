@@ -109,7 +109,7 @@ func run(t testing.TB, sl sl.SL, cmd string) (md.MD, error) {
 		actualTrigger: split[0],
 	}
 
-	return c.handleCommand(c.commands(), split[1:])
+	return c.main(split[1:])
 }
 
 func mustRun(t testing.TB, sl sl.SL, cmd string) md.MD {

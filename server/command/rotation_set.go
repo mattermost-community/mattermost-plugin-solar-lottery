@@ -8,18 +8,6 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 )
 
-func (c *Command) rotationSet(parameters []string) (md.MD, error) {
-	subcommands := map[string]func([]string) (md.MD, error){
-		commandAutopilot: c.rotationSetAutopilot,
-		commandFill:      c.rotationSetFill,
-		commandLimit:     c.rotationSetLimit,
-		commandRequire:   c.rotationSetRequire,
-		commandTask:      c.rotationSetTask,
-	}
-
-	return c.handleCommand(subcommands, parameters)
-}
-
 func (c *Command) rotationSetAutopilot(parameters []string) (md.MD, error) {
 	off := c.flags().Bool("off", false, "turn off")
 	create := c.flags().Bool("create", false, "create shifts automatically")
