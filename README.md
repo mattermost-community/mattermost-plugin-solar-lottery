@@ -46,17 +46,27 @@ intro.
 
 ## Commands
 
+### `/lotto autopilot`
+
+Run autopilot. 
+
+Usage: `/lotto autopilot [--flags]`.
+
+Flags:
+
+- `--now=datetime` - Run autopilot as if the time were _datetime_. Default: now.
+
 ### `/lotto rotation`
 
 Tools to manage rotations. 
 
-Usage: `/lotto <subcommand> <rotation-ID> [--flags]`.
+Usage: `/lotto rotation <subcommand> <rotation-ID> [--flags]`.
 
 Subcommands: [archive](#lotto-rotation-archive) - [list](#lotto-rotation-list) - [new](#lotto-rotation-new) - [show](#lotto-rotation-show) - [set autopilot](#lotto-rotation-set-autopilot) | [set fill](#lotto-rotation-set-fill) | [set limit](#lotto-rotation-set-limit) | [set require](#lotto-rotation-set-require) | [set task](#lotto-rotation-set-task)
 
 #### `/lotto rotation new`
 
-Creates a new rotation. Certain parameters can be specified only at creation
+Create a new rotation. Certain parameters can be specified only at creation
 time and may not be changed later.
 
 Flags:
@@ -77,19 +87,19 @@ Flags:
 
 #### `/lotto rotation archive`
 
-Archives a rotation.
+Archive a rotation.
 
 #### `/lotto rotation list`
 
-Lists active rotations.
+List active rotations.
 
 #### `/lotto rotation show`
 
-Shows rotation details.
+Show rotation details.
 
 #### `/lotto rotation set autopilot`
 
-Changes rotation's autopilot settings.
+Change rotation's autopilot settings.
 
 Flags:
 
@@ -106,7 +116,7 @@ Flags:
 
 #### `/lotto rotation set fill`
 
-Changes rotation's settings for filling (assigning users to) tasks.
+Change rotation's settings for filling (assigning users to) tasks.
 
 Flags:
 
@@ -115,7 +125,7 @@ Flags:
 
 #### `/lotto rotation set limit`
 
-Changes rotation's constraints (limits). A limit is like, "no more than 2 people
+Change rotation's constraints (limits). A limit is like, "no more than 2 people
 with knowledge of netops, intermediate plus. Use `any` to indicate any
 skill/level.
 
@@ -127,7 +137,7 @@ Flags:
 
 #### `/lotto rotation set require`
 
-Changes rotation's requirements (needs). A requirement is like, "at least 2
+Change rotation's requirements (needs). A requirement is like, "at least 2
 people with knowledge of netops, intermediate plus. Use `any` to indicate any
 skill/level.
 
@@ -139,39 +149,109 @@ Flags:
 
 #### `/lotto rotation set task`
 
-Changes rotation's defaults for new tasks.
+Change rotation's defaults for new tasks.
 
 Flags:
 - `--duration` - sets the default duration for new tasks.
 - `--grace` - sets the default grace period for new tasks.
 
+### `/lotto task`
 
+Tools to manage tasks. 
 
+Usage: `/lotto task <subcommand> [<rotation-ID>|<task-ID>] [@user1 @user2...] [--flags]`.
 
-((TODO))
-- [ ] task
-  - [ ] debug-delete
-  - [ ] list --pending | --scheduled | --started | --finished
-  - [x] assign
-  - [x] close
-  - [x] fill
-  - [x] new shift
-  - [x] new ticket
-  - [x] schedule
-  - [x] show ROT#id
-  - [x] start
-  - [x] unassign
-- [x] user: manage users.
-  - [x] disqualify [@user...] --skill 
-  - [x] join ROT [@user...] --starting
-  - [x] leave ROT [@user...]
-  - [x] qualify [@user...] --skill 
-  - [x] show [@user...]
-  - [x] unavailable: [@user...] --start --finish [--clear] 
-- [ ] autopilot [--now=datetime]
-- [x] info: display this.
-- [x] skill
-  - [x] delete SKILL
-  - [x] list
-  - [x] new SKILL
+Subcommands: [assign](#lotto-task-assign) - [fill](#lotto-task-fill) - [finish](#lotto-task-finish) - 
+[new shift](#lotto-task-new-shift) - [new ticket](#lotto-task-new-ticket) - [schedule](#lotto-task-schedule) - 
+[show](#lotto-task-show) - [start](#lotto-task-start) - [unassign](#lotto-task-unassign)
 
+#### `/lotto task assign`
+
+Assign users to tasks.
+
+Flags:
+- `--force` - force assign: ignore the checks for the task's state and limits.
+
+#### `/lotto task fill`
+
+Auto-assign users to tasks to meet the requirements.
+
+#### `/lotto task finish`
+
+Transition a task to the `finished` state. 
+
+#### `/lotto task new shift`
+
+Create a new shift (i.e. recurring) task, sets its status to `pending`. 
+
+Flags:
+- `--number` - shift's period number to create, 0-based.
+
+#### `/lotto task new ticket`
+
+Create a new ticket (i.e. on-request) task, sets its status to `pending`. 
+
+Flags:
+- `--summary` - shift's period number to create, 0-based.
+
+#### `/lotto task finish`
+
+Transition a task to the `finished` state. 
+
+#### `/lotto task schedule`
+
+Transition a task to the `scheduled` state. 
+
+#### `/lotto task show`
+
+Display task's details
+
+#### `/lotto task unassign`
+
+Display task's details
+
+### `/lotto user`
+
+Tools to manage the user settings and calendars. 
+
+Usage: `/lotto user <subcommand> [@user1 @user2...] [--flags]`.
+
+Subcommands: [disqualify](#lotto-user-) - [join](#lotto-user-) - [leave](#lotto-user-) - [qualify](#lotto-user-) - [show](#lotto-user-) - [unavailable](#lotto-user-)
+
+#### `/lotto user disqualify`
+
+Disqualify users from skills.
+
+- `--skill=skill[,...]` - the skills to remove from the users' profiles (default: all).
+
+#### `/lotto user join`
+
+Add user(s) to a rotation.
+
+- `--starting=datetime` - specify the start time in the rotation. Setting it in the past will increase the users' weight immediately; setting it in the future will give the user a grace period until then. (default: all).
+
+#### `/lotto user leave`
+
+Add user(s) to a rotation.
+
+- `--starting=datetime` - specify the start time in the rotation. Setting it in the past will increase the users' weight immediately; setting it in the future will give the user a grace period until then. (default: all).
+
+#### `/lotto user qualify`
+
+Qualify users for skills, with optional skill levels.
+
+Flags:
+- `--skill=skill-level[,...]` - qualifies the user for the skills, at the specified levels. The _-level_ part is optional, is a number 1-4 corresponding to Beginner/Intermediate/Advanced/Expert (default: 1/beginner).
+
+#### `/lotto user show`
+
+Show user records.
+
+#### `/lotto user unavailable`
+
+Add or clear times when user(s) are unavailable.
+
+Flags:
+- `--start=datetime` - start of the interval.
+- `--finish=datetime` - end of the interval.
+- `--clear` - clear all previous events *overlapping* with the date range.
