@@ -33,7 +33,7 @@ func (c *Command) subUsage(subcommands map[string]func([]string) (md.MD, error))
 	}
 	sort.Strings(subs)
 	usage := fmt.Sprintf("`%s %s`", c.actualTrigger, strings.Join(subs, "|"))
-	return md.Markdownf("Usage: %s\nUse `%s <subcommand> --help` for more info.",
+	return md.Markdownf("Usage: %s\nUse `%s help <subcommand>` for more info.",
 		usage, c.actualTrigger)
 }
 
