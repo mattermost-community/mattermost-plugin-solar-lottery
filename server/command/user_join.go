@@ -8,14 +8,15 @@ import (
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
-	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
 func (c *Command) userJoin(parameters []string) (md.MD, error) {
-	var starting types.Time
 	c.withFlagRotation()
-	c.fs.Var(&starting, flagStart, fmt.Sprintf("time for user to start participating"))
-	err := c.fs.Parse(parameters)
+	starting, err := c.withTimeFlag("starting", fmt.Sprintf("time for user to start participating"))
+	if err != nil {
+		return c.flagUsage(), err
+	}
+	err = c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
 	}
@@ -29,6 +30,6 @@ func (c *Command) userJoin(parameters []string) (md.MD, error) {
 		c.SL.JoinRotation(sl.InJoinRotation{
 			MattermostUserIDs: mattermostUserIDs,
 			RotationID:        rotationID,
-			Starting:          starting,
+			Starting:          *starting,
 		}))
 }

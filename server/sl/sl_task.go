@@ -33,11 +33,40 @@ func (sl *sl) LoadTasks(taskIDs *types.IDSet) (*Tasks, error) {
 	return tasks, nil
 }
 
+func (sl *sl) ListTasks(rotation *Rotation, taskStatus types.ID) ([]string, error) {
+	return []string{"<><> TODO"}, nil
+}
+
+func (sl *sl) createShift(r *Rotation, shiftNumber int, now types.Time) (task *Task, err error) {
+	task, err = r.makeShift(shiftNumber, now)
+	if err != nil {
+		return nil, err
+	}
+	defer task.WrapError(&err, "create (shift)")
+	var id types.ID
+	id, err = sl.Store.Entity(KeyTask).NewID(string(task.TaskID))
+	if err != nil {
+		return nil, err
+	}
+	task.TaskID = id
+	err = sl.storeTask(task)
+	if err != nil {
+		return nil, err
+	}
+
+	r.TaskIDs.Set(task.TaskID)
+	if r.Tasks != nil {
+		r.Tasks.Set(task)
+	}
+
+	return task, nil
+}
+
 func (sl *sl) loadTask(taskID types.ID) (*Task, error) {
 	t := NewTask("")
 	err := sl.Store.Entity(KeyTask).Load(taskID, t)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to load %s", taskID)
+		return nil, errors.Wrapf(err, "failed to load task %s", taskID)
 	}
 	return t, nil
 }
@@ -46,7 +75,7 @@ func (sl *sl) storeTask(task *Task) error {
 	task.PluginVersion = sl.conf.PluginVersion
 	err := sl.Store.Entity(KeyTask).Store(task.TaskID, task)
 	if err != nil {
-		return errors.Wrapf(err, "failed to store %s", task.String())
+		return errors.Wrapf(err, "failed to store task %s", task.String())
 	}
 	return nil
 }
@@ -65,7 +94,9 @@ var allowedAssignTaskStates = map[bool]*types.IDSet{
 	true:  types.NewIDSet(TaskStatePending, TaskStateScheduled, TaskStateStarted),
 }
 
-func (sl *sl) assignTask(task *Task, users *Users, force bool) (*Users, error) {
+func (sl *sl) assignTask(r *Rotation, task *Task, users *Users, force bool) (assigned *Users, err error) {
+	defer task.WrapError(&err, "assign")
+
 	if !allowedAssignTaskStates[force].Contains(task.State) {
 		out := "can not "
 		if force {
@@ -76,16 +107,18 @@ func (sl *sl) assignTask(task *Task, users *Users, force bool) (*Users, error) {
 
 	limit := NewNeeds(task.Limit.AsArray()...)
 	require := NewNeeds(task.Require.AsArray()...)
-	added := NewUsers()
+	assigned = NewUsers()
 	for _, user := range users.AsArray() {
 		if task.MattermostUserIDs.Contains(user.MattermostUserID) {
 			continue
 		}
 
-		var failed *Needs
-		limit, _, failed = limit.CheckLimits(user)
-		if !failed.IsEmpty() && !force {
-			return nil, errors.Errorf("user %s failed max constraints %s", user.Markdown(), failed.MarkdownSkillLevels())
+		if !force {
+			var failed *Needs
+			limit, _, failed = limit.CheckLimits(user)
+			if !failed.IsEmpty() {
+				return nil, errors.Errorf("user %s failed max constraints %s", user.Markdown(), failed.MarkdownSkillLevels())
+			}
 		}
 		require = require.CheckRequired(user)
 
@@ -93,12 +126,16 @@ func (sl *sl) assignTask(task *Task, users *Users, force bool) (*Users, error) {
 		if task.Users != nil {
 			task.Users.Set(user)
 		}
-		added.Set(user)
+		assigned.Set(user)
 	}
-	return added, nil
+
+	sl.markUsersServed(r, task, assigned)
+	return assigned, nil
 }
 
-func (sl *sl) unassignTask(task *Task, users *Users, force bool) (*Users, error) {
+func (sl *sl) unassignTask(task *Task, users *Users, force bool) (removed *Users, err error) {
+	defer task.WrapError(&err, "unassign")
+
 	if !allowedAssignTaskStates[force].Contains(task.State) {
 		out := "can not "
 		if force {
@@ -107,11 +144,10 @@ func (sl *sl) unassignTask(task *Task, users *Users, force bool) (*Users, error)
 		return nil, errors.Errorf("%s unassign to task in state %s", out, task.State)
 	}
 
-	removed := NewUsers()
+	removed = NewUsers()
 	for _, user := range users.AsArray() {
 		if !task.MattermostUserIDs.Contains(user.MattermostUserID) {
-			return nil, errors.Wrapf(kvstore.ErrNotFound,
-				"User %s is not assigned to task %s", user.Markdown(), task.Markdown())
+			return nil, errors.Wrapf(kvstore.ErrNotFound, "%s is not assigned", user.Markdown())
 		}
 
 		task.MattermostUserIDs.Delete(user.MattermostUserID)
@@ -120,15 +156,12 @@ func (sl *sl) unassignTask(task *Task, users *Users, force bool) (*Users, error)
 		}
 		removed.Set(user)
 	}
+	// TODO clear users' calendars
 	return removed, nil
 }
 
-func (sl *sl) fillTask(r *Rotation, task *Task) (added *Users, err error) {
-	defer func() {
-		if err != nil {
-			err = errors.Wrapf(err, "failed to fill task %s", task.Markdown())
-		}
-	}()
+func (sl *sl) fillTask(r *Rotation, task *Task, now types.Time) (added *Users, err error) {
+	defer task.WrapError(&err, "fill")
 
 	// Autofill is only allowed on pending tasks
 	if task.State != TaskStatePending {
@@ -139,17 +172,12 @@ func (sl *sl) fillTask(r *Rotation, task *Task) (added *Users, err error) {
 	if err != nil {
 		return nil, err
 	}
-	added, err = filler.FillTask(r, task, sl.Logger)
+	added, err = filler.FillTask(r, task, now, sl.Logger)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, user := range added.AsArray() {
-		task.MattermostUserIDs.Set(user.MattermostUserID)
-		task.Users.Set(user)
-	}
-
-	return added, nil
+	return sl.assignTask(r, task, added, true)
 }
 
 var validPriorStates = map[types.ID]*types.IDSet{
@@ -158,38 +186,51 @@ var validPriorStates = map[types.ID]*types.IDSet{
 	TaskStateStarted:   types.NewIDSet(TaskStateScheduled),
 }
 
-func (sl *sl) transitionTask(r *Rotation, task *Task, now types.Time, to types.ID) error {
-	if task.State == to {
+func (sl *sl) transitionTask(r *Rotation, t *Task, now types.Time, to types.ID) (err error) {
+	if t.State == to {
 		return nil
 	}
+	defer t.WrapError(&err, "transition to "+to.String())
 
 	priorStates, ok := validPriorStates[to]
-	if ok && !priorStates.Contains(task.State) {
-		return errors.Errorf("fail to transition from %s to %s, only allowed for %s", task.State, to, priorStates.IDs())
-	}
-
-	// Touch LastServed for all users.
-	for _, user := range task.Users.AsArray() {
-		user.LastServed.Set(r.RotationID, now.Unix())
-		_, err := sl.storeUserWelcomeNew(user)
-		if err != nil {
-			return err
-		}
+	if ok && !priorStates.Contains(t.State) {
+		return errors.Errorf("prior state: %s, only allowed for %s", t.State, priorStates.IDs())
 	}
 
 	switch to {
 	case TaskStatePending:
 		sl.announceRotationUsers(r, func(user *User, _ *Rotation) {
-			sl.dmUserTaskPending(user, task)
+			sl.dmUserTaskPending(user, t)
 		})
 	case TaskStateScheduled:
-		sl.announceTaskUsers(task, sl.dmUserTaskScheduled)
+		sl.announceTaskUsers(t, sl.dmUserTaskScheduled)
 	case TaskStateStarted:
-		sl.announceTaskUsers(task, sl.dmUserTaskStarted)
+		t.ActualStart = now
+		sl.announceTaskUsers(t, sl.dmUserTaskStarted)
 	case TaskStateFinished:
-		sl.announceTaskUsers(task, sl.dmUserTaskFinished)
+		t.ActualFinish = now
+		sl.announceTaskUsers(t, sl.dmUserTaskFinished)
 	}
 
-	task.State = to
-	return sl.storeTask(task)
+	sl.markUsersServed(r, t, t.Users)
+
+	err = sl.storeUsers(t.Users)
+	if err != nil {
+		return err
+	}
+	t.State = to
+	return sl.storeTask(t)
+}
+
+func (sl *sl) markUsersServed(r *Rotation, t *Task, users *Users) {
+	cal := t.NewUnavailable()
+	if cal == nil {
+		return
+	}
+	for _, user := range users.AsArray() {
+		// TODO: add a Task method to return projected end date, package cal[0].Interval.Finish
+		user.LastServed.Set(r.RotationID, cal[0].Interval.Finish.Unix())
+		user.ClearUnavailable(types.Interval{}, t.RotationID, t.TaskID)
+		user.AddUnavailable(cal...)
+	}
 }

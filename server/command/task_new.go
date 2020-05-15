@@ -4,21 +4,16 @@
 package command
 
 import (
+	"time"
+
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-func (c *Command) taskNew(parameters []string) (md.MD, error) {
-	subcommands := map[string]func([]string) (md.MD, error){
-		commandTicket: c.newTicketTask,
-	}
-
-	return c.handleCommand(subcommands, parameters)
-}
-
-func (c *Command) newTicketTask(parameters []string) (md.MD, error) {
+func (c *Command) taskNewTicket(parameters []string) (md.MD, error) {
 	c.withFlagRotation()
-	summary := c.withFlagSummary()
+	summary := c.flags().String("summary", "", "task summary")
 	err := c.parse(parameters)
 	if err != nil {
 		return c.flagUsage(), err
@@ -28,8 +23,29 @@ func (c *Command) newTicketTask(parameters []string) (md.MD, error) {
 		return "", err
 	}
 
-	return c.normalOut(c.SL.MakeTicket(sl.InMakeTicket{
+	return c.normalOut(
+		c.SL.CreateTicket(sl.InCreateTicket{
+			RotationID: rotationID,
+			Summary:    *summary,
+			Time:       *c.now,
+		}))
+}
+
+func (c *Command) taskNewShift(parameters []string) (md.MD, error) {
+	c.withFlagRotation()
+	shiftNumber := c.flags().IntP("number", "n", 1, "shift number")
+	err := c.parse(parameters)
+	if err != nil {
+		return c.flagUsage(), err
+	}
+	rotationID, err := c.resolveRotation()
+	if err != nil {
+		return "", err
+	}
+
+	return c.normalOut(c.SL.CreateShift(sl.InCreateShift{
 		RotationID: rotationID,
-		Summary:    *summary,
+		Number:     *shiftNumber,
+		Time:       types.NewTime(time.Now()),
 	}))
 }

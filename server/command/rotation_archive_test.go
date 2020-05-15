@@ -13,13 +13,13 @@ import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-func TestCommandRotationArchive(t *testing.T) {
+func TestRotationArchive(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		SL, store := getTestSL(t, ctrl)
 
-		runCommands(t, SL, `
+		mustRunMulti(t, SL, `
 			/lotto rotation new test
 			/lotto rotation new test-123
 			/lotto rotation new test-345
@@ -29,10 +29,7 @@ func TestCommandRotationArchive(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, types.NewIDSet("test", "test-123", "test-345"), activeRotations)
 
-		r := sl.NewRotation()
-		_, err = runJSONCommand(t, SL, `
-			/lotto rotation archive test-123`, &r)
-		require.NoError(t, err)
+		r := mustRunRotation(t, SL, `/lotto rotation archive test-123`)
 		require.Equal(t, types.ID("test-123"), r.RotationID)
 		require.True(t, r.IsArchived)
 
@@ -46,34 +43,29 @@ func TestCommandRotationArchive(t *testing.T) {
 		require.True(t, r.IsArchived)
 
 		rr := []string{}
-		_, err = runJSONCommand(t, SL, `
-			/lotto rotation list`, &rr)
-		require.NoError(t, err)
+		mustRunJSON(t, SL, `/lotto rotation list`, &rr)
 		require.Equal(t, []string{"test", "test-345"}, rr)
 
-		_, err = runCommand(t, SL, `
-			/lotto rotation show test-123`)
+		_, err = run(t, SL, `/lotto rotation show test-123`)
 		require.Equal(t, kvstore.ErrNotFound, err)
 	})
 
 }
 
-func TestCommandRotationDelete(t *testing.T) {
+func TestRotationDelete(t *testing.T) {
 	t.Run("happy", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
 		SL, store := getTestSL(t, ctrl)
 
-		runCommands(t, SL, `
+		mustRunMulti(t, SL, `
 			/lotto rotation new test
 			/lotto rotation new test-123
 			/lotto rotation new test-345
 			`)
 
 		var rotationID types.ID
-		_, err := runJSONCommand(t, SL, `
-			/lotto rotation debug-delete test-123`, &rotationID)
-		require.NoError(t, err)
+		mustRunJSON(t, SL, `/lotto rotation debug-delete test-123`, &rotationID)
 		require.Equal(t, types.ID("test-123"), rotationID)
 
 		activeRotations, err := store.IDIndex(sl.KeyActiveRotations).Load()
@@ -85,13 +77,10 @@ func TestCommandRotationDelete(t *testing.T) {
 		require.Equal(t, kvstore.ErrNotFound, err)
 
 		rr := []string{}
-		_, err = runJSONCommand(t, SL, `
-			/lotto rotation list`, &rr)
-		require.NoError(t, err)
+		mustRunJSON(t, SL, `/lotto rotation list`, &rr)
 		require.Equal(t, []string{"test", "test-345"}, rr)
 
-		_, err = runCommand(t, SL, `
-			/lotto rotation show test-123`)
+		_, err = run(t, SL, `/lotto rotation show test-123`)
 		require.Equal(t, kvstore.ErrNotFound, err)
 	})
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
@@ -48,12 +49,12 @@ func (users Users) MarkdownWithSkills() string {
 	return strings.Join(out, ", ")
 }
 
-func (users Users) Markdown() string {
+func (users Users) Markdown() md.MD {
 	out := []string{}
 	for _, user := range users.AsArray() {
-		out = append(out, user.Markdown())
+		out = append(out, user.Markdown().String())
 	}
-	return strings.Join(out, ", ")
+	return md.MD(strings.Join(out, ", "))
 }
 
 func (users Users) String() string {

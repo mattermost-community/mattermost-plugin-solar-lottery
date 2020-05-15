@@ -6,49 +6,67 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-func TestCommandTaskFill(t *testing.T) {
+func TestTaskFill(t *testing.T) {
 	t.Run("fill happy", func(t *testing.T) {
-		ctrl := gomock.NewController(t)
+		ctrl, SL := defaultEnv(t)
 		defer ctrl.Finish()
-		SL, _ := getTestSL(t, ctrl)
-
-		ts := time.Now()
-		err := runCommands(t, SL, `
-			/lotto rotation new test-rotation
-			/lotto rotation param ticket test-rotation 
-			/lotto rotation param min -k web-1 --count 2 test-rotation
+		mustRunMulti(t, SL, `
+			/lotto rotation new test-rotation --task-type=ticket --beginning=2020-03-01
+			/lotto rotation set require -s web-1 --count 2 test-rotation
 			
-			# user3 and 4 are joining in the future, and will not be selected,
-			# user1 and 2 are in the past, and will be selected
-			/lotto user join test-rotation @test-user3 @test-user4 --start 2022-01-01
-			/lotto user join test-rotation @test-user1 @test-user2 --start 2020-01-01
-			/lotto user qualify -k web-1 @test-user1 @test-user2 @test-user3 @test-user4
-			/lotto task new ticket test-rotation --summary test-summary1
-			/lotto task show test-rotation#1
-			`)
-		require.NoError(t, err)
+			# user1,2 are joining in the future, and will not be selected,
+			# user3,4 are in the past, and will be selected
 
-		out := &sl.OutAssignTask{
-			Changed: sl.NewUsers(),
+			/lotto user join test-rotation @test-user1 --starting 2033-01-01
+			/lotto user join test-rotation @test-user2 --starting 2033-01-01PST
+			/lotto user join test-rotation @test-user3 --starting 2020-01-01UTC
+			/lotto user join test-rotation @test-user4 --starting 2020-01-01T11:00EST
+			/lotto user qualify -s web-1 @test-user1 @test-user2 @test-user3 @test-user4
+			/lotto task new ticket test-rotation --summary test-summary1 --now 2020-03-01
+			`)
+
+		lastServed := func(user *sl.User) string {
+			return time.Unix(user.LastServed.Get("test-rotation"), 0).In(types.PST).Format(time.RFC3339)
 		}
-		_, err = runJSONCommand(t, SL, `
-			/lotto task fill test-rotation#1 
-			`, &out)
-		task := out.Task
-		require.NoError(t, err)
+		require.Equal(t, "2033-01-01T00:00:00-08:00", lastServed(mustRunUser(t, SL, `/lotto user show @test-user1`)))
+		require.Equal(t, "2033-01-01T00:00:00-08:00", lastServed(mustRunUser(t, SL, `/lotto user show @test-user2`)))
+		require.Equal(t, "2019-12-31T16:00:00-08:00", lastServed(mustRunUser(t, SL, `/lotto user show @test-user3`)))
+		require.Equal(t, "2020-01-01T03:00:00-08:00", lastServed(mustRunUser(t, SL, `/lotto user show @test-user4`)))
+
+		task := mustRunTaskAssign(t, SL, `/lotto task fill test-rotation#1 --now 2020-02-20`)
 		require.Equal(t, "test-plugin-version", task.PluginVersion)
 		require.Equal(t, types.ID("test-rotation#1"), task.TaskID)
 		require.Equal(t, types.ID("test-rotation"), task.RotationID)
 		require.Equal(t, sl.TaskStatePending, task.State)
-		require.True(t, task.Created.After(ts))
 		require.Equal(t, "test-summary1", task.Summary)
-		require.Equal(t, []string{"test-user1", "test-user2"}, out.Task.MattermostUserIDs.TestIDs())
+		require.Equal(t, []string{"test-user3", "test-user4"}, task.MattermostUserIDs.TestIDs())
+		require.Equal(t, "2020-03-01T08:00", task.ExpectedStart.String())
+		require.Equal(t, "30m0s", task.ExpectedDuration.String())
+
+		// Once added to a ticket, last served must be updated
+		require.Equal(t, "2020-03-01T00:30:00-08:00", lastServed(mustRunUser(t, SL, `/lotto user show @test-user3`)))
+		require.Equal(t, "2020-03-01T00:30:00-08:00", lastServed(mustRunUser(t, SL, `/lotto user show @test-user4`)))
+
+		// Check at least one calendar
+		require.Equal(t,
+			[]*sl.Unavailable{
+				{
+					Interval: types.Interval{
+						Start:  types.MustParseTime("2020-03-01T08:00"),
+						Finish: types.MustParseTime("2020-03-01T08:30"),
+					},
+					Reason:     "task",
+					TaskID:     "test-rotation#1",
+					RotationID: "test-rotation",
+				},
+			},
+			mustRunUser(t, SL, `/lotto user show @test-user3`).Calendar,
+		)
 	})
 }

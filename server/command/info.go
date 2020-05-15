@@ -17,50 +17,5 @@ func (c *Command) info(parameters []string) (md.MD, error) {
 		c.SL.Config().BuildHash,
 		c.SL.Config().BuildDate)
 
-	resp += `
-- [x] info: display this.
-
-- [ ] autopilot
-
-- [ ] task
-	- [x] schedule
-	- [x] close
-	- [x] start
-	- [ ] list --pending | --in-progress | --all
-	- [ ] new shift
-	- [x] unassign
-	- [x] assign
-	- [x] fill
-	- [x] new ticket
-	- [x] show ROT#id
-	- [ ] debug-delete
-
-- [x] rotation
-	- [x] archive ROT
-	- [x] debug-delete ROT
-	- [x] list
-	- [x] new ROT
-	- [x] show ROT
-	- [x] param grace --duration 
-	- [x] param max --skill <s-l> (--count | --clear)
-	- [x] param min --skill <s-l> (--count | --clear)
-	- [x] param shift --starting --period
-	- [x] param ticket
-	
-- [x] skill
-	- [x] delete SKILL
-	- [x] list
-	- [x] new SKILL
-
-- [x] user: manage users.
-	- [x] disqualify [@user...] --skill 
-	- [x] join ROT [@user...] --starting
-	- [x] leave ROT [@user...]
-	- [x] qualify [@user...] --skill 
-	- [x] show [@user...]
-	- [x] unavailable: [@user...] --start --finish [--clear] 
-
-
-	`
 	return resp, nil
 }

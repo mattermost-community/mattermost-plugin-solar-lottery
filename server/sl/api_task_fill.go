@@ -20,7 +20,7 @@ func (sl *sl) FillTask(params InAssignTask) (*OutAssignTask, error) {
 	}
 	defer sl.popLogger()
 
-	filled, err := sl.fillTask(r, task)
+	filled, err := sl.fillTask(r, task, params.Time)
 	if err != nil {
 		return nil, err
 	}
@@ -29,12 +29,16 @@ func (sl *sl) FillTask(params InAssignTask) (*OutAssignTask, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = sl.storeUsers(filled)
+	if err != nil {
+		return nil, err
+	}
 
 	out := &OutAssignTask{
-		MD:      md.Markdownf("Auto-assigned %s to ticket %s.", filled.Markdown(), task.Markdown()),
+		MD:      md.Markdownf("Auto-assigned %s to ticket %s", filled.MarkdownWithSkills(), task.Markdown()),
 		Task:    task,
 		Changed: filled,
 	}
-	sl.LogAPI(out)
+	sl.logAPI(out)
 	return out, nil
 }

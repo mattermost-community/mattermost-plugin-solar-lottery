@@ -6,6 +6,7 @@ package sl
 import (
 	"fmt"
 
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
@@ -28,11 +29,11 @@ func (need Need) SkillLevel() SkillLevel {
 }
 
 func (need Need) String() string {
-	return fmt.Sprintf("%v-%s", need.Count(), need.SkillLevel())
+	return fmt.Sprintf("%v %s", need.Count(), need.SkillLevel())
 }
 
-func (need Need) Markdown() string {
-	return fmt.Sprintf("**%v** %s", need.Count(), need.SkillLevel())
+func (need Need) Markdown() md.MD {
+	return md.Markdownf("**%v** %s", need.Count(), need.SkillLevel())
 }
 
 func (need Need) QualifyUser(user *User) (bool, Need) {

@@ -12,6 +12,7 @@ type InAssignTask struct {
 	TaskID            types.ID
 	MattermostUserIDs *types.IDSet
 	Force             bool
+	Time              types.Time
 }
 
 type OutAssignTask struct {
@@ -35,7 +36,7 @@ func (sl *sl) AssignTask(params InAssignTask) (*OutAssignTask, error) {
 	}
 	defer sl.popLogger()
 
-	assigned, err := sl.assignTask(task, users, params.Force)
+	assigned, err := sl.assignTask(r, task, users, params.Force)
 	if err != nil {
 		return nil, err
 	}
@@ -46,10 +47,10 @@ func (sl *sl) AssignTask(params InAssignTask) (*OutAssignTask, error) {
 	}
 
 	out := &OutAssignTask{
-		MD:      md.Markdownf("assigned %s to ticket %s.", assigned.Markdown(), task.Markdown()),
+		MD:      md.Markdownf("assigned %s to ticket %s", assigned.Markdown(), task.Markdown()),
 		Task:    task,
 		Changed: assigned,
 	}
-	sl.LogAPI(out)
+	sl.logAPI(out)
 	return out, nil
 }

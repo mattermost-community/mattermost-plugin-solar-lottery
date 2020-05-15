@@ -43,6 +43,6 @@ func (sl *sl) JoinRotation(params InJoinRotation) (*OutJoinRotation, error) {
 		Modified: modified,
 		MD:       md.Markdownf("added %s to %s.", modified.MarkdownWithSkills(), r.Markdown()),
 	}
-	sl.LogAPI(out)
+	sl.logAPI(out)
 	return out, nil
 }

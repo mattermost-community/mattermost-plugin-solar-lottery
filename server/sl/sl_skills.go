@@ -5,13 +5,8 @@ package sl
 
 import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
+	"github.com/pkg/errors"
 )
-
-type SkillService interface {
-	ListKnownSkills() (*types.IDSet, error)
-	AddKnownSkill(types.ID) error
-	DeleteKnownSkill(types.ID) error
-}
 
 func (sl *sl) ListKnownSkills() (*types.IDSet, error) {
 	knownSkills := types.NewIDSet()
@@ -29,12 +24,17 @@ func (sl *sl) AddKnownSkill(skillName types.ID) error {
 	}
 	defer sl.popLogger()
 
-	err = sl.Store.IDIndex(KeyKnownSkills).Set(skillName)
+	if skillName == AnySkill {
+		return errors.Errorf("%s is reserved", skillName)
+	}
+
+	added, err := sl.Store.IDIndex(KeyKnownSkills).Set(skillName)
 	if err != nil {
 		return err
 	}
-
-	sl.Infof("%s added known skill %s.", sl.actingUser.Markdown(), skillName)
+	if added {
+		sl.Infof("%s added known skill %s.", sl.actingUser.Markdown(), skillName)
+	}
 	return nil
 }
 

@@ -55,100 +55,50 @@ func (p *Period) Set(in string) error {
 	return nil
 }
 
-// func (p *Period) IntervalForTime(beginning, now Time) Interval {
-// 	start := p.StartForTime(beginning, now)
-// 	next := p.Next(start)
-// 	return Interval{
-// 		Start:  start,
-// 		Finish: next,
-// 	}
-// }
-
-func (p *Period) StartForTime(start, now Time) Time {
-	const (
-		maxDay   = time.Hour * 24
-		maxMonth = maxDay * 31
-	)
-
-	if now.Before(start.Time) {
-		return start
-	}
-
-	n := 0
-	delta := now.Sub(start.Time)
+func (p *Period) ForNumber(beginning Time, num int) Time {
 	days, months := 0, 0
 	switch p.Period {
 	case EveryDuration:
-		reduced := now.Add(-p.Duration / 2)
+		reduced := beginning.Add(-p.Duration / 2)
 		return NewTime(reduced.Round(p.Duration))
 
 	case EveryDay:
-		days = 1
-		n = int(delta / maxDay)
+		days = 1 * num
 
 	case EveryWeek:
-		days = 7
-		n = int(delta / (7 * maxDay))
+		days = 7 * num
 
 	case EveryTwoWeeks:
-		days = 14
-		n = int(delta / (14 * maxDay))
+		days = 14 * num
 
 	case EveryMonth:
-		months = 1
-		n = int(delta / maxMonth)
-
-	default:
-		return start
+		months = 1 * num
 	}
 
-	t := start.AddDate(0, months*n, days*n)
-	if now.Before(t) {
-		panic("<><> TODO")
+	return NewTime(beginning.AddDate(0, months, days))
+}
+
+func (p *Period) ForTime(beginning, forTime Time) (int, Time) {
+	if forTime.Before(beginning.Time) {
+		return -1, Time{}
 	}
-	for {
-		next := t.AddDate(0, months, days)
-		if now.Before(next) {
-			return NewTime(t)
+
+	last := beginning
+	for n := 0; ; n++ {
+		if forTime.Before(beginning.Time) {
+			return n - 1, last
 		}
-		t = next
+		last = beginning
+		beginning = p.ForNumber(beginning, 1)
 	}
 }
 
-func (p *Period) Next(start Time) Time {
-	days, months := 0, 0
-	switch p.Period {
-	case EveryDuration:
-		reduced := start.Add(-p.Duration / 2)
-		return NewTime(reduced.Round(p.Duration))
-
-	case EveryDay:
-		days = 1
-
-	case EveryWeek:
-		days = 7
-
-	case EveryTwoWeeks:
-		days = 14
-
-	case EveryMonth:
-		months = 1
-	}
-
-	return NewTime(start.AddDate(0, months, days))
-}
-
-func (p *Period) NumberForTime(start, now Time) int {
-	if start.Before(now.Time) {
-		return -1
-	}
-
-	n := 0
-	for {
-		if !start.Before(now.Time) {
-			return n
-		}
-		start = p.Next(start)
-		n++
-	}
+func (p *Period) AverageDuration() time.Duration {
+	return map[string]time.Duration{
+		EveryDuration: p.Duration,
+		EveryDay:      24 * time.Hour,
+		EveryWeek:     7 * 24 * time.Hour,
+		EveryTwoWeeks: 2 * 7 * 24 * time.Hour,
+		EveryMonth:    time.Duration(730.08 * float64(time.Hour)),
+	}[p.Period]
 }

@@ -42,16 +42,19 @@ type Task struct {
 	TaskID        types.ID
 	RotationID    types.ID
 	State         types.ID
-	Created       types.Time
-	Summary       string
-	Description   string
 
-	Scheduled         types.Interval `json:",omitempty"`
-	Require           *Needs         `json:",omitempty"`
-	Limit             *Needs         `json:",omitempty"`
-	Actual            types.Interval `json:",omitempty"`
-	Grace             time.Duration  `json:",omitempty"`
-	MattermostUserIDs *types.IDSet   `json:",omitempty"`
+	ActualFinish            types.Time    `json:",omitempty"`
+	ActualStart             types.Time    `json:",omitempty"`
+	AutopilotRemindedFinish bool          `json:",omitempty"`
+	AutopilotRemindedStart  bool          `json:",omitempty"`
+	Description             string        `json:",omitempty"`
+	ExpectedDuration        time.Duration `json:",omitempty"`
+	ExpectedStart           types.Time    `json:",omitempty"`
+	Grace                   time.Duration `json:",omitempty"`
+	Limit                   *Needs        `json:",omitempty"`
+	MattermostUserIDs       *types.IDSet  `json:",omitempty"`
+	Require                 *Needs        `json:",omitempty"`
+	Summary                 string        `json:",omitempty"`
 
 	Users *Users `json:"-"`
 }
@@ -59,7 +62,6 @@ type Task struct {
 func NewTask(rotationID types.ID) *Task {
 	return &Task{
 		State:             TaskStatePending,
-		Created:           types.NewTime(),
 		RotationID:        rotationID,
 		Require:           NewNeeds(),
 		Limit:             NewNeeds(),
@@ -72,6 +74,12 @@ func (t Task) GetID() types.ID {
 	return t.TaskID
 }
 
+func (t *Task) WrapError(err *error, verb string) {
+	if *err != nil {
+		*err = errors.Wrapf(*err, "failed to %v task %s", verb, t.Markdown())
+	}
+}
+
 func (t Task) MarkdownBullets(rotation *Rotation) md.MD {
 	out := md.Markdownf("- %s\n", t.Markdown())
 	out += md.Markdownf("  - Status: **%s**\n", t.State)
@@ -82,55 +90,57 @@ func (t Task) MarkdownBullets(rotation *Rotation) md.MD {
 	return out
 }
 
-func (task Task) Markdown() md.MD {
-	return md.Markdownf("%s", task.String())
+func (t Task) Markdown() md.MD {
+	return md.Markdownf("%s", t.String())
 }
 
-func (task Task) String() string {
-	return fmt.Sprintf("%s", task.TaskID)
+func (t Task) String() string {
+	return fmt.Sprintf("%s", t.TaskID)
 }
 
-func (task *Task) NewUnavailable() []*Unavailable {
-	interval := task.Actual
+func (t *Task) NewUnavailable() []*Unavailable {
+	interval := t.Interval()
 	if interval.IsEmpty() {
-		interval = task.Scheduled
+		return nil
 	}
-	if interval.IsEmpty() {
-		now := types.NewTime()
-		interval = types.Interval{
-			Start:  now,
-			Finish: now,
-		}
-	}
+
 	uu := []*Unavailable{
 		{
 			Reason:     ReasonTask,
 			Interval:   interval,
-			TaskID:     task.TaskID,
-			RotationID: task.RotationID,
+			TaskID:     t.TaskID,
+			RotationID: t.RotationID,
 		},
 	}
-
-	if task.Grace > 0 {
+	if t.Grace > 0 {
 		uu = append(uu, &Unavailable{
-			Reason: ReasonGrace,
-			Interval: types.Interval{
-				Start:  interval.Finish,
-				Finish: types.NewTime(interval.Finish.Add(task.Grace)),
-			},
-			TaskID: task.TaskID,
+			Reason:     ReasonGrace,
+			Interval:   types.NewDurationInterval(interval.Finish, t.Grace),
+			TaskID:     t.TaskID,
+			RotationID: t.RotationID,
 		})
 	}
-
 	return uu
 }
 
-func (task *Task) isReadyToStart() (ready bool, whyNot string, err error) {
-	if task.State != TaskStatePending && task.State != TaskStateScheduled {
-		return false, "", errors.Wrap(ErrWrongState, string(task.State))
+func (t *Task) Interval() types.Interval {
+	switch {
+	case !t.ActualStart.IsZero() && !t.ActualFinish.IsZero():
+		return types.NewInterval(t.ActualStart, t.ActualFinish)
+	case !t.ActualStart.IsZero() && t.ExpectedDuration != 0:
+		return types.NewDurationInterval(t.ActualStart, t.ExpectedDuration)
+	case !t.ExpectedStart.IsZero() && t.ExpectedDuration != 0:
+		return types.NewDurationInterval(t.ExpectedStart, t.ExpectedDuration)
+	}
+	return types.Interval{}
+}
+
+func (t *Task) isReadyToStart() (ready bool, whyNot string, err error) {
+	if t.State != TaskStatePending && t.State != TaskStateScheduled {
+		return false, "", errors.Wrap(ErrWrongState, string(t.State))
 	}
 
-	unmetNeeds := task.Require.Unmet(task.Users)
+	unmetNeeds := t.Require.Unmet(t.Users)
 	if unmetNeeds.IsEmpty() {
 		return true, "", nil
 	}
@@ -138,7 +148,7 @@ func (task *Task) isReadyToStart() (ready bool, whyNot string, err error) {
 	whyNot = FillError{
 		UnmetNeeds: unmetNeeds,
 		Err:        errors.New("not filled"),
-		TaskID:     task.TaskID,
+		TaskID:     t.TaskID,
 	}.Error()
 
 	return false, whyNot, nil

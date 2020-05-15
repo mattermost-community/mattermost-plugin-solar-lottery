@@ -23,7 +23,7 @@ func (c *Command) taskTransition(to types.ID) func([]string) (md.MD, error) {
 		return c.normalOut(c.SL.TransitionTask(sl.InTransitionTask{
 			TaskID: taskID,
 			State:  to,
-			Time:   types.NewTime(),
+			Time:   *c.now,
 		}))
 	}
 }

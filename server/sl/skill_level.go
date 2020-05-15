@@ -16,7 +16,7 @@ type SkillLevel struct {
 	Level Level
 }
 
-var AnySkill = types.ID("*")
+var AnySkill = types.ID("any")
 var AnySkillLevel = NewSkillLevel(AnySkill, AnyLevel)
 
 func NewSkillLevel(s types.ID, l Level) SkillLevel {
@@ -33,7 +33,17 @@ func ParseSkillLevel(in types.ID) SkillLevel {
 }
 
 func (skillLevel SkillLevel) String() string {
-	return fmt.Sprintf("%s-%s", skillLevel.Skill, skillLevel.Level)
+	none := SkillLevel{}
+	switch {
+	case skillLevel == none || skillLevel.Skill == AnySkill:
+		return AnySkill.String()
+
+	case skillLevel.Level == AnyLevel:
+		return skillLevel.Skill.String()
+
+	default:
+		return fmt.Sprintf("%s-%s", skillLevel.Skill, skillLevel.Level)
+	}
 }
 
 func (skillLevel SkillLevel) AsID() types.ID {
@@ -45,7 +55,7 @@ func (skillLevel SkillLevel) Type() string {
 }
 
 func (skillLevel *SkillLevel) Set(in string) error {
-	if in == AnySkill.String() || in == AnySkillLevel.String() {
+	if in == AnySkill.String() {
 		*skillLevel = AnySkillLevel
 		return nil
 	}
@@ -54,7 +64,7 @@ func (skillLevel *SkillLevel) Set(in string) error {
 		return errors.Errorf("should be formatted as skill-level: %s", skillLevel)
 	}
 
-	l := Beginner
+	l := BeginnerLevel
 	if len(split) == 2 {
 		err := l.Set(split[1])
 		if err != nil {

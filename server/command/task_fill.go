@@ -20,5 +20,6 @@ func (c *Command) taskFill(parameters []string) (md.MD, error) {
 
 	return c.normalOut(c.SL.FillTask(sl.InAssignTask{
 		TaskID: taskID,
+		Time:   *c.now,
 	}))
 }

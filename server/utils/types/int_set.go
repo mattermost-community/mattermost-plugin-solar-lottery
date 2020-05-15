@@ -3,7 +3,10 @@
 
 package types
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"sort"
+)
 
 type IntValue struct {
 	ID    ID
@@ -74,10 +77,17 @@ func (set *IntSet) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
+	keys := []string{}
+	for key := range m {
+		keys = append(keys, key.String())
+	}
+	sort.Strings(keys)
+
 	n := NewIntSet()
 	*set = *n
-	for k, v := range m {
-		set.Set(k, v)
+	for _, key := range keys {
+		id := ID(key)
+		set.Set(id, m[id])
 	}
 	return nil
 }

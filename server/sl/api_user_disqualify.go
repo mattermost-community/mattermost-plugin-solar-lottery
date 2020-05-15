@@ -5,13 +5,19 @@ package sl
 
 import (
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
+	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/types"
 )
 
-func (sl *sl) Disqualify(params InQualify) (*OutQualify, error) {
+type InDisqualify struct {
+	MattermostUserIDs *types.IDSet
+	Skills            []string
+}
+
+func (sl *sl) Disqualify(params InDisqualify) (*OutQualify, error) {
 	users := NewUsers()
 	err := sl.Setup(
 		pushAPILogger("Disqualify", params),
-		withValidSkillName(&params.SkillLevel.Skill),
+		withValidSkillNames(params.Skills...),
 		withExpandedUsers(&params.MattermostUserIDs, users),
 	)
 	if err != nil {
@@ -19,15 +25,15 @@ func (sl *sl) Disqualify(params InQualify) (*OutQualify, error) {
 	}
 	defer sl.popLogger()
 
-	err = sl.disqualify(users, params.SkillLevel.Skill)
+	err = sl.disqualify(users, params.Skills)
 	if err != nil {
 		return nil, err
 	}
 
 	out := &OutQualify{
 		Users: users,
-		MD:    md.Markdownf("removed skill %s from %s.", params.SkillLevel.Skill, users.Markdown()),
+		MD:    md.Markdownf("removed skill(s) %s from %s.", params.Skills, users.Markdown()),
 	}
-	sl.LogAPI(out)
+	sl.logAPI(out)
 	return out, nil
 }

@@ -16,12 +16,12 @@ func TestLevelHappy(t *testing.T) {
 		level    Level
 		expected string
 	}{
-		{Level(-1), "*"},
-		{Level(0), "⛔"},
-		{Level(1), LevelBeginnerSymbol},
-		{Level(2), LevelIntermediateSymbol},
-		{Level(3), LevelAdvancedSymbol},
-		{Level(4), LevelExpertSymbol},
+		{Level(-1), "⛔"},
+		{Level(0), AnyLevelSymbol},
+		{Level(1), BeginnerLevelSymbol},
+		{Level(2), IntermediateLevelSymbol},
+		{Level(3), AdvancedLevelSymbol},
+		{Level(4), ExpertLevelSymbol},
 	} {
 		assert.Equal(t, tc.expected, fmt.Sprint(tc.level))
 	}
@@ -30,10 +30,10 @@ func TestLevelHappy(t *testing.T) {
 		value    string
 		expected Level
 	}{
-		// {LevelBeginnerSymbol, Level(1)},
-		{LevelIntermediateSymbol, Level(2)},
-		// {LevelAdvancedSymbol, Level(3)},
-		// {LevelExpertSymbol, Level(4)},
+		{BeginnerLevelSymbol, Level(1)},
+		{IntermediateLevelSymbol, Level(2)},
+		{AdvancedLevelSymbol, Level(3)},
+		{ExpertLevelSymbol, Level(4)},
 	} {
 		var l Level
 		err := l.Set(tc.value)
@@ -42,9 +42,9 @@ func TestLevelHappy(t *testing.T) {
 	}
 
 	for _, bad := range []string{"⛔", "invalid"} {
-		l := Beginner
+		l := BeginnerLevel
 		err := l.Set(bad)
 		require.Error(t, err)
-		require.Equal(t, Beginner, l)
+		require.Equal(t, BeginnerLevel, l)
 	}
 }

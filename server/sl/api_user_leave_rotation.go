@@ -31,6 +31,6 @@ func (sl *sl) LeaveRotation(params InJoinRotation) (*OutJoinRotation, error) {
 		Modified: modified,
 		MD:       md.Markdownf("removed %s from %s.", modified.MarkdownWithSkills(), r.Markdown()),
 	}
-	sl.LogAPI(out)
+	sl.logAPI(out)
 	return out, nil
 }

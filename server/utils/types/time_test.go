@@ -27,7 +27,7 @@ func TestTimeSet(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.in, func(t *testing.T) {
-			tt := NewTime().In(EST)
+			tt := NewTime(time.Now()).In(EST)
 			err := tt.Set(tc.in)
 			if tc.expectedError != "" {
 				require.Equal(t, tc.expectedError, fmt.Sprintf("%v", err))
@@ -61,7 +61,7 @@ func TestTimeJSON(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedJSON, strings.Trim(string(data), `"`))
 
-			back := NewTime().In(time.UTC)
+			back := NewTime(time.Now()).In(time.UTC)
 			err = json.Unmarshal(data, &back)
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedBackString, back.String())
