@@ -32,7 +32,7 @@ func TestTaskFill(t *testing.T) {
 			`)
 
 		lastServed := func(user *sl.User) string {
-			return time.Unix(user.LastServed.Get("test-rotation"), 0).Format(time.RFC3339)
+			return time.Unix(user.LastServed.Get("test-rotation"), 0).In(types.PST).Format(time.RFC3339)
 		}
 		require.Equal(t, "2033-01-01T00:00:00-08:00", lastServed(mustRunUser(t, SL, `/lotto user show @test-user1`)))
 		require.Equal(t, "2033-01-01T00:00:00-08:00", lastServed(mustRunUser(t, SL, `/lotto user show @test-user2`)))
