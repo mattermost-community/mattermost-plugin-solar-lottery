@@ -14,7 +14,7 @@ func (sl *sl) dmUserWelcomeToSolarLottery(user *User) {
 	// There is the special case when a user uses the plugin for the first time,
 	// in which case the actingUser is not yet set. Default to the "subject" user.
 	actingUser := sl.actingUser
-	if actingUser == nil || actingUser.mattermostUser == nil {
+	if actingUser == nil {
 		actingUser = user
 	}
 

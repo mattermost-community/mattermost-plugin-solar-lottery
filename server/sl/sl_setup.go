@@ -75,8 +75,6 @@ func withExpandedRotation(idref *types.ID, r *Rotation) func(sl *sl) error {
 }
 
 func withExpandedActingUser(sl *sl) error {
-	sl.actingUser = NewUser("")
-
 	user, _, err := sl.loadOrMakeUser(sl.actingMattermostUserID)
 	if err != nil {
 		return err
