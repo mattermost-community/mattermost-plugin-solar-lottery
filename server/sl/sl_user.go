@@ -215,12 +215,16 @@ func (sl *sl) expandUsers(users *Users) error {
 // note that it can be used inside of filters, so it must not use filters itself,
 //  nor assume that any runtime values have been filled.
 func (sl *sl) storeUserWelcomeNew(user *User) error {
+	userIsNew := false
 	if user.PluginVersion == "" {
-		sl.dmUserWelcomeToSolarLottery(user)
+		userIsNew = true
 	}
 	err := sl.storeUser(user)
 	if err != nil {
 		return err
+	}
+	if userIsNew {
+		sl.dmUserWelcomeToSolarLottery(user)
 	}
 	return nil
 }
