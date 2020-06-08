@@ -66,7 +66,7 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	router := &mux.Router{}
-	p.api = api.NewService(p.config, router)
+	p.api = api.NewService(p.config, router, p.sl)
 	router.Handle("{anything:.*}", http.NotFoundHandler())
 
 	command.Register(p.API.RegisterCommand)
