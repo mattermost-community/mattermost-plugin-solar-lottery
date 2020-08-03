@@ -21,7 +21,7 @@ func (c *Command) rotationShow(parameters []string) (md.MD, error) {
 		return "", err
 	}
 
-	if c.outputJson {
+	if c.outputJSON {
 		return md.JSONBlock(r), nil
 	}
 	return r.MarkdownBullets(), nil

@@ -4,7 +4,6 @@
 package command
 
 import (
-	"fmt"
 
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/sl"
 	"github.com/mattermost/mattermost-plugin-solar-lottery/server/utils/md"
@@ -12,7 +11,7 @@ import (
 
 func (c *Command) userJoin(parameters []string) (md.MD, error) {
 	c.withFlagRotation()
-	starting, err := c.withTimeFlag("starting", fmt.Sprintf("time for user to start participating"))
+	starting, err := c.withTimeFlag("starting", "time for user to start participating")
 	if err != nil {
 		return c.flagUsage(), err
 	}

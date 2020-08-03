@@ -23,7 +23,7 @@ func TestQualifiedForNeed(t *testing.T) {
 	}{
 		{
 			name:     "Guru server 2",
-			need:     C1_Server_L2(),
+			need:     C1ServerL2(),
 			user:     UserGuru(),
 			expected: true,
 		},
@@ -35,13 +35,13 @@ func TestQualifiedForNeed(t *testing.T) {
 		},
 		{
 			name:     "Webapp1 server 1",
-			need:     C1_Server_L1(),
+			need:     C1ServerL1(),
 			user:     UserWebapp1(),
 			expected: true,
 		},
 		{
 			name:     "Webapp1 server 2",
-			need:     C1_Server_L2(),
+			need:     C1ServerL2(),
 			user:     UserWebapp1(),
 			expected: false,
 		},
@@ -64,13 +64,13 @@ func TestUsersQualifiedForNeed(t *testing.T) {
 	}{
 		{
 			name:              "happy server3",
-			need:              C1_Server_L3(),
+			need:              C1ServerL3(),
 			users:             sl.NewUsers(UserGuru(), UserServer1(), UserServer2(), UserServer3(), UserMobile1()),
 			expectedQualified: sl.NewUsers(UserGuru(), UserServer1(), UserServer2(), UserServer3()),
 		},
 		{
 			name:              "happy server4",
-			need:              C1_Server_L4(),
+			need:              C1ServerL4(),
 			users:             sl.NewUsers(UserGuru(), UserServer1(), UserServer2(), UserServer3(), UserMobile1()),
 			expectedQualified: sl.NewUsers(UserGuru()),
 		},
@@ -79,7 +79,6 @@ func TestUsersQualifiedForNeed(t *testing.T) {
 			qualified, need := tc.need.QualifyUsers(tc.users)
 			require.Equal(t, tc.expectedQualified, qualified)
 			require.Equal(t, tc.need.Count()-int64(tc.expectedQualified.Len()), need.Count())
-
 		})
 	}
 }

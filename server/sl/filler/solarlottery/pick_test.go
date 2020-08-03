@@ -132,54 +132,54 @@ func TestPickNeed(t *testing.T) {
 		{
 			name: "happy 2",
 			require: sl.NewNeeds(
-				test.C3_Server_L1(),
-				test.C1_Webapp_L2(),
+				test.C3_ServerL1(),
+				test.C1WebappL2(),
 			),
 			requirePools: map[types.ID]*sl.Users{
-				test.C3_Server_L1().GetID(): usersServer1,
-				test.C1_Webapp_L2().GetID(): usersWebapp2,
+				test.C3_ServerL1().GetID(): usersServer1,
+				test.C1WebappL2().GetID(): usersWebapp2,
 			},
-			expectedHighest:        test.C1_Webapp_L2(),
-			expectedRandom:         test.C3_Server_L1(),
-			expectedWeightedRandom: test.C1_Webapp_L2(),
+			expectedHighest:        test.C1WebappL2(),
+			expectedRandom:         test.C3_ServerL1(),
+			expectedWeightedRandom: test.C1WebappL2(),
 		},
 		{
 			name: "happy 3",
 			require: sl.NewNeeds(
-				test.C3_Server_L1(),
-				test.C2_Server_L2(),
-				test.C1_Webapp_L2(),
+				test.C3_ServerL1(),
+				test.C2ServerL2(),
+				test.C1WebappL2(),
 			),
 			requirePools: map[types.ID]*sl.Users{
-				test.C3_Server_L1().GetID(): usersServer1,
-				test.C2_Server_L2().GetID(): usersServer2,
-				test.C1_Webapp_L2().GetID(): usersWebapp2,
+				test.C3_ServerL1().GetID(): usersServer1,
+				test.C2ServerL2().GetID(): usersServer2,
+				test.C1WebappL2().GetID(): usersWebapp2,
 			},
 
-			// testNeedServer_L2_Min2 is selected since it has the lowest weight/headcount
-			expectedHighest:        test.C2_Server_L2(),
-			expectedRandom:         test.C3_Server_L1(),
-			expectedWeightedRandom: test.C1_Webapp_L2(),
+			// testNeedServerL2_Min2 is selected since it has the lowest weight/headcount
+			expectedHighest:        test.C2ServerL2(),
+			expectedRandom:         test.C3_ServerL1(),
+			expectedWeightedRandom: test.C1WebappL2(),
 		},
 		{
 			name: "happy 3 with constraint",
 			require: sl.NewNeeds(
-				test.C3_Server_L1(),
-				test.C2_Server_L2(),
-				test.C1_Webapp_L2(),
+				test.C3_ServerL1(),
+				test.C2ServerL2(),
+				test.C1WebappL2(),
 			),
 			limit: sl.NewNeeds(
-				test.C1_Webapp_L2(),
+				test.C1WebappL2(),
 			),
 			requirePools: map[types.ID]*sl.Users{
-				test.C3_Server_L1().GetID(): usersServer1,
-				test.C2_Server_L2().GetID(): usersServer2,
-				test.C1_Webapp_L2().GetID(): usersWebapp2,
+				test.C3_ServerL1().GetID(): usersServer1,
+				test.C2ServerL2().GetID(): usersServer2,
+				test.C1WebappL2().GetID(): usersWebapp2,
 			},
 
-			expectedHighest:        test.C1_Webapp_L2(),
-			expectedRandom:         test.C3_Server_L1(),
-			expectedWeightedRandom: test.C1_Webapp_L2(),
+			expectedHighest:        test.C1WebappL2(),
+			expectedRandom:         test.C3_ServerL1(),
+			expectedWeightedRandom: test.C1WebappL2(),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -216,21 +216,21 @@ func TestNeedWeight(t *testing.T) {
 		{
 			name: "happy",
 			require: sl.NewNeeds(
-				test.C3_Server_L1(),
-				test.C1_Webapp_L2(),
+				test.C3_ServerL1(),
+				test.C1WebappL2(),
 			),
 			requirePools: map[types.ID]*sl.Users{
-				test.C3_Server_L1().GetID(): usersServer,
-				test.C1_Webapp_L2().GetID(): usersWebapp,
+				test.C3_ServerL1().GetID(): usersServer,
+				test.C1WebappL2().GetID(): usersWebapp,
 			},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			f := makeTestFiller(t, nil, nil, tc.require, tc.limit)
 			f.requirePools = tc.requirePools
-			w := f.requireWeight(test.C1_Webapp_L2())
+			w := f.requireWeight(test.C1WebappL2())
 			require.Equal(t, 1.3724873597089898e+15, w)
-			w = f.requireWeight(test.C3_Server_L1())
+			w = f.requireWeight(test.C3_ServerL1())
 			require.Equal(t, 1.8299831462785262e+15, w)
 		})
 	}
