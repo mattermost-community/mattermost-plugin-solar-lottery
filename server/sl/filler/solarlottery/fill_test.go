@@ -41,13 +41,13 @@ func TestFill(t *testing.T) {
 	}{
 		{
 			name:                       "happy",
-			require:                    sl.NewNeeds(test.C1_Mobile_L1(), test.C1_Server_L1(), test.C1_Webapp_L1()),
+			require:                    sl.NewNeeds(test.C1MobileL1(), test.C1ServerL1(), test.C1WebappL1()),
 			pool:                       test.AllUsers(),
 			skipSucessResultValidation: true,
 		},
 		{
 			name:    "happy accepted",
-			require: sl.NewNeeds(test.C1_Mobile_L1()),
+			require: sl.NewNeeds(test.C1MobileL1()),
 			pool: sl.NewUsers(
 				test.UserMobile1().WithLastServed(test.RotationID, longTimeAgo),
 				test.UserMobile2().WithLastServed(test.RotationID, recently),
@@ -58,11 +58,11 @@ func TestFill(t *testing.T) {
 		{
 			name: "accepted another maxed out",
 			require: sl.NewNeeds(
-				test.C1_Mobile_L1(),
-				test.C1_Server_L1(),
+				test.C1MobileL1(),
+				test.C1ServerL1(),
 			),
 			limit: sl.NewNeeds(
-				test.C1_Server_L1(),
+				test.C1ServerL1(),
 			),
 			assigned: sl.NewUsers(
 				test.UserServer1(), // meets and maxes out the server need, leaving only mobile
@@ -78,35 +78,35 @@ func TestFill(t *testing.T) {
 		},
 		{
 			name:             "Err Insufficient simple",
-			require:          sl.NewNeeds(test.C2_Mobile_L1()),
+			require:          sl.NewNeeds(test.C2MobileL1()),
 			pool:             sl.NewUsers(test.UserServer1(), test.UserMobile1()),
 			expectFillError:  sl.ErrFillInsufficient,
-			expectUnmetNeeds: sl.NewNeeds(test.C1_Mobile_L1()),
-			expectFailedNeed: test.C1_Mobile_L1(),
+			expectUnmetNeeds: sl.NewNeeds(test.C1MobileL1()),
+			expectFailedNeed: test.C1MobileL1(),
 		},
 		{
 			name:             "Err Insufficient with assigned",
-			require:          sl.NewNeeds(test.C2_Mobile_L1()),
+			require:          sl.NewNeeds(test.C2MobileL1()),
 			assigned:         sl.NewUsers(test.UserMobile1()),
 			pool:             sl.NewUsers(test.UserServer1(), test.UserServer2()),
 			expectFillError:  sl.ErrFillInsufficient,
-			expectUnmetNeeds: sl.NewNeeds(test.C1_Mobile_L1()),
-			expectFailedNeed: test.C1_Mobile_L1(),
+			expectUnmetNeeds: sl.NewNeeds(test.C1MobileL1()),
+			expectFailedNeed: test.C1MobileL1(),
 		},
 		{
 			name:             "Err Limit",
-			limit:            sl.NewNeeds(test.C1_Any()),
-			require:          sl.NewNeeds(test.C2_Mobile_L1()),
+			limit:            sl.NewNeeds(test.C1Any()),
+			require:          sl.NewNeeds(test.C2MobileL1()),
 			assigned:         sl.NewUsers(test.UserMobile1()),
 			pool:             sl.NewUsers(test.UserMobile2(), test.UserGuru()),
 			expectFillError:  sl.ErrFillInsufficient,
-			expectUnmetNeeds: sl.NewNeeds(test.C1_Mobile_L1()),
-			expectFailedNeed: test.C1_Mobile_L1(),
+			expectUnmetNeeds: sl.NewNeeds(test.C1MobileL1()),
+			expectFailedNeed: test.C1MobileL1(),
 		},
 		{
 			name:         "Noop on preassigned",
-			limit:        sl.NewNeeds(test.C2_Any()),
-			require:      sl.NewNeeds(test.C2_Mobile_L1()),
+			limit:        sl.NewNeeds(test.C2Any()),
+			require:      sl.NewNeeds(test.C2MobileL1()),
 			assigned:     sl.NewUsers(test.UserMobile1(), test.UserMobile2()),
 			pool:         sl.NewUsers(test.UserWebapp2(), test.UserGuru()),
 			expectPool:   sl.NewUsers(test.UserWebapp2(), test.UserGuru()),

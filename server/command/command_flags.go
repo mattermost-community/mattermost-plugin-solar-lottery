@@ -43,7 +43,7 @@ func (c *Command) parse(parameters []string) error {
 		return err
 	}
 
-	if (*c.now).IsZero() {
+	if c.now.IsZero() {
 		now := types.NewTime(time.Now())
 		c.now = &now
 	}
@@ -53,7 +53,7 @@ func (c *Command) parse(parameters []string) error {
 func (c *Command) flags() *pflag.FlagSet {
 	if c.fs == nil {
 		c.fs = pflag.NewFlagSet("", pflag.ContinueOnError)
-		c.fs.BoolVar(&c.outputJson, "json", false, "output as JSON")
+		c.fs.BoolVar(&c.outputJSON, "json", false, "output as JSON")
 		c.now, _ = c.withTimeFlag("now", "specify the transaction time (default: now)")
 	}
 	return c.fs

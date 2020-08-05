@@ -14,7 +14,6 @@ import (
 )
 
 func TestTimeSet(t *testing.T) {
-
 	tests := []struct {
 		in            string
 		expectedError string
@@ -53,7 +52,6 @@ func TestTimeJSON(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
-
 		t.Run(tc.time.Format(time.RFC3339), func(t *testing.T) {
 			tt := NewTime(tc.time).In(EST)
 

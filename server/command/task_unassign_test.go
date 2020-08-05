@@ -85,7 +85,7 @@ func TestTaskUnassign(t *testing.T) {
 			}
 			force := " "
 			if tc.force {
-				force = force + "--force"
+				force += "--force"
 			}
 			_, err := runJSON(t, SL, "/lotto task unassign test-rotation#1 "+tc.unassign+force, &out)
 			if tc.expectError {

@@ -49,7 +49,6 @@ func TestRotationArchive(t *testing.T) {
 		_, err = run(t, SL, `/lotto rotation show test-123`)
 		require.Equal(t, kvstore.ErrNotFound, err)
 	})
-
 }
 
 func TestRotationDelete(t *testing.T) {
@@ -83,5 +82,4 @@ func TestRotationDelete(t *testing.T) {
 		_, err = run(t, SL, `/lotto rotation show test-123`)
 		require.Equal(t, kvstore.ErrNotFound, err)
 	})
-
 }

@@ -19,7 +19,7 @@ func (c *Command) rotationList(parameters []string) (md.MD, error) {
 		return "", err
 	}
 
-	if c.outputJson {
+	if c.outputJSON {
 		return md.JSONBlock(rotations), nil
 	}
 	if rotations.Len() == 0 {

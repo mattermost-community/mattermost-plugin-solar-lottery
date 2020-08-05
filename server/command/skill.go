@@ -25,7 +25,7 @@ func (c *Command) skillNew(parameters []string) (md.MD, error) {
 		return "", err
 	}
 
-	if c.outputJson {
+	if c.outputJSON {
 		return md.JSONBlock(skill), nil
 	}
 	return md.Markdownf("Added **%s** to known skills.", skill), nil
@@ -45,7 +45,7 @@ func (c *Command) skillDelete(parameters []string) (md.MD, error) {
 	if err != nil {
 		return "", err
 	}
-	if c.outputJson {
+	if c.outputJSON {
 		return md.JSONBlock(skill), nil
 	}
 	return md.Markdownf("Deleted **%s** from known skills. User profiles are not changed.", skill), nil
@@ -60,7 +60,7 @@ func (c *Command) skillList(parameters []string) (md.MD, error) {
 	if err != nil {
 		return "", err
 	}
-	if c.outputJson {
+	if c.outputJSON {
 		return md.JSONBlock(skills), nil
 	}
 	return "Known skills: " + md.JSONBlock(skills), nil

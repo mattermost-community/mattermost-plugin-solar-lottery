@@ -54,7 +54,7 @@ func TestFairSimple(t *testing.T) {
 }
 
 // TODO TestFairSET is effectively failing; for some reason preferring the
-// "MOBILE" team. Need to do some careful analisys, the skills structure may
+// "MOBILE" team. Need to do some careful analysis, the skills structure may
 // indeed be skewed towards non-mobile, but would think randomization would
 // help? Need a better "fairness" test harness anyway.
 //

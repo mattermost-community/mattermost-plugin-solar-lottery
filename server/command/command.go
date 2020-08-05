@@ -29,7 +29,7 @@ type Command struct {
 	ChannelID   string
 
 	actualTrigger string
-	outputJson    bool
+	outputJSON    bool
 	fs            *pflag.FlagSet
 	now           *types.Time
 }
@@ -109,7 +109,7 @@ func (c *Command) normalOut(out md.Markdowner, err error) (md.MD, error) {
 	if err != nil {
 		return "", err
 	}
-	if c.outputJson {
+	if c.outputJSON {
 		out = md.JSONBlock(out)
 	}
 	return out.Markdown(), nil

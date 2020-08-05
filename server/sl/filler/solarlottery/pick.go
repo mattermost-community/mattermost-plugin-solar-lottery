@@ -112,7 +112,7 @@ func (f *fill) requireWeight(need sl.Need) float64 {
 
 	// Boost needs that have limits
 	if f.limit.Contains(need.ID) {
-		total = total * 10
+		total *=  10
 	}
 
 	return total / float64(len(users))
