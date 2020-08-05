@@ -44,55 +44,6 @@ all: check-style test dist
 apply:
 	./build/bin/manifest apply
 
-## Runs govet and gofmt against all packages.
-.PHONY: check-style
-check-style: webapp/.npminstall gofmt govet
-	@echo Checking for style guide compliance
-
-ifneq ($(HAS_WEBAPP),)
-	cd webapp && npm run lint
-endif
-
-## Runs gofmt against all packages.
-.PHONY: gofmt
-gofmt:
-ifneq ($(HAS_SERVER),)
-	@echo Running gofmt
-	@for package in $$(go list ./...); do \
-		echo "Checking "$$package; \
-		files=$$(go list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' $$package); \
-		if [ "$$files" ]; then \
-			gofmt_output=$$(gofmt -d -s $$files 2>&1); \
-			if [ "$$gofmt_output" ]; then \
-				echo "$$gofmt_output"; \
-				echo "Gofmt failure"; \
-				exit 1; \
-			fi; \
-		fi; \
-	done
-	@echo Gofmt success
-endif
-
-## Runs govet against all packages.
-.PHONY: govet
-govet:
-ifneq ($(HAS_SERVER),)
-	@echo Running govet
-	@# Workaround because you can't install binaries without adding them to go.mod
-	env GO111MODULE=off $(GO) get golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow
-	$(GO) vet ./...
-	$(GO) vet -vettool=$(GOPATH)/bin/shadow ./...
-	@echo Govet success
-endif
-
-## Runs golint against all packages.
-.PHONY: golint
-golint:
-	@echo Running lint
-	env GO111MODULE=off $(GO) get golang.org/x/lint/golint
-	$(GOPATH)/bin/golint -set_exit_status ./...
-	@echo lint success
-	
 ## Runs golangci-lint and eslint.
 .PHONY: check-style
 check-style: webapp/.npminstall golangci-lint
@@ -112,16 +63,6 @@ golangci-lint:
 
 	@echo Running golangci-lint
 	golangci-lint run ./...
-
-## Builds the server, if it exists, including support for multiple architectures.
-.PHONY: server
-server:
-ifneq ($(HAS_SERVER),)
-	mkdir -p server/dist;
-	cd server && env GOOS=linux GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-linux-amd64;
-	cd server && env GOOS=darwin GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-darwin-amd64;
-	cd server && env GOOS=windows GOARCH=amd64 $(GO) build $(GO_BUILD_FLAGS) -o dist/plugin-windows-amd64.exe;
-endif
 
 ## Generates mock golang interfaces for testing
 mock:
