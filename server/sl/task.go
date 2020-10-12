@@ -37,7 +37,7 @@ const (
 )
 
 type Task struct {
-	//TODO set PluginID on save
+	// TODO set PluginID on save
 	PluginVersion string
 	TaskID        types.ID
 	RotationID    types.ID
